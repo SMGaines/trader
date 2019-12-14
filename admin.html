@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" type="text/css" href="css/traderStyles.css">
+</head>
+<body background="images/stockbackground.jpg" onload="init()">
+    <div id='headerDisplay' style="position:absolute; top:0px; left:0px; z-index:1">  
+        <H1>TRADER ADMIN</H1>
+        <H2 id="gamedate"></H2>
+    </div>
+    <div id='gameAdmin' style="position:absolute; top:100px; left:0px; z-index:1">  
+        <form action="/adminResponse">
+            <table>
+                <tr><th><label class='largeText' for="maxPeople">Max People:</label></th>
+                <th><input class='largeText' type="number" name="maxPeople" min = "2" max = "10" value="8"></th></tr>
+                <tr><th><label class='largeText' for="dayDuration">Day Duration</label></th>
+                <th><input class='largeText' type="number" name="dayDuration" min = ".5" max = "3.5" value="2"></th></tr>
+                <tr><th><label class='largeText' for="gameMonths">Game Months</label></th>
+                <th><input class='largeText' type="number" name="gameMonths" min = "12" max = "36" value="24"></th></tr>
+                <tr><th><label class='largeText' for="numBots">Number of Bots</label></th>
+                <th><input class='largeText' type="number" name="numBots" min = "0" max = "6" value="4"></th></tr>
+            </table>
+            <input class='largeText'type="submit" value="Start Registration">
+        </form> 
+    </div>
+</body>
+</html>

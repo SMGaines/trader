@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" type="text/css" href="css/traderStyles.css">
+    <script src="/socket.io/socket.io.js"></script>
+	<script src="./js/processPlayer.js" type="text/javascript"></script>
+	<title>Trader!</title>
+</head>
+<body  background="images/stockbackground.jpg" onload="init()">	
+	    <div id='audio'>
+        <audio id="police" preload="auto"> <source src="audio/police.mp3" type="audio/mpeg"/></audio>
+	<TABLE style="margin:auto;">
+		<TR><TH class="headerText">TRADER v1.0</TH></TR>
+		<TR><TH style="margin:auto;"><button class='veryLargeButton' onclick="openForm('buyForm')">Buy</button></TH></TR>
+		<TR style="margin:auto;"><TH><button class='veryLargeButton' onclick="openForm('sellForm')">Sell</button></TH></TR>
+		<TR style="margin:auto;"><TH><button class='veryLargeButton' onclick="openForm('hackForm')">Hack</button></TH></TR>
+		<TR style="margin:auto;"><TH><button class='veryLargeButton' onclick="openForm('suspectForm')">Suspect</button></TH></TR>
+		<TR style="margin:auto;"><TH><button class='veryLargeButton' onclick="insider()">Insider</button></TH></TR>
+	</TABLE>
+	<div class='bigpopup' id='buyForm'></div>
+	<div class='bigpopup' id='sellForm'></div>
+	<div class='bigpopup' id='hackForm'></div>
+	<div class='bigpopup' id='suspectForm'></div>
+	<div class='popup' id='statusForm'></div>
+	<div class='prison' id='prisonForm'></div>
+	<div class='bigpopup' id='registrationForm'></div>
+</body>
+</html>

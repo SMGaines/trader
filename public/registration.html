@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" type="text/css" href="css/traderStyles.css">
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="./js/processRegistration.js" type="text/javascript"></script>
+</head>
+<body background="images/stockbackground.jpg" onload="init()">
+    <div id='headerDisplay' style="border-radius: 25px;background-color:#003200;position:absolute;width:1500px; height: 200px; top:10px; left:10px; z-index:1">  
+        <H1 class='largeText'>TRADER REGISTRATION</H1>
+        <H2 id='gameConnectDetails'></H2>
+    </div>
+    <div id='registrationDisplay' style="border-radius: 25px;background-color:#003200;position:absolute;width:1500px; height: 500px;top:220px; left:10px; z-index:1"> </div>
+    <div id='startGame'style="border-radius: 25px;background-color:#003200;position:absolute;width:800px; height: 150px;top:740px; left:10px; z-index:1">>
+        <form action="/registrationComplete">
+            <input class='largeText' type="submit" value="Start Game">
+        </form> 
+</body>
+</html>

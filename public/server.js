@@ -170,15 +170,15 @@ function sendPlayerList()
 
 io.on('connection',function(socket)
 {
-    socket.on(CMD_REGISTER,function(playerName)
+    socket.on(CMD_REGISTER,function(playerName,lang)
     {
         if (state == STATE_REGISTRATION)
         {
             var regStatus = game.validateNewPlayer(playerName);
             if (regStatus == 0)
             {
-                console.log("Server: New player registered: "+playerName);
-                game.registerPlayer(playerName);
+                console.log("Server: New player registered: "+playerName+"("+lang+")");
+                game.registerPlayer(playerName,lang);
                 io.sockets.emit(CMD_REGISTERED,{msg:game.getPlayer(playerName)});
             }
             else

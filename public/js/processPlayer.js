@@ -3,7 +3,8 @@ const COOKIE_USER_PARAMETER = "username";
 const STOCK_INCREMENT = 50;
 const MAX_STOCK = 1000;
 const REG_PLAYER_EXISTS=1;
-
+const LANG_EN=0;
+const LANG_PL=1;
 const CMD_NEW_PRICES="newprices";
 const CMD_NEW_MONTH="newmonth";
 const CMD_SELL_STOCK="sellstock";
@@ -33,14 +34,14 @@ var policeAudioPlayed;
 
 socket = io.connect();
 
-registerPlayer = function(playerName)
+registerPlayer = function(playerName,lang)
 {
   if (playerName != "" && playerName != null) 
   {
     setCookie(playerName);
     myPlayerName=playerName;
     console.log("Registering player: "+playerName);
-    socket.emit(CMD_REGISTER,playerName);
+    socket.emit(CMD_REGISTER,playerName,lang);
   }
  };
 
@@ -66,7 +67,8 @@ socket.on(CMD_REGISTERED,function(data)
     myPlayer=newPlayer;
     closeRegistration();
     console.log("Registered");
-    showStatus("Registered");
+    showStatus(newPlayer.status);
+    setFieldLanguage(myPlayer.lang);
   }
 });
 
@@ -91,7 +93,7 @@ socket.on(CMD_PLAYER_LIST,function(data)
   myPlayer=findMyPlayer(players);
   if (myPlayer == null)
   {
-    showStatus("Player not registered");
+    showStatus(myPlayer.lang==LANG_EN?"Player not registered":"Gracz nie jest zarejestrowany");
     return;
   }
   else if (myPlayer.prisonDaysRemaining > 0)
@@ -219,6 +221,15 @@ function getStoredPlayerName()
   return getCookie(COOKIE_USER_PARAMETER);
 }
 
+function setFieldLanguage(lang)
+{
+  document.getElementById('buttonBuy').innerHTML=lang=="EN"?"Buy":"Kup";
+  document.getElementById('buttonSell').innerHTML=lang=="EN"?"Sell":"Sprzedaj";
+  document.getElementById('buttonHack').innerHTML=lang=="EN"?"Hack":"Zhakuj";
+  document.getElementById('buttonSuspect').innerHTML=lang=="EN"?"Suspect":"Podejrzewaj ";
+  document.getElementById('buttonInsider').innerHTML=lang=="EN"?"Insider":"Insider";
+}
+
 function showStatus(statusMsg) 
 {
   document.getElementById('playerStatus').innerHTML=statusMsg;
@@ -228,7 +239,7 @@ function showStatus(statusMsg)
 function openForm(formName) 
 {
   if (!gameStarted)
-    showStatus("Game not started");
+    showStatus(myPlayer.lang==LANG_EN?"Game not started":"Gra się nie rozpoczęła");
   else
 	if (myPlayer.prisonDaysRemaining > 0)
 		return;
@@ -259,7 +270,7 @@ function closeForm(formName)
 function addPlayerDropDown(action,players)
 {
     var html = "<select class='veryLargeText' id='"+action+"SelectPlayer'>";
-    html+= "<option id='selectstock' value='NONE'>Select Player</option>";
+    html+= "<option id='selectstock' value='NONE'>"+(myPlayer.lang==LANG_EN?"Select Player":"Wybierz gracza")+"</option>";
     console.log("addPlayerDropDown: "+players.length+"/"+players);
     players.forEach(function(player)
     {
@@ -276,7 +287,7 @@ function addPlayerDropDown(action,players)
 function addStockDropDown(action,stocks)
 {
     var html = "<select class='veryLargeText' id='"+action+"SelectStock'>";
-    html+= "<option id='selectstock' value='NONE'>Select Stock</option>";
+    html+= "<option id='selectstock' value='NONE'>"+(myPlayer.lang==LANG_EN?"Select Stock":"Wybierz Zapas")+"</option>";
     stocks.forEach(function(stock)
     {
         html+= "<option id = '"+stock.name+"' value = '"+stock.name+"'>"+stock.name+"</option>";
@@ -367,7 +378,7 @@ function buildStockForm(action,stocks)
   html+="</TR>";
   html+=addEmptyRow();
   html+="<TR><TH colspan='3'><button class='veryLargeText' type='button' onclick='"+action+"()'>OK</button></TH></TR>";
-  html+="<TR><TH colspan='3'><button class='veryLargeText' type='button' onclick='closeForm(&quot;"+action+"Form&quot;)'>Cancel</button></TH></TR>";
+  html+="<TR><TH colspan='3'><button class='veryLargeText' type='button' onclick='closeForm(&quot;"+action+"Form&quot;)'>"+(myPlayer.lang==LANG_EN?"Cancel":"Anuluj")+"</button></TH></TR>";
   html+="</TABLE>";
   document.getElementById(action+'Form').innerHTML=html;
 }
@@ -380,7 +391,7 @@ function buildPlayerForm(action,players)
   html+="<TR><TH>"+addPlayerDropDown(action,players)+"</TH></TR>";
   html+=addEmptyRow();
   html+="<TR><TH><button class='veryLargeText' type='submit' onclick='"+action+"()'>OK</button></TH></TR>";
-  html+="<TR><TH><button class='largeText' type='button' onclick='closeForm(&quot;"+action+"Form&quot;)'>Cancel</button></TH></TR>";
+  html+="<TR><TH><button class='largeText' type='button' onclick='closeForm(&quot;"+action+"Form&quot;)'>"+(myPlayer.lang==LANG_EN?"Cancel":"Anuluj")+"</button></TH></TR>";
   html+="</TABLE>";
   document.getElementById(action+'Form').innerHTML=html;
 }
@@ -392,6 +403,8 @@ function buildRegistrationForm()
   html+=addEmptyRow();
   html+="<TR><TH><input class='veryLargeText' id='regName' type='text' maxlength='8' size='8'/></TH></TR>"; 
   html+=addEmptyRow();
+  html+= "<TR><TH><select class='veryLargeText' id='regLang'><option value='EN'>EN</option><option value='PL'>PL</option></select></TH></TR>";
+  html+=addEmptyRow();
   html+="<TR><TH><button class='veryLargeText' type='button' onclick='processRegistrationForm()'>OK</button></TH></TR>";
   html+="<TR><TH class='veryLargeText' id='regStatus'></TH></TR>";
   html+="</TABLE>";
@@ -401,10 +414,11 @@ function buildRegistrationForm()
 function processRegistrationForm()
 {
 	var nameInput=document.getElementById("regName").value;
+	var langInput=document.getElementById("regLang").value;
 	if (nameInput.length >=3 && nameInput.length <= 8)
 	{
 		document.getElementById("registrationForm").style.display= "none";
-		registerPlayer(nameInput);
+		registerPlayer(nameInput,langInput);
 	}
 	else
 		showRegistrationError(0);
@@ -424,9 +438,9 @@ function closeRegistration()
 function showRegistrationError(error)
 {
 	if (error == REG_PLAYER_EXISTS)
-		document.getElementById("regStatus").innerHTML="Player name in use";
+		document.getElementById("regStatus").innerHTML=(myPlayer.lang==LANG_EN?"Player name in use":"Nazwa gracza w użyciu");
 	else
-		document.getElementById("regStatus").innerHTML="Name must be between 3 and 8 chars";
+		document.getElementById("regStatus").innerHTML=(myPlayer.lang==LANG_EN?"Name must be between 3 and 8 chars":"Nazwa musi zawierać od 3 do 8 znaków");
 }
 
 function buildStatusForm()
@@ -456,7 +470,7 @@ function showPrison(player)
     return;
   }
   document.getElementById('prisonReason').innerHTML = player.prisonReason;
-  document.getElementById('prisonStatus').innerHTML = "Days left: "+(player.prisonDaysRemaining-1);
+  document.getElementById('prisonStatus').innerHTML = (myPlayer.lang==LANG_EN?"Days left: ":"Pozostało Dni")+(player.prisonDaysRemaining-1);
   document.getElementById('prisonForm').style.display= "block";
 }
 

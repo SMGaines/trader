@@ -30,7 +30,7 @@ socket.on('registered',function(data)
 socket.on(CMD_GAME_ADDRESS,function(data)
 {
     var serverIP=data.msg;
-    document.getElementById('gameConnectDetails').innerHTML=addStandardText("Connect to: http://"+serverIP+":8081/player");
+    document.getElementById('gameConnectDetails').innerHTML=addStandardText("Connect to http://"+serverIP+":8081/player");
 });
 
 init = function()

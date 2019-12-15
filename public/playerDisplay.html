@@ -12,11 +12,11 @@
         <audio id="police" preload="auto"> <source src="audio/police.mp3" type="audio/mpeg"/></audio>
 	<TABLE style="margin:auto;">
 		<TR><TH class="headerText">TRADER v1.0</TH></TR>
-		<TR><TH style="margin:auto;"><button class='veryLargeButton' onclick="openForm('buyForm')">Buy</button></TH></TR>
-		<TR style="margin:auto;"><TH><button class='veryLargeButton' onclick="openForm('sellForm')">Sell</button></TH></TR>
-		<TR style="margin:auto;"><TH><button class='veryLargeButton' onclick="openForm('hackForm')">Hack</button></TH></TR>
-		<TR style="margin:auto;"><TH><button class='veryLargeButton' onclick="openForm('suspectForm')">Suspect</button></TH></TR>
-		<TR style="margin:auto;"><TH><button class='veryLargeButton' onclick="insider()">Insider</button></TH></TR>
+		<TR align='center' style="margin:auto;"><TH><button id='buttonBuy' class='veryLargeButton' onclick="openForm('buyForm')">Buy</button></TH></TR>
+		<TR align='center' style="margin:auto;"><TH><button id='buttonSell' class='veryLargeButton' onclick="openForm('sellForm')">Sell</button></TH></TR>
+		<TR align='center' style="margin:auto;"><TH><button id='buttonHack' class='veryLargeButton' onclick="openForm('hackForm')">Hack</button></TH></TR>
+		<TR align='center' style="margin:auto;"><TH><button id='buttonSuspect' class='veryLargeButton' onclick="openForm('suspectForm')">Suspect</button></TH></TR>
+		<TR align='center' style="margin:auto;"><TH><button id='buttonInsider' class='veryLargeButton' onclick="insider()">Insider</button></TH></TR>
 	</TABLE>
 	<div class='bigpopup' id='buyForm'></div>
 	<div class='bigpopup' id='sellForm'></div>

@@ -1,11 +1,10 @@
 const NO_SUCH_STOCK = -1;
 const STARTING_CASH = 100000;
-const NONE ="";
-const MAX_STOCKS = 10;
 
-exports.Player = function(name)
+exports.Player = function(name,aLang)
 {
   this.name = name;
+  this.lang=aLang;
   this.cash = STARTING_CASH;
   this.status="Player registered - waiting for game to start";
   this.hacking="NONE";
@@ -15,7 +14,6 @@ exports.Player = function(name)
   this.prisonReason="";
   this.beingHacked=false;
   this.hackingCompletionDate=0;
-  this.bankrupt=false;
   this.stocks=[];
   this.netWorth=0;
   this.taxBill=0;

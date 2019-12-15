@@ -41,6 +41,29 @@ getMonthEvent = function(aDate)
 }
 exports.getMonthEvent = getMonthEvent;
 
+getInsiderEventPlayerStatus = function(event)
+{
+  var interestingEventDate = getMonthYear(event.date);
+  switch(event.type)
+  {
+    case EVENT_CRASH: return "It seems "+event.stockName+" will crash in "+interestingEventDate;
+    case EVENT_BOOM: return "I hear that "+event.stockName+" will surge in "+interestingEventDate;
+    case EVENT_CRASH_ALL_STOCKS: return "The whole stock market is going to crash in "+interestingEventDate;
+    case EVENT_BOOM_ALL_STOCKS: return "The whole stock market is going to boom in "+interestingEventDate;
+    case EVENT_STOCK_IPO:return "A very interesting new Stock IPOs in "+interestingEventDate;
+    case EVENT_STOCK_RELEASE: return "Extra shares of "+event.stockName+" will be released in "+interestingEventDate;
+    case EVENT_STOCK_DIVIDEND: return event.stockName+" will release a dividend in "+interestingEventDate;
+    case EVENT_SHARES_SUSPENDED: return event.stockName+" will be suspended in "+interestingEventDate;
+    default: console.log("setupInsider: Unknown event type: "+event.type);return "";
+  }
+}
+exports.getInsiderEventPlayerStatus = getInsiderEventPlayerStatus;
+
+function getMonthYear(aDate)
+{
+    return aDate.toLocaleString('default', { month: 'long' }) + " "+aDate.getFullYear();
+}
+
 getEndOfGameEvent = function(aDate)
 {
   return new MonthEvent(EVENT_GAME_WINNER,"","$name wins!!","Crushes opposition with impressive win",true); //true==final event

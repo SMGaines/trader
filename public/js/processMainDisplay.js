@@ -90,13 +90,11 @@ init = function()
 
 var financialsDisplay = function(stocks)
 {
-    console.log("Financials Display: "+stocks.length);
     var html= "<TABLE>";
     html+=addTR(addTH(addHeaderText("Stock"))+addTH(addHeaderText("Avail"))+addTH(addHeaderText("Price")));
     for (var i=0;i<stocks.length;i++)
     {
         var priceDisplay,stockNameDisplay,stockAvailDisplay;
-        console.log("sus="+stocks[i].suspensionDays);
         if (stocks[i].suspensionDays > 0)
         {
             priceDisplay = addTH(addText(stocks[i].price.toFixed(2),"courier",7,"black"));

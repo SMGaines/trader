@@ -60,7 +60,7 @@ exports.start =function()
   inflationRate=INITIAL_INFLATION_RATE;
   players.forEach(function(player)
   {
-    player.status = getPlayerStatus(MSG_GAME_STARTED,player.lang);
+    player.status = getPlayerStatusMsg(MSG_GAME_STARTED,player.lang);
   });
 }
 
@@ -83,7 +83,7 @@ exports.nextDay = function()
     {
       players[i].prisonDaysRemaining--;
       if (players[i].prisonDaysRemaining == 0)
-        player.status = getPlayerStatus(MSG_PRISON_RELEASE,player.lang);
+        player.status = getPlayerStatusMsg(MSG_PRISON_RELEASE,player.lang);
     }
   }  
   for (var i=0;i<stocks.length;i++)
@@ -111,7 +111,7 @@ exports.getEndOfGameEvent=function()
   var endEvent =events.getEndOfGameEvent();
   var winner=findWinner();
   endEvent.headLine = endEvent.headLine.replace("$name",winner.name);
-  winner.status = getPlayerStatus(MSG_WINNER,winner.lang);
+  winner.status = getPlayerStatusMsg(MSG_WINNER,winner.lang);
   console.log("getEndOfGameEvent: "+endEvent.headLine);
   return endEvent;
 }
@@ -177,10 +177,11 @@ getStockSummary = function ()
 
 getPlayerStatusMsg=function(msgType,lang,argX,argY,argZ)
 {
+  console.log("getPlayerStatusMsg:"+msgType[lang]+"/"+lang+"/"+argX+"/"+argY+"/"+argZ);
   var msg =msgType[lang];
-  if (argX !== undefined) msg.replace("$x",argX);
-  if (argY !== undefined) msg.replace("$y",argY);
-  if (argZ !== undefined) msg.replace("$z",argZ);
+  if (argX !== undefined) msg=msg.replace("$x",argX);
+  if (argY !== undefined) msg=msg.replace("$y",argY);
+  if (argZ !== undefined) msg=msg.replace("$z",argZ);
   return msg;
 }
 
@@ -344,7 +345,8 @@ buyStock = function(playerName,stockName,amount)
     return;
   }
 
-  amount = stock.available>MIN_STOCK_PURCHASE?roundStock(stock.available/2):MIN_STOCK_PURCHASE; // Cannot buy all available stock in one purchase - makes it fairer
+  if (amount > stock.available/2)
+    amount = stock.available>MIN_STOCK_PURCHASE?roundStock(stock.available/2):MIN_STOCK_PURCHASE; // Cannot buy all available stock in one purchase - makes it fairer
 
   if (amount > stock.available)
   {
@@ -557,8 +559,8 @@ suspectHacker = function(suspectingPlayerName,suspectedPlayerName)
       removeCash(suspectedPlayer,amount);
       addCash(suspectingPlayer,amount);
       suspectedPlayer.prisonDaysRemaining=HACKING_PRISON_SENTENCE;
-      suspectedPlayer.status = getPlayerStatus(MSG_HACK_DETECTED,suspectedPlayer.lang,suspectingPlayerName,HACKING_FINE,suspectedPlayer.prisonDaysRemaining);
-      suspectingPlayer.status = getPlayerStatus(MSG_HACK_COMPENSATION,suspectingPlayer.lang,suspectedPlayer.name,formatMoney(amount));
+      suspectedPlayer.status = getPlayerStatusMsg(MSG_HACK_DETECTED,suspectedPlayer.lang,suspectingPlayerName,HACKING_FINE,suspectedPlayer.prisonDaysRemaining);
+      suspectingPlayer.status = getPlayerStatusMsg(MSG_HACK_COMPENSATION,suspectingPlayer.lang,suspectedPlayer.name,formatMoney(amount));
       suspectedPlayer.hacking="NONE";
       suspectingPlayer.beingHacked=false;
     }
@@ -567,8 +569,8 @@ suspectHacker = function(suspectingPlayerName,suspectedPlayerName)
       var amount = HACKING_INCORRECT_SUSPICION_FINE;
       removeCash(suspectingPlayer,amount);
       addCash(suspectedPlayer,amount);
-      suspectedPlayer.status =  getPlayerStatus(MSG_WRONG_SUSPICION,suspectedPlayer.lang,suspectingPlayer.name,formatMoney(amount));
-      suspectingPlayer.status = getPlayerStatus(MSG_NOT_HACKING,suspectingPlayer.lang,suspectedPlayer.name,formatMoney(amount));
+      suspectedPlayer.status =  getPlayerStatusMsg(MSG_WRONG_SUSPICION,suspectedPlayer.lang,suspectingPlayer.name,formatMoney(amount));
+      suspectingPlayer.status = getPlayerStatusMsg(MSG_NOT_HACKING,suspectingPlayer.lang,suspectedPlayer.name,formatMoney(amount));
    }
 }
 exports.suspectHacker = suspectHacker;
@@ -584,16 +586,16 @@ function checkHackers()
             var hackedPlayer=getPlayer(player.hacking);
             if (hackedPlayer.cash <= 0)
             {
-              player.status = getPlayerStatus(MSG_SUCCESSFUL_HACK_NO_MONEY,player.lang,hackedPlayer.name);
+              player.status = getPlayerStatusMsg(MSG_SUCCESSFUL_HACK_NO_MONEY,player.lang,hackedPlayer.name);
             }
             else
             {
               var amount = Math.max(MIN_HACKING_AMOUNT,hackedPlayer.cash*HACKING_FRACTION);
               removeCash(hackedPlayer,amount);
               addCash(player,amount);
-              hackedPlayer.status = getPlayerStatus(MSG_HACK_STEAL,hackedPlayer.lang,player.name,formatMoney(amount));
+              hackedPlayer.status = getPlayerStatusMsg(MSG_HACK_STEAL,hackedPlayer.lang,player.name,formatMoney(amount));
               hackedPlayer.beingHacked=false;
-              player.status = getPlayerStatus(MSG_SUCCESSFUL_HACK,player.lang,hackedPlayer.name,formatMoney(amount));
+              player.status = getPlayerStatusMsg(MSG_SUCCESSFUL_HACK,player.lang,hackedPlayer.name,formatMoney(amount));
             }
             player.hacking="NONE";
           }
@@ -623,7 +625,7 @@ setupInsider = function(insiderPlayerName)
   var upcomingEvent = events.findUpcomingEvent(gameDate,INSIDER_LOOKAHEAD_MONTHS);
   if (upcomingEvent == null)
   {
-    insiderPlayer.status=getPlayerStatus(MSG_NO_INTERESTING_EVENTS,insiderPlayer.lang);
+    insiderPlayer.status=getPlayerStatusMsg(MSG_NO_INTERESTING_EVENTS,insiderPlayer.lang);
     return;
   }
   insiderPlayer.status=events.getInsiderEventPlayerStatus(upcomingEvent);
@@ -646,13 +648,13 @@ function checkInsiderTrading()
       player.prisonReason="Insider Trading";
       player.prisonDaysRemaining = PRISON_DAYS_INCREMENT*(1+player.numInsiderDeals);
       player.numInsiderDeals = 0;
-      player.status=getPlayerStatus(MSG_INSIDER_CONVICTED,player.prisonDaysRemaining);
+      player.status=getPlayerStatusMsg(MSG_INSIDER_CONVICTED,player.prisonDaysRemaining);
     }
     else if (player.numInsiderDeals > 0 && sufficientTimeElapsed(gameDate,player.lastInsiderTradeDate)) // Crime expires after CRIME_EXPIRY_DAYS
     {
       player.numInsiderDeals=0;
       player.lastInsiderTradeDate=0;
-      player.status=getPlayerStatus(MSG_INSIDER_DROPPED,player.lang);
+      player.status=getPlayerStatusMsg(MSG_INSIDER_DROPPED,player.lang);
     }
   });
 }
@@ -695,7 +697,7 @@ exports.registerPlayer = function(playerName,language)
 {
   console.log("registerPlayer: Registering new player: "+playerName);
   players.push(new player.Player(playerName,getLanguageIndex(language)));
-  getPlayer(playerName).status=getPlayerStatus(MSG_REGISTERED,getLanguageIndex(language));
+  getPlayer(playerName).status=getPlayerStatusMsg(MSG_REGISTERED,getLanguageIndex(language));
 }
 
 getLanguageIndex=function(lang)
@@ -746,13 +748,15 @@ exports.registerBot = function(botName)
 
 exports.processBots=function()
 {
+  if (numBots==0)
+    return;
   var rndBotIndex = 1+Math.floor(numBots*Math.random());
   var rndBotName = "Bot"+rndBotIndex;
   var rndAmount = MIN_STOCK_PURCHASE*(1+Math.floor(Math.random()*20));
   var rndStock=Math.floor(Math.random()*stocks.length);
   var p = getPlayer(rndBotName);
   var stockName=stocks[rndStock].name;
-
+  
   if (p.getStockHolding(stockName) > 0 && stocks[rndStock].trend < 0)
     sellStock(rndBotName,stockName,rndAmount);
   if (stocks[rndStock].trend > 0)

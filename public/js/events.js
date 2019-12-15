@@ -99,7 +99,7 @@ function createMainEvents(stocks,ipoStockName)
 {
   // Set initially with 0 dates since the dates are assigned later in setEventDates()
   events.push(new MonthEvent(EVENT_NONE,"","","")); // Dummy event since we don't have one in very first month
-  events.push(new MonthEvent(EVENT_CRASH,"GOLD","Gold prices tumble","Massive new mine discovered in South Africa"));
+  events.push(new MonthEvent(EVENT_CRASH,"OIL","Oil prices tumble","Huge new reserves discovered in Middle East"));
   events.push(new MonthEvent(EVENT_BOOM,"GOLD","Gold in huge demand","Investors seek safe haven"));
   events.push(new MonthEvent(EVENT_BOOM,"OIL","Oil prices surge","Fighting in Iraq reduces supply"));
   events.push(new MonthEvent(EVENT_CRASH_ALL_STOCKS,"","Stock Market Crash","Panic as prices freefall"));

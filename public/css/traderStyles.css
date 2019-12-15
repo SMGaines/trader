@@ -81,15 +81,12 @@ p{
     font-family: 'Playfair Display', serif;
     display: block;
     margin: 0 auto;
-
-
 }
 .collumn .headline.hl1{
     font-weight: 700;
     font-size: 128px;
     text-transform: uppercase;
     padding: 10px 0 10px 0;
-
 }
 
 .collumn .headline.hl2{
@@ -278,16 +275,28 @@ p{
 }
 
 .largeText {
-  border-radius: 25px;
-  display: block;
-  background-color: #4CAF50;
-  color: white;
-  font-size: 96px;
-  font-family: "Courier";
-  text-align: center;
-  z-index: 10;
-  margin: auto;
-}
+    border-radius: 25px;
+    display: block;
+    background-color: #4CAF50;
+    color: white;
+    font-size: 96px;
+    font-family: "Courier";
+    text-align: center;
+    z-index: 10;
+    margin: auto;
+  }
+  
+  .mediumText {
+    border-radius: 25px;
+    display: block;
+    background-color: #4CAF50;
+    color: white;
+    font-size: 48px;
+    font-family: "Courier";
+    text-align: center;
+    width:30%;
+    z-index: 10;
+  }
 
 .headerText {
   border-radius: 25px;
@@ -300,6 +309,40 @@ p{
   z-index: 10;
   margin: auto;
 }
+
+.subheaderText {
+    display: block;
+    background-color: #003200;
+    color: white;
+    font-size: 48px;
+    font-family: "Courier";
+    text-align: center;
+    z-index: 10;
+    width:50%;
+    margin: auto;
+  }
+  
+  .sectionText {
+    display: block;
+    background-color: #003200;
+    color: white;
+    font-size: 32px;
+    font-family: "Courier";
+    text-align: center;
+    z-index: 10;
+    margin: auto;
+  }
+
+  .bodyText {
+    display: block;
+    background-color: #000000;
+    color: white;
+    font-size: 24px;
+    font-family: "Courier";
+    text-align: left;
+    z-index: 10;
+    margin: auto;
+  }
 
 .largeButton {
   border-radius: 25px;

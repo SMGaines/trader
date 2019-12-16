@@ -403,7 +403,7 @@ function buildRegistrationForm()
   html+=addEmptyRow();
   html+="<TR><TH><input class='veryLargeText' id='regName' type='text' maxlength='8' size='8'/></TH></TR>"; 
   html+=addEmptyRow();
-  html+= "<TR><TH><select class='veryLargeText' id='regLang'><option value='EN'>EN</option><option value='PL'>PL</option></select></TH></TR>";
+  html+= "<TR><TH><select class='veryLargeText' id='regLang'><option value='PL'>Polski</option><option value='EN'>English</option><option value='PL'>Polski</option></select></TH></TR>";
   html+=addEmptyRow();
   html+="<TR><TH><button class='veryLargeText' type='button' onclick='processRegistrationForm()'>OK</button></TH></TR>";
   html+="<TR><TH class='veryLargeText' id='regStatus'></TH></TR>";

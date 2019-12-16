@@ -52,7 +52,7 @@ app.get('/registrationComplete',function(req,res)
 
 app.get('/adminResponse',function(req,res)
 {
-    initialiseGame(req.query.gameMonths,req.query.maxPlayers,req.query.dayDuration,req.query.numBots);
+    initialiseGame(req.query.gameMonths,req.query.dayDuration,req.query.numBots,req.query.gameLang);
     res.sendFile(__dirname+'/registration.html');
 });
 
@@ -81,12 +81,12 @@ function getLocalIP()
  return addresses;
 }
 
-function initialiseGame(gameDuration,maxP,dayLength,numBots)
+function initialiseGame(gameDuration,dayLength,numBots,gameLang)
 {
-    console.log("Server: Initialising");
+    console.log("Server: Initialising: "+gameLang);
     state=STATE_INITIALISING;
     dayDuration=dayLength*1000;
-    game.init(gameDuration);
+    game.init(gameDuration,gameLang);
     
     console.log("Server: Starting registration");
     state=STATE_REGISTRATION;

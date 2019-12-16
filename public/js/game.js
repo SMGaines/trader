@@ -38,14 +38,14 @@ var inflationRate;
 var gameDate;
 var gameEndDate;
 
-exports.init = function(gameDurationInMonths)
+exports.init = function(gameDurationInMonths,gameLang)
 {
   gameDate = new Date("January 1 2020 00:00:00");
   gameEndDate=new Date(gameDate);
   gameEndDate.setMonth(gameDate.getMonth()+gameDurationInMonths);
   console.log("Game ends on: "+gameEndDate);
   setupStock();
-  events.setupEvents(gameDate,gameDurationInMonths,stocks,IPO_STOCK);
+  events.setupEvents(gameDate,gameDurationInMonths,stocks,IPO_STOCK,getLanguageIndex(gameLang)); // eg convert "EN" to a number (0)
   startRegistration();
 }
 
@@ -185,6 +185,28 @@ getPlayerStatusMsg=function(msgType,lang,argX,argY,argZ)
   return msg;
 }
 
+getInsiderEventPlayerStatus = function(event,lang)
+{
+  var interestingEventDate = getMonthYear(event.date);
+  switch(event.type)
+  {
+    case EVENT_CRASH: return getPlayerStatusMsg(MSG_EVENT_STOCK_CRASH,lang,event.stockName,interestingEventDate);
+    case EVENT_BOOM: return getPlayerStatusMsg(MSG_EVENT_STOCK_BOOM,lang,event.stockName,interestingEventDate);
+    case EVENT_CRASH_ALL_STOCKS: return getPlayerStatusMsg(MSG_EVENT_STOCK_MARKET_CRASH,lang,interestingEventDate);
+    case EVENT_BOOM_ALL_STOCKS: return getPlayerStatusMsg(MSG_EVENT_STOCK_MARKET_BOOM,lang,interestingEventDate);
+    case EVENT_STOCK_IPO:return getPlayerStatusMsg(MSG_EVENT_STOCK_IPO,lang,interestingEventDate);
+    case EVENT_STOCK_RELEASE: return getPlayerStatusMsg(MSG_EVENT_EXTRA_STOCK,lang,event.stockName,interestingEventDate);
+    case EVENT_STOCK_DIVIDEND: return getPlayerStatusMsg(MSG_EVENT_STOCK_DIVIDEND,lang,event.stockName,interestingEventDate);
+    case EVENT_SHARES_SUSPENDED: return getPlayerStatusMsg(MSG_EVENT_STOCK_SUSPENDED,lang,event.stockName,interestingEventDate);
+    default: console.log("setupInsider: Unknown event type: "+event.type);return "";
+  }
+}
+exports.getInsiderEventPlayerStatus = getInsiderEventPlayerStatus;
+
+function getMonthYear(aDate)
+{
+    return aDate.toLocaleString('default', { month: 'long' }) + " "+aDate.getFullYear();
+}
 exports.updatePrices = function()
 {
   if (gameOver())

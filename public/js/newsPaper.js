@@ -10,10 +10,16 @@ NewsPaperChart = function()
         rotationAngle=0;
         animationScale=.01;
         document.getElementById("newsDisplay").style.visibility='visible';
-        var newsAudio=document.getElementById("newsIntro");     
-        newsAudio.play();
-
         createNewsPaper(monthEvent);
+        if (monthEvent.isFinalEvent)
+        {
+            document.getElementById("newsGameOver").play();
+        }
+        else
+        {   
+            document.getElementById("newsIntro").play();
+        }
+       
         animateNewsStory(monthEvent.isFinalEvent);
     }
 
@@ -28,8 +34,7 @@ NewsPaperChart = function()
         }
         else
         {
-            if (!isFinalEvent)
-                setTimeout(hideNews,5000);
+            setTimeout(hideNews,isFinalEvent?10000:5000);
         }
     }
 

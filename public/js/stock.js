@@ -84,7 +84,7 @@ function getRandomTrend()
 
 function getRandomStartingPrice()
 {
-  return STOCK_MAX_VALUE*.1 + STOCK_MAX_VALUE*.3*Math.random();
+  return STOCK_MAX_VALUE*.1 + STOCK_MAX_VALUE*.2*Math.random();
 }
 
 function StockSummary(name,available,price,trend,sus)

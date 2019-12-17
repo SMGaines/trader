@@ -44,7 +44,6 @@ exports.getMonthEvent = getMonthEvent;
 
 getNewsMsg=function(msgType,argX,argY,argZ)
 {
-  console.log("getNewsMsg:"+msgType[gameLang]+"/"+gameLang+"/"+argX+"/"+argY+"/"+argZ);
   var msg=msgType[gameLang];
   if (argX !== undefined) msg=msg.replace("$x",argX);
   if (argY !== undefined) msg=msg.replace("$y",argY);
@@ -119,7 +118,7 @@ function createMainEvents(stocks,ipoStockName)
   events.push(new MonthEvent(EVENT_BOOM_ALL_STOCKS,"",getNewsMsg(MSG_NEWS_HEAD_MKT_BOOM),getNewsMsg(MSG_NEWS_SUB_MKT_BOOM)));
   events.push(new MonthEvent(EVENT_LOTTERY_WIN,"",getNewsMsg(MSG_NEWS_HEAD_LOTTERY),getNewsMsg(MSG_NEWS_SUB_LOTTERY)));
   events.push(new MonthEvent(EVENT_LOTTERY_WIN,"",getNewsMsg(MSG_NEWS_HEAD_LOTTERY),getNewsMsg(MSG_NEWS_SUB_LOTTERY)));
-  events.push(new MonthEvent(EVENT_STOCK_IPO,ipoStockName,getNewsMsg(MSG_NEWS_HEAD_IPO),getNewsMsg(MSG_NEWS_SUB_IPO)));
+  events.push(new MonthEvent(EVENT_STOCK_IPO,ipoStockName,getNewsMsg(MSG_NEWS_HEAD_IPO,ipoStockName),getNewsMsg(MSG_NEWS_SUB_IPO)));
   var rndStockID = Math.floor(Math.random()*stocks.length);
   events.push(new MonthEvent(EVENT_STOCK_RELEASE,stocks[rndStockID].name,getNewsMsg(MSG_NEWS_HEAD_EXTRA_SHARES),getNewsMsg(MSG_NEWS_SUB_EXTRA_SHARES,stocks[rndStockID].name)));
   rndStockID = Math.floor(Math.random()*stocks.length);

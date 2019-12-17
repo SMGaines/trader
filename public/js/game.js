@@ -179,7 +179,6 @@ getStockSummary = function ()
 
 getPlayerStatusMsg=function(msgType,lang,argX,argY,argZ)
 {
-  console.log("getPlayerStatusMsg:"+msgType[lang]+"/"+lang+"/"+argX+"/"+argY+"/"+argZ);
   var msg =msgType[lang];
   if (argX !== undefined) msg=msg.replace("$x",argX);
   if (argY !== undefined) msg=msg.replace("$y",argY);
@@ -443,17 +442,19 @@ exports.processMonth = function()
           break;
         case EVENT_LOTTERY_WIN:
           // Need to generate a random winner and update the text
-          var rndPlayerIndex;
-          while(true)
+          var rndPlayerIndex=getLotteryWinnerIndex();
+          if (rndPlayerIndex != -1)
           {
-            rndPlayerIndex = Math.floor(players.length*Math.random());
-            if (players[rndPlayerIndex].prisonDaysRemaining == 0) // Cannot win the lottery if in prison
-              break;
+            var win = BASE_LOTTERY_WIN+10000*Math.floor(Math.random()*5);
+            monthEvent.headLine = monthEvent.headLine.replace("$name",players[rndPlayerIndex].name);
+            monthEvent.headLine = monthEvent.headLine.replace("$win",formatMoney(win));
+            players[rndPlayerIndex].cash+=win;
           }
-          var win = BASE_LOTTERY_WIN+10000*Math.floor(Math.random()*5);
-          monthEvent.headLine = monthEvent.headLine.replace("$name",players[rndPlayerIndex].name);
-          monthEvent.headLine = monthEvent.headLine.replace("$win",formatMoney(win));
-          players[rndPlayerIndex].cash+=win;
+          else
+          {
+            monthEvent.headLine = monthEvent.headLine=getPlayerStatusMsg(MSG_NEWS_HEAD_NO_LOTTERY_WINNER,player.lang);
+            monthEvent.headLine = monthEvent.headLine=getPlayerStatusMsg(MSG_NEWS_SUB_NO_LOTTERY_WINNER,player.lang);
+          }
           break;
         case EVENT_STOCK_IPO:
           stocks.push(new stk.Stock(monthEvent.stockName,RISK_NONE));
@@ -515,6 +516,27 @@ exports.processMonth = function()
       }
     }
    return monthEvent;
+}
+
+getLotteryWinnerIndex=function()
+{
+  var best=0;
+  var bestIndex=-1;
+  for (var i=0;i<players.length;i++)
+  {
+    var playerNetWorth=players[i].calcNetWorth(stocks);
+    if (playerNetWorth <=10000)
+      playerNetWorth=10000; // Set minimum net worth for lottery purposes only
+    var playerChance = Math.random()/playerNetWorth; // Lower net worth means higher chance of winning
+    if (players[i].prisonDaysRemaining > 0) // Cannot win the lottery if in prison
+      playerChance=0;
+    if (playerChance > best)
+    {
+      best=playerChance;
+      bestIndex=i;
+    }
+  }
+  return bestIndex;
 }
 
 setupHack = function(hackingPlayerName,hackedPlayerName)

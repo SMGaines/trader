@@ -131,18 +131,18 @@ function createMainEvents(stocks,ipoStockName)
   while(true)
   {
       rndStockID = Math.floor(Math.random()*stocks.length);
-      if (rndStockID != "GOVT")
+      if (stocks[rndStockID].name != STOCK_GOVT)
         break;
   }
-  events.push(new MonthEvent(EVENT_SHARES_SUSPENDED,stocks[rndStockID].name,getNewsMsg(MSG_NEWS_HEAD_SUSPENDED,stocks[rndStockID].name),MSG_NEWS_SUB_SUSPENDED));
+  events.push(new MonthEvent(EVENT_SHARES_SUSPENDED,stocks[rndStockID].name,getNewsMsg(MSG_NEWS_HEAD_SUSPENDED,stocks[rndStockID].name),getNewsMsg(MSG_NEWS_SUB_SUSPENDED)));
   
   while(true)
   {
       rndStockID = Math.floor(Math.random()*stocks.length);
-      if (rndStockID != "GOVT")
+      if (stocks[rndStockID].name != STOCK_GOVT)
         break;
   }
-  events.push(new MonthEvent(EVENT_SHARES_SUSPENDED,stocks[rndStockID].name,getNewsMsg(MSG_NEWS_HEAD_SUSPENDED,stocks[rndStockID].name),MSG_NEWS_SUB_SUSPENDED)));
+  events.push(new MonthEvent(EVENT_SHARES_SUSPENDED,stocks[rndStockID].name,getNewsMsg(MSG_NEWS_HEAD_SUSPENDED,stocks[rndStockID].name),getNewsMsg(MSG_NEWS_SUB_SUSPENDED)));
 }
 
 function addTaxEvents(gameDurationInMonths)

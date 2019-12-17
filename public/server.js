@@ -1,7 +1,6 @@
 const STATE_INITIALISING = 0;
 const STATE_REGISTRATION = 1;
 const STATE_STARTED = 2;
-const STATE_GAME_OVER = 3;
 
 const CMD_NEW_PRICES="newprices";
 const CMD_NEW_MONTH="newmonth";
@@ -30,7 +29,6 @@ var io = require('socket.io').listen(server);
 var os = require( 'os' );
 
 var state;
-var numBots;
 var dayTimer,botTimer;
 var dayDuration;
 
@@ -92,8 +90,8 @@ function initialiseGame(gameDuration,dayLength,numBots,gameLang)
     state=STATE_REGISTRATION;
     for (var i=0;i<numBots;i++)
     {
-        game.registerBot("Bot"+(i+1));
-        io.sockets.emit(CMD_REGISTERED,{msg:game.getPlayer("Bot"+(i+1))});
+        game.registerBot(BOT_NAME_PREFIX+(i+1));
+        io.sockets.emit(CMD_REGISTERED,{msg:game.getPlayer(BOT_NAME_PREFIX+(i+1))});
     }
 }
 
@@ -189,8 +187,7 @@ io.on('connection',function(socket)
             var aPlayer = game.getPlayer(playerName);
             if (aPlayer != null)
             {
-                console.log("Server: player already registered: "+playerName);
-                aPlayer.status ="Player reconnected";
+                console.log("Server: Ignoring player already registered: "+playerName);
             }
             else
                 io.sockets.emit(CMD_ERROR,{msg:"Game already in progress"});

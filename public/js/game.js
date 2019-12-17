@@ -17,6 +17,8 @@ const HACKING_PRISON_SENTENCE=30;
 const INSIDER_BASE_FINE = 10000;
 const INSIDER_LOOKAHEAD_MONTHS = 3;
 
+const NO_PLAYER="NONE";
+
 const PRISON_DAYS_INCREMENT = 10;
 const CRIME_EXPIRY_DAYS = 90;
 
@@ -134,10 +136,10 @@ function findWinner()
 
 function setupStock()
 {
-  stocks.push(new stk.Stock("GOVT",RISK_NONE));
-  stocks.push(new stk.Stock("GOLD",RISK_LOW));
-  stocks.push(new stk.Stock("OIL",RISK_MEDIUM));
-  stocks.push(new stk.Stock("HITECH",RISK_HIGH));
+  stocks.push(new stk.Stock(STOCK_GOVT,RISK_NONE));
+  stocks.push(new stk.Stock(STOCK_GOLD,RISK_LOW));
+  stocks.push(new stk.Stock(STOCK_OIL,RISK_MEDIUM));
+  stocks.push(new stk.Stock(STOCK_HITECH,RISK_HIGH));
 }
 
 function getStock(stockName)
@@ -201,7 +203,6 @@ getInsiderEventPlayerStatus = function(event,lang)
     default: console.log("setupInsider: Unknown event type: "+event.type);return "";
   }
 }
-exports.getInsiderEventPlayerStatus = getInsiderEventPlayerStatus;
 
 function getMonthYear(aDate)
 {
@@ -535,7 +536,7 @@ setupHack = function(hackingPlayerName,hackedPlayerName)
     hackingPlayer.status = getPlayerStatusMsg(MSG_CANNOT_AFFORD_HACK,hackingPlayer.lang,formatMoney(HACKING_FEE));
     return;
   }
-  if (hackingPlayer.hacking != "NONE")
+  if (hackingPlayer.hacking != NO_PLAYER)
   {
     hackingPlayer.status=getPlayerStatusMsg(MSG_ALREADY_HACKING,hackingPlayer.lang,hackedPlayerName);
     return;
@@ -583,7 +584,7 @@ suspectHacker = function(suspectingPlayerName,suspectedPlayerName)
       suspectedPlayer.prisonDaysRemaining=HACKING_PRISON_SENTENCE;
       suspectedPlayer.status = getPlayerStatusMsg(MSG_HACK_DETECTED,suspectedPlayer.lang,suspectingPlayerName,HACKING_FINE,suspectedPlayer.prisonDaysRemaining);
       suspectingPlayer.status = getPlayerStatusMsg(MSG_HACK_COMPENSATION,suspectingPlayer.lang,suspectedPlayer.name,formatMoney(amount));
-      suspectedPlayer.hacking="NONE";
+      suspectedPlayer.hacking=NO_PLAYER;
       suspectingPlayer.beingHacked=false;
     }
   else
@@ -601,7 +602,7 @@ function checkHackers()
 {
     players.forEach(function(player)
     {
-        if (player.hacking != "NONE")
+        if (player.hacking != NO_PLAYER)
         {
           if (gameDate > player.hackingCompletionDate)
           {
@@ -619,7 +620,7 @@ function checkHackers()
               hackedPlayer.beingHacked=false;
               player.status = getPlayerStatusMsg(MSG_SUCCESSFUL_HACK,player.lang,hackedPlayer.name,formatMoney(amount));
             }
-            player.hacking="NONE";
+            player.hacking=NO_PLAYER;
           }
         }
     });
@@ -650,7 +651,7 @@ setupInsider = function(insiderPlayerName)
     insiderPlayer.status=getPlayerStatusMsg(MSG_NO_INTERESTING_EVENTS,insiderPlayer.lang);
     return;
   }
-  insiderPlayer.status=events.getInsiderEventPlayerStatus(upcomingEvent);
+  insiderPlayer.status=getInsiderEventPlayerStatus(upcomingEvent,insiderPlayer.lang);
   
   console.log("setupInsider: "+insiderPlayer.status);
   insiderPlayer.numInsiderDeals++;
@@ -773,7 +774,7 @@ exports.processBots=function()
   if (numBots==0)
     return;
   var rndBotIndex = 1+Math.floor(numBots*Math.random());
-  var rndBotName = "Bot"+rndBotIndex;
+  var rndBotName = BOT_NAME_PREFIX+rndBotIndex;
   var rndAmount = MIN_STOCK_PURCHASE*(1+Math.floor(Math.random()*20));
   var rndStock=Math.floor(Math.random()*stocks.length);
   var p = getPlayer(rndBotName);
@@ -784,14 +785,14 @@ exports.processBots=function()
   if (stocks[rndStock].trend > 0)
       buyStock(rndBotName,stockName,rndAmount);
 
-  if (Math.random() > .95 && p.hacking=="NONE")
+  if (Math.random() > .95 && p.hacking==NO_PLAYER)
     setupHack(rndBotName,chooseRandomPlayer(rndBotName).name);
   if (Math.random() > .95)
     setupInsider(rndBotName);
   if (p.beingHacked)
     suspectHacker(rndBotName,chooseRandomPlayer(rndBotName).name);
 
-  if (player.status != "")
+  if (p.status != "")
     console.log(rndBotName+": "+getPlayer(rndBotName).status);
 }
 

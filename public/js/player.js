@@ -65,7 +65,6 @@ this.buyStock = function (stockName,amount,stockPrice)
      this.stocks[stockIndex].amount+=amount;
     else
       this.stocks.push(new this.PlayerHolding(stockName,amount));
-    this.cash-=(amount*stockPrice);
 }
 
 this.sellStock = function (stockName,amount,stockPrice)
@@ -73,7 +72,18 @@ this.sellStock = function (stockName,amount,stockPrice)
   var stockIndex=this.getStockIndex(stockName);
   if (stockIndex != NO_SUCH_STOCK)
       this.stocks[stockIndex].amount-=amount;
-   this.cash+=(amount*stockPrice);
+}
+
+this.hasStock = function()
+{
+  for (var i=0;i<this.stocks.length;i++)
+  {
+    if (this.stocks[i].amount > 0)
+    {
+      return true;
+    }
+  }
+  return false;
 }
 
 this.PlayerHolding = function (name,amount)

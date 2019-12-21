@@ -22,14 +22,14 @@ StockChart = function(canvas,stocks)
             self.ctx.strokeStyle = colors[i];
             self.ctx.lineWidth = 4;
             self.ctx.beginPath();
-            self.ctx.moveTo(axisMargin+xAxisIndent,canvas.height*(1-stockHistory[i*HISTORY_SIZE]/STOCK_MAX_VALUE)-yAxisIndent-axisMargin);
+            self.ctx.moveTo(axisMargin+1+xAxisIndent,canvas.height*(1-stockHistory[i*HISTORY_SIZE]/STOCK_MAX_VALUE)-yAxisIndent-axisMargin);
               
             for (var j=0;j<HISTORY_SIZE;j++)
             {
                 var stkValue = stockHistory[i*HISTORY_SIZE+j];
                 stkValue=Math.max(stkValue,STOCK_MIN_VALUE);
                 stkValue=Math.min(stkValue,STOCK_MAX_VALUE);
-                self.ctx.lineTo(axisMargin+xAxisIndent+j*(canvas.width-xAxisIndent-axisMargin)/HISTORY_SIZE,canvas.height*(1-stkValue/STOCK_MAX_VALUE)-yAxisIndent-axisMargin);
+                self.ctx.lineTo(axisMargin+1+xAxisIndent+j*(canvas.width-xAxisIndent-axisMargin)/HISTORY_SIZE,canvas.height*(1-stkValue/STOCK_MAX_VALUE)-yAxisIndent-axisMargin);
                 self.ctx.stroke();
             }
         };

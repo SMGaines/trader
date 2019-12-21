@@ -16,7 +16,7 @@ global.EVENT_STOCK_RELEASE = 13;
 global.EVENT_STOCK_DIVIDEND = 14;
 global.EVENT_SHARES_SUSPENDED = 15;
 
-global.TAX_RETURN_MONTH=11; //i.e. December
+global.TAX_RETURN_MONTH=8; //i.e. September 
 
 var events=[];
 var gameLang; // The language that event messages will be in
@@ -25,10 +25,20 @@ MonthEvent = function (type,stockName,headLine,tagLine,finalEvent)
 {
   this.date=new Date();
   this.type=type;
+  this.goodNews=isGoodNews(type);
+  this.isTaxReturn=type==EVENT_TAX_RETURN;
   this.stockName=stockName;
   this.headLine=headLine;
   this.tagLine=tagLine;
   this.isFinalEvent=finalEvent;
+}
+
+isGoodNews = function(type)
+{
+  return  (type == EVENT_NONE || type == EVENT_INTEREST_RATE_UP  || type==EVENT_INFLATION_RATE_DOWN ||
+           type == EVENT_GAME_WINNER || type == EVENT_LOTTERY_WIN || type == EVENT_BOOM ||
+           type == EVENT_BOOM_ALL_STOCKS || type == EVENT_STOCK_IPO || type == EVENT_STOCK_RELEASE ||
+           type == EVENT_STOCK_DIVIDEND);
 }
 
 getMonthEvent = function(aDate)

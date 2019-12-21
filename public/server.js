@@ -18,6 +18,8 @@ const CMD_PLAYER_LIST="playerlist";
 const CMD_ERROR="error";
 const CMD_GET_GAME_ADDRESS="getgameaddress";
 const CMD_GAME_ADDRESS="getgameaddress";
+const CMD_GAME_LANGUAGE="gamelanguage";
+const CMD_GET_GAME_LANGUAGE="getgamelanguage";
 
 const BOT_TIMER = 2000;
 
@@ -31,6 +33,7 @@ var os = require( 'os' );
 var state;
 var dayTimer,botTimer;
 var dayDuration;
+var gameLang;
 
 app.use('/css',express.static(__dirname + '/css'));
 app.use('/js',express.static(__dirname + '/js'));
@@ -79,8 +82,9 @@ function getLocalIP()
  return addresses;
 }
 
-function initialiseGame(gameDuration,dayLength,numBots,gameLang)
+function initialiseGame(gameDuration,dayLength,numBots,aGameLang)
 {
+    gameLang=aGameLang;
     console.log("Server: Initialising: "+gameLang);
     state=STATE_INITIALISING;
     dayDuration=dayLength*1000;
@@ -123,7 +127,6 @@ function processBots()
 
 function processMonth()
 {
-    console.log("New month");
 	var monthEvent=game.processMonth();
 	io.sockets.emit(CMD_NEW_MONTH,{msg:monthEvent});
 }
@@ -194,14 +197,19 @@ io.on('connection',function(socket)
         }
         else
             console.log("Ignoring registration attempt");
-     });
+    });
 
+    socket.on(CMD_GET_GAME_LANGUAGE,function()
+    {
+        io.sockets.emit(CMD_GAME_LANGUAGE,{msg:gameLang});
+    });
+ 
     socket.on(CMD_BUY_STOCK,function(playerName,stockName,amount)
     {
         console.log("Server: buystock: "+playerName+"/"+stockName+"/"+amount);
         game.buyStock(playerName,stockName,amount);
         sendPlayerList();
-        sendNewPrices();
+        //sendNewPrices();
     });
 
     socket.on(CMD_GET_GAME_ADDRESS,function()
@@ -216,7 +224,7 @@ io.on('connection',function(socket)
         console.log("Server: sellstock: "+playerName+"/"+stockName+"/"+amount);
         game.sellStock(playerName,stockName,amount);
         sendPlayerList();
-        sendNewPrices();
+        //sendNewPrices();
    });    
 
     socket.on(CMD_HACK,function(hackingPlayerName,hackedPlayerName)

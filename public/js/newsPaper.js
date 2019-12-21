@@ -15,9 +15,17 @@ NewsPaperChart = function()
         {
             document.getElementById("newsGameOver").play();
         }
-        else
+        else if (monthEvent.isTaxReturn)
         {   
-            document.getElementById("newsIntro").play();
+            document.getElementById("taxReturn").play();
+        }
+        else if (monthEvent.goodNews)
+        {   
+            document.getElementById("goodNews").play();
+        }
+        else
+        {
+            document.getElementById("badNews").play();
         }
        
         animateNewsStory(monthEvent.isFinalEvent);

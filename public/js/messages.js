@@ -39,6 +39,7 @@ global.MSG_SUCCESSFUL_HACK_NO_MONEY=["You successfully hacked $x but they have n
 global.MSG_HACK_STEAL = ["$x hacked you and stole $y","$x zhakował cię i ukradł $y"];
 global.MSG_SUCCESSFUL_HACK=["You successfully hacked $x and stole $y","Z powodzeniem zhakowałeś $x i ukradłeś $y"];
 global.MSG_NO_INTERESTING_EVENTS=["No interesting events upcoming","Brak nadchodzących ciekawych wydarzeń"];
+global.MSG_CANNOT_AFFORD_INSIDER =["You cannot afford the insider fee of $x","Nie stać Cię na Insider w wysokości $x"];
 global.MSG_INSIDER_CONVICTED =  ["You have been convicted of Insider Trading and will serve $x days in prison","Zostałeś skazany za wykorzystywanie informacji poufnych i będziesz odbywał $x dni w więzieniu"];
 global.MSG_INSIDER_DROPPED =  ["Police have dropped your Insider Trading case","Policja porzuciła twoją sprawę dotyczącą wykorzystywania informacji poufnych"];
 global.MSG_EVENT_STOCK_CRASH = ["$x will crash in $y","$x ulegnie awarii za $y"];

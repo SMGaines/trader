@@ -23,6 +23,8 @@ const CMD_PLAYER_LIST="playerlist";
 const CMD_ERROR="error";
 const CMD_GET_GAME_ADDRESS="getgameaddress";
 const CMD_GAME_ADDRESS="getgameaddress";
+const CMD_GAME_LANGUAGE="gamelanguage";
+const CMD_GET_GAME_LANGUAGE="getgamelanguage";
 
 const TAX_BEGIN_TIMER = 10000;
 const TAX_SHOW_TIMER = 10000;
@@ -33,6 +35,7 @@ var firstPrices;
 var players = [];
 var stocks = [];
 var gameDate;
+var gameLang;
 
 socket = io.connect();
 
@@ -54,11 +57,16 @@ socket.on(CMD_NEW_PRICES,function(data)
     playerDisplay(players,stocks);
 });
 
+socket.on(CMD_GAME_LANGUAGE,function(data)
+{  
+    gameLang=data.msg;
+    console.log("CMD_GAME_LANGUAGE: "+gameLang);
+});
+
 socket.on(CMD_NEW_MONTH,function(data)
 {  
     var monthEvent=data.msg;
     newspaperChart.initNewsStory(monthEvent);
-    var eventMonth=new Date(monthEvent.date).getMonth();
 });
 
 socket.on(CMD_END_OF_GAME,function(data)
@@ -83,15 +91,15 @@ init = function()
 {
     console.log("ProcessMainDisplay: Initialising");
     firstPrices=true;
-    playerDisplay(players,stocks);
- 
+    //playerDisplay(players,stocks);
+    socket.emit(CMD_GET_GAME_LANGUAGE);
     newspaperChart=new NewsPaperChart();
 };
 
 var financialsDisplay = function(stocks)
 {
     var html= "<TABLE>";
-    html+=addTR(addTH(addHeaderText("Stock"))+addTH(addHeaderText("Avail"))+addTH(addHeaderText("Price")));
+    html+=addTR(addTH(addHeaderText(gameLang=="PL"?"Akcje":"Stock"))+addTH(addHeaderText(gameLang=="PL"?"ILOŚĆ":"Avail"))+addTH(addHeaderText(gameLang=="PL"?"CENA":"Price")));
     for (var i=0;i<stocks.length;i++)
     {
         var priceDisplay,stockNameDisplay,stockAvailDisplay;
@@ -147,8 +155,8 @@ var playerDisplay = function(players,stocks)
 {
     var html= "<TABLE style='width:100%'>";
     html+="<TR>";
-    html+=addTH(addHeaderText("Player"));
-    html+=addTH(addHeaderText("Cash"));
+    html+=addTH(addHeaderText(gameLang=="PL"?"Gracz":"Player"));
+    html+=addTH(addHeaderText(gameLang=="PL"?"Gotówka":"Cash"));
     if (stocksReady())
     {
         for (var j=0;j<stocks.length;j++)
@@ -159,7 +167,7 @@ var playerDisplay = function(players,stocks)
                 html+=addTH(addText(stocks[j].name,"courier",FONT_SIZE,colors[j]));
         }
     }
-    html+=addTH(addHeaderText("Net Worth"));
+    html+=addTH(addHeaderText(gameLang=="PL"?"Wartość Netto":"Net Worth"));
     html+="</TR>";
 
     var sortedPlayerList=sortOnNetWorth(players,stocks);
@@ -167,14 +175,14 @@ var playerDisplay = function(players,stocks)
     {
         html+="<TR>";
         var player = sortedPlayerList[i];
-        if (player.prisonDaysRemaining > 0)
+        if (player.prisonDaysRemaining > 0 && player.netWorth > 0)
             html+=addTH(addText(player.name,"courier",FONT_SIZE,"black"));
-        else if (player.beingHacked)
+        else if (player.beingHacked && player.netWorth > 0)
             html+=addTH(addText(player.name,"courier",FONT_SIZE,"red"));
         else
             html+=addTH(addStandardText(player.name));
-         if (player.cash<0)
-            html+=addTH(addText("BANKRUPT","courier",FONT_SIZE,"red"));
+         if (player.netWorth<0)
+            html+=addTH(addText(gameLang=="PL"?"UPADŁY":"BANKRUPT","courier",FONT_SIZE,"red"));
         else
             html+=addTHWithID("cash"+player.name,addStandardText(formatMoney(player.cash)));
         if (stocksReady())
@@ -187,7 +195,10 @@ var playerDisplay = function(players,stocks)
                     html+=addTH(addStandardText(getPlayerStockHolding(player,stocks[j].name)));
             }
         }
-        html+=addTH(addStandardText(formatMoney(player.netWorth)));
+        if (player.netWorth<0)
+            html+=addTH(addText(gameLang=="PL"?"UPADŁY":"BANKRUPT","courier",FONT_SIZE,"red"));
+        else
+            html+=addTH(addStandardText(formatMoney(player.netWorth)));
         html+="</TR>";
     };
     html+="</TABLE>"
@@ -320,17 +331,17 @@ function stocksReady()
     return Array.isArray(stocks) && stocks.length;
 }
 
-function getLongDate(aDate)
+function getLongDate(aDate,lang)
 {
     var options = {year: 'numeric', month: 'long', day: 'numeric' };
-    return aDate.toLocaleDateString("en-US", options);
+    return aDate.toLocaleDateString(lang=="PL"?"PL":"en-US", options);
 }
 
 function showFinancialData(aDate,interestRate,inflationRate)
 {
-    var dateToday = getLongDate(aDate);
+    var dateToday = getLongDate(aDate,gameLang);
     document.getElementById('gametitle').innerHTML=addHeaderText(GAME_TITLE);
     document.getElementById('gamedate').innerHTML=addStandardText(dateToday);
-    document.getElementById('interestRate').innerHTML=addStandardText("Interest: "+interestRate+"%");
-    document.getElementById('inflationRate').innerHTML=addStandardText("Inflation: "+inflationRate+"%");
+    document.getElementById('interestRate').innerHTML=addStandardText((gameLang=="PL"?"Stopa Procentowa":"Interest")+": "+interestRate+"%");
+    document.getElementById('inflationRate').innerHTML=addStandardText((gameLang=="PL"?"Inflacja":"Inflation")+": "+inflationRate+"%");
 }

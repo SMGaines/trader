@@ -21,6 +21,8 @@ const CMD_PLAYER_LIST="playerlist";
 const CMD_ERROR="error";
 const CMD_GET_GAME_ADDRESS="getgameaddress";
 const CMD_GAME_ADDRESS="getgameaddress";
+const CMD_GAME_LANGUAGE="gamelanguage";
+const CMD_GET_GAME_LANGUAGE="getgamelanguage";
 
 var stocks=[];
 var numStocks;
@@ -31,6 +33,7 @@ var myPlayerName;
 var gameStarted;
 var gameDate;
 var policeAudioPlayed;
+var bankruptAudioPlayed;
 
 socket = io.connect();
 
@@ -89,12 +92,19 @@ socket.on(CMD_ERROR,function(data)
 socket.on(CMD_PLAYER_LIST,function(data)
 {
   gameStarted=true;
+  if (myPlayer != null)
+    checkForTrades(data.msg);
+
   players=data.msg;
   myPlayer=findMyPlayer(players);
   if (myPlayer == null)
   {
     showStatus(myPlayer.lang==LANG_EN?"Player not registered":"Gracz nie jest zarejestrowany");
     return;
+  }
+  else if (myPlayer.netWorth < 0)
+  {
+    showBankrupt(myPlayer);
   }
   else if (myPlayer.prisonDaysRemaining > 0)
   {
@@ -106,6 +116,32 @@ socket.on(CMD_PLAYER_LIST,function(data)
   }
 });
   
+// Any changes in stock levels, play a 'trade' sound
+checkForTrades=function(newPlayers)
+{
+  var newMyPlayer=findMyPlayer(newPlayers);
+  for (var i=0;i<newMyPlayer.stocks.length;i++)
+  {
+    var stockName=newMyPlayer.stocks[i].name;
+    
+    if (getPlayerStockHolding(newMyPlayer,stockName) != getPlayerStockHolding(myPlayer,stockName))
+    {
+      var traderAudio=document.getElementById("trade");     
+      traderAudio.play();
+    }
+  }
+}
+
+getPlayerStockHolding = function(player,stockName)
+{
+  for (var i=0;i<player.stocks.length;i++)
+  {
+    if (player.stocks[i].name == stockName)
+      return player.stocks[i].amount;
+  }
+  return 0;
+}
+
 init = function()
 {
     console.log("Init");
@@ -113,8 +149,10 @@ init = function()
     numPlayers=0;
     gameStarted=false;
     policeAudioPlayed=false;
+    bankruptAudioPlayed=false;
     buildStatusForm();
     buildPrisonForm();
+    buildBankruptForm();
     buildRegistrationForm();
     var storedPlayerName=getStoredPlayerName();
     openRegistration(storedPlayerName);
@@ -141,6 +179,9 @@ sell = function()
 insider = function()
 {
   console.log("Insider");
+  var insiderAudio=document.getElementById("insider");     
+  insiderAudio.play();
+
   socket.emit(CMD_INSIDER,myPlayer.name);
 }
 
@@ -162,16 +203,6 @@ suspect = function()
   if (suspectedPlayerName == "NONE")
     return;
   socket.emit(CMD_SUSPECT,myPlayer.name,suspectedPlayerName);
-}
-
-getPlayerStockHolding = function(stockName)
-{
-  for (var i=0;i<myPlayer.stocks.length;i++)
-  {
-    if (myPlayer.stocks[i].name == stockName)
-      return myPlayer.stocks[i].amount;
-  }
-  return 0;
 }
 
 findMyPlayer = function(players)
@@ -459,7 +490,7 @@ function showPrison(player)
 {
   if(!policeAudioPlayed)
   {
-   var policeAudio=document.getElementById("police");     
+    var policeAudio=document.getElementById("police");     
     policeAudio.play();
     policeAudioPlayed=true;
   }
@@ -470,7 +501,7 @@ function showPrison(player)
     return;
   }
   document.getElementById('prisonReason').innerHTML = player.prisonReason;
-  document.getElementById('prisonStatus').innerHTML = (myPlayer.lang==LANG_EN?"Days left: ":"Pozostało Dni")+(player.prisonDaysRemaining-1);
+  document.getElementById('prisonStatus').innerHTML = (myPlayer.lang==LANG_EN?"Days left: ":"Pozostało Dni:")+(player.prisonDaysRemaining-1);
   document.getElementById('prisonForm').style.display= "block";
 }
 
@@ -482,4 +513,26 @@ function buildPrisonForm()
   html+="<TR><TH align='center' class='veryLargeText' id='prisonStatus'></TH></TR>";
   html+="</TABLE>";
   document.getElementById('prisonForm').innerHTML=html;
+}
+
+function showBankrupt(player)
+{
+  if(!bankruptAudioPlayed)
+  {
+    var bankruptAudio=document.getElementById("bankrupt");     
+    bankruptAudio.play();
+    bankruptAudioPlayed=true;
+  }
+  
+  document.getElementById('bankruptStatus').innerHTML = (myPlayer.lang==LANG_EN?"BANKRUPT":"UPADŁY");
+  document.getElementById('bankruptForm').style.display= "block";
+}
+
+function buildBankruptForm()
+{
+  var html="<TABLE align='center'>";
+  html+="<TR><TH><img align='center' src='images/bankrupt.png'/></TH></TR>";
+  html+="<TR><TH align='center' class='veryLargeText' id='bankruptStatus'></TH></TR>";
+  html+="</TABLE>";
+  document.getElementById('bankruptForm').innerHTML=html;
 }

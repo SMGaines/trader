@@ -14,13 +14,14 @@ const HACKING_FRACTION = .3;
 const MIN_HACKING_AMOUNT = 10000;
 const HACKING_INCORRECT_SUSPICION_FINE = 10000;
 const HACKING_PRISON_SENTENCE=30;
+const INSIDER_FEE=5000;
 const INSIDER_BASE_FINE = 10000;
 const INSIDER_LOOKAHEAD_MONTHS = 3;
 
 const NO_PLAYER="NONE";
 
 const PRISON_DAYS_INCREMENT = 10;
-const CRIME_EXPIRY_DAYS = 90;
+const CRIME_EXPIRY_DAYS = 60;
 
 const BASE_LOTTERY_WIN = 50000;
 
@@ -45,7 +46,7 @@ exports.init = function(gameDurationInMonths,gameLang)
   gameDate = new Date("January 1 2020 00:00:00");
   gameEndDate=new Date(gameDate);
   gameEndDate.setMonth(gameDate.getMonth()+gameDurationInMonths);
-  console.log("Game ends on: "+gameEndDate);
+  log("Game ends on: "+gameEndDate);
   setupStock();
   events.setupEvents(gameDate,gameDurationInMonths,stocks,IPO_STOCK,getLanguageIndex(gameLang)); // eg convert "EN" to a number (0)
   startRegistration();
@@ -94,7 +95,11 @@ exports.nextDay = function()
     {
       stocks[i].suspensionDays--;
       if (stocks[i].suspensionDays == 0)
+      {
+        log("nextDay: Suspension lifted for "+stocks[i].name);
         stocks[i].liftSuspension();
+      }
+        
     }
   }  
   gameDate.setDate(gameDate.getDate() + 1);
@@ -114,7 +119,7 @@ exports.getEndOfGameEvent=function()
   var winner=findWinner();
   endEvent.headLine = endEvent.headLine.replace("$name",winner.name);
   winner.status = getPlayerStatusMsg(MSG_WINNER,winner.lang);
-  console.log("getEndOfGameEvent: "+endEvent.headLine);
+  log("getEndOfGameEvent: "+endEvent.headLine);
   return endEvent;
 }
 
@@ -199,7 +204,7 @@ getInsiderEventPlayerStatus = function(event,lang)
     case EVENT_STOCK_RELEASE: return getPlayerStatusMsg(MSG_EVENT_EXTRA_STOCK,lang,event.stockName,interestingEventDate);
     case EVENT_STOCK_DIVIDEND: return getPlayerStatusMsg(MSG_EVENT_STOCK_DIVIDEND,lang,event.stockName,interestingEventDate);
     case EVENT_SHARES_SUSPENDED: return getPlayerStatusMsg(MSG_EVENT_STOCK_SUSPENDED,lang,event.stockName,interestingEventDate);
-    default: console.log("setupInsider: Unknown event type: "+event.type);return "";
+    default: log("setupInsider: Unknown event type: "+event.type);return "";
   }
 }
 
@@ -207,11 +212,12 @@ function getMonthYear(aDate)
 {
     return aDate.toLocaleString('default', { month: 'long' }) + " "+aDate.getFullYear();
 }
+
 exports.updatePrices = function()
 {
   if (gameOver())
   {
-    console.log("updatePrices ignored - game over");
+    log("updatePrices ignored - game over");
     return;
   }
 
@@ -232,7 +238,7 @@ exports.applyInterestAndInflation = function()
 {
   if (gameOver())
   {
-    console.log("updatePlayerCash ignored - game over");
+    log("updatePlayerCash ignored - game over");
     return;
   }
 
@@ -242,6 +248,11 @@ exports.applyInterestAndInflation = function()
     {
       player.cash*=(100-inflationRate/5)/100; 
       player.cash*=(100+interestRate/5)/100;
+    // Below creates larger effect for small cash sums
+    if (interestRate>inflationRate)
+      addCash(player,100*(interestRate-inflationRate));
+    else
+      removeCash(player,100*(interestRate-inflationRate));
     }
   });
 }
@@ -250,6 +261,7 @@ function removeCash(player,amount)
 {
   player.cash-=amount;
   player.lastCashChange=-amount;
+  //log("removeCash: "+player.name+": Cash change from "+ formatMoney(player.cash+amount)+" to "+formatMoney(player.cash));
   if (player.cash < 0)
   {
     sellAllPlayerStock(player);
@@ -260,13 +272,16 @@ function removeCash(player,amount)
 
 function addCash(player,amount)
 {
+  if (player.cash < 0 && !player.hasStock()) // Once you're bankrupt, that's the end of your game - no recovery
+    return;
   player.cash+=amount;
   player.lastCashChange=amount;
+  log("addCash: "+player.name+": Cash change from "+ formatMoney(player.cash-amount)+" to "+formatMoney(player.cash));
 }
 
 function sellAllPlayerStock(player)
 {
-  console.log("sellAllPlayerStock: "+player.name);
+  log("sellAllPlayerStock: "+player.name);
   player.stocks.forEach(function(stockHolding)
   {
     if (stockHolding.amount > 0)
@@ -297,10 +312,9 @@ sellStock = function(playerName,stockName,amount)
 {
   if (gameOver())
   {
-    console.log("sellStock ignored - game over");
+    log("sellStock ignored - game over");
     return;
   }
-  console.log("sellStock: "+playerName+"/"+stockName+"/"+amount);
   var player = getPlayer(playerName);
   if (player.prisonDaysRemaining > 0)
   {
@@ -318,6 +332,8 @@ sellStock = function(playerName,stockName,amount)
   if (sellableAmount > 0)
   {
      player.sellStock(stockName,sellableAmount,salePrice);
+     log("sellStock: "+playerName+" sells "+sellableAmount+" of "+stockName+" at "+formatMoney(salePrice));
+     addCash(player,salePrice*sellableAmount);
      stock.sell(sellableAmount);
      player.status = getPlayerStatusMsg(MSG_SHARE_SALE,player.lang,sellableAmount,stockName,formatMoney(salePrice));
   }
@@ -330,14 +346,13 @@ buyStock = function(playerName,stockName,amount)
 {
   if (gameOver())
   {
-    console.log("buyStock ignored - game over");
+    log("buyStock ignored - game over");
     return;
   }
-
   var player = getPlayer(playerName);
   if (player==null)
   {
-    console.log("Unknown player: "+playerName);
+    log("Unknown player: "+playerName);
     return;
   }
   if (player.prisonDaysRemaining > 0)
@@ -353,7 +368,7 @@ buyStock = function(playerName,stockName,amount)
   var stock = getStock(stockName);
   if (stock==null)
   {
-    console.log("Unknown stock: "+stockName);
+    log("Unknown stock: "+stockName);
     return;
   }
   if (stock.suspensionDays > 0)
@@ -381,6 +396,8 @@ buyStock = function(playerName,stockName,amount)
   if (player.cash >= stockValue)
   {   
       player.buyStock(stockName,amount,buyPrice);
+      log("buyStock: "+playerName+" buys "+amount+" of "+stockName+" at "+formatMoney(buyPrice));
+      removeCash(player,stockValue);
       stock.buy(amount);
       player.status = getPlayerStatusMsg(MSG_SHARE_BUY,player.lang,amount,stockName,formatMoney(buyPrice));            
   }
@@ -393,6 +410,8 @@ buyStock = function(playerName,stockName,amount)
       return;
     }
     player.buyStock(stockName,affordableAmount,buyPrice);
+    log("buyStock: "+playerName+" buys "+amount+" of "+stockName+" at "+formatMoney(buyPrice));
+    removeCash(player,affordableAmount*buyPrice);
     stock.buy(affordableAmount);
     player.status = getPlayerStatusMsg(MSG_SHARE_BUY,player.lang,affordableAmount,stockName,formatMoney(buyPrice));             
   }
@@ -406,116 +425,121 @@ function roundStock(amount)
 
 exports.processMonth = function()
 {
-    var monthEvent;
-    if (gameOver())
+  log("processMonth");
+  var monthEvent;
+  if (gameOver())
+  {
+      return null;
+  }
+  monthEvent=events.getMonthEvent(gameDate);
+  if (monthEvent != null)
+  {
+    switch(monthEvent.type)
     {
-        return null;
-    }
-    monthEvent=events.getMonthEvent(gameDate);
-    if (monthEvent != null)
-    {
-      switch(monthEvent.type)
-      {
-        case EVENT_NONE:
-          break;
-        case EVENT_CRASH:
-          var stock = getStock(monthEvent.stockName);
-          stock.trend=-STOCK_MAX_TREND;
-          break;
-        case EVENT_BOOM:
-          var stock = getStock(monthEvent.stockName);
-          stock.trend=STOCK_MAX_TREND;
-          break;
-        case EVENT_CRASH_ALL_STOCKS:
-          stocks.forEach(function(stock)
-          {
-             if (stock.riskiness != RISK_NONE)
-              stock.trend=-STOCK_MAX_TREND;
-          });
-          break;
-        case EVENT_BOOM_ALL_STOCKS:
-          stocks.forEach(function(stock)
-          {
+      case EVENT_NONE:
+        break;
+      case EVENT_CRASH:
+        var stock = getStock(monthEvent.stockName);
+        stock.trend=-STOCK_MAX_TREND;
+        break;
+      case EVENT_BOOM:
+        var stock = getStock(monthEvent.stockName);
+        stock.trend=STOCK_MAX_TREND;
+        break;
+      case EVENT_CRASH_ALL_STOCKS:
+        stocks.forEach(function(stock)
+        {
             if (stock.riskiness != RISK_NONE)
-              stock.trend=STOCK_MAX_TREND;
-          });
-          break;
-        case EVENT_LOTTERY_WIN:
-          // Need to generate a random winner and update the text
-          var rndPlayerIndex=getLotteryWinnerIndex();
-          if (rndPlayerIndex != -1)
+            stock.trend=-STOCK_MAX_TREND;
+        });
+        break;
+      case EVENT_BOOM_ALL_STOCKS:
+        stocks.forEach(function(stock)
+        {
+          if (stock.riskiness != RISK_NONE)
+            stock.trend=STOCK_MAX_TREND;
+        });
+        break;
+      case EVENT_LOTTERY_WIN:
+        // Need to generate a random winner and update the text
+        var rndPlayerIndex=getLotteryWinnerIndex();
+        if (rndPlayerIndex != -1)
+        {
+          var win = BASE_LOTTERY_WIN+10000*Math.floor(Math.random()*5);
+          monthEvent.headLine = monthEvent.headLine.replace("$name",players[rndPlayerIndex].name);
+          monthEvent.headLine = monthEvent.headLine.replace("$win",formatMoney(win));
+          log("EVENT_LOTTERY_WIN: "+players[rndPlayerIndex].name+" wins "+formatMoney(win));
+          addCash(players[rndPlayerIndex],win);
+        }
+        else
+        {
+          monthEvent.headLine = monthEvent.headLine=getPlayerStatusMsg(MSG_NEWS_HEAD_NO_LOTTERY_WINNER,player.lang);
+          monthEvent.headLine = monthEvent.tagLine=getPlayerStatusMsg(MSG_NEWS_SUB_NO_LOTTERY_WINNER,player.lang);
+        }
+        break;
+      case EVENT_STOCK_IPO:
+        log("EVENT_STOCK_IPO: "+monthEvent.stockName);
+        stocks.push(new stk.Stock(monthEvent.stockName,RISK_NONE));
+        break;
+      case EVENT_STOCK_RELEASE:
+        log("EVENT_STOCK_RELEASE: "+monthEvent.stockName);
+        getStock(monthEvent.stockName).available+=MIN_STOCK_RELEASE_AMOUNT+STOCK_INCREMENT*Math.floor(Math.random()*10);
+        break;
+      case EVENT_STOCK_DIVIDEND:
+        log("EVENT_STOCK_DIVIDEND: "+monthEvent.stockName);
+        players.forEach(function(player)
+        {
+          var playerStock = player.getStockHolding(monthEvent.stockName)
+          if (playerStock > 0 && player.prisonDaysRemaining == 0) // Naughty players dont get stock
           {
-            var win = BASE_LOTTERY_WIN+10000*Math.floor(Math.random()*5);
-            monthEvent.headLine = monthEvent.headLine.replace("$name",players[rndPlayerIndex].name);
-            monthEvent.headLine = monthEvent.headLine.replace("$win",formatMoney(win));
-            players[rndPlayerIndex].cash+=win;
+            var dividendAmount = roundStock(playerStock*STOCK_DIVIDEND_RATIO);
+            if (dividendAmount < STOCK_INCREMENT)
+              dividendAmount = STOCK_INCREMENT;
+            player.buyStock(monthEvent.stockName,dividendAmount,0);
+            player.status= getPlayerStatusMsg(MSG_DIVIDEND,player.lang,dividendAmount,monthEvent.stockName);
           }
-          else
+        });
+        break;       
+      case EVENT_SHARES_SUSPENDED:
+        getStock(monthEvent.stockName).price=0;
+        getStock(monthEvent.stockName).suspensionDays=30+Math.floor(Math.random()*30);
+        log("EVENT_SHARES_SUSPENDED: "+monthEvent.stockName+" suspended for "+getStock(monthEvent.stockName).suspensionDays+" days");
+        break;
+      case EVENT_TAX_RETURN:
+        log("EVENT_TAX_RETURN");
+        players.forEach(function(player)
+        {
+          var totalTax=0;
+          stocks.forEach(function(stock)
           {
-            monthEvent.headLine = monthEvent.headLine=getPlayerStatusMsg(MSG_NEWS_HEAD_NO_LOTTERY_WINNER,player.lang);
-            monthEvent.headLine = monthEvent.headLine=getPlayerStatusMsg(MSG_NEWS_SUB_NO_LOTTERY_WINNER,player.lang);
-          }
-          break;
-        case EVENT_STOCK_IPO:
-          stocks.push(new stk.Stock(monthEvent.stockName,RISK_NONE));
-          break;
-        case EVENT_STOCK_RELEASE:
-          getStock(monthEvent.stockName).available+=MIN_STOCK_RELEASE_AMOUNT+STOCK_INCREMENT*Math.floor(Math.random()*10);
-          break;
-       case EVENT_STOCK_DIVIDEND:
-          players.forEach(function(player)
-          {
-            var playerStock = player.getStockHolding(monthEvent.stockName)
-            if (playerStock > 0 && player.prisonDaysRemaining == 0) // Naughty players dont get stock
+            var playerStock = player.getStockHolding(stock.name);
+            if (playerStock > 0)
             {
-              var dividendAmount = roundStock(playerStock*STOCK_DIVIDEND_RATIO);
-              if (dividendAmount < STOCK_INCREMENT)
-                dividendAmount = STOCK_INCREMENT;
-              player.buyStock(monthEvent.stockName,dividendAmount,0);
-              player.status= getPlayerStatusMsg(MSG_DIVIDEND,player.lang,dividendAmount,monthEvent.stockName);
+              var taxShares = playerStock*TAX_PERCENTAGE/100;
+              totalTax+= taxShares*stock.price;
             }
           });
-          break;       
-        case EVENT_SHARES_SUSPENDED:
-          var stock = getStock(monthEvent.stockName);
-          getStock(monthEvent.stockName).price=0;
-          getStock(monthEvent.stockName).suspensionDays=30+Math.floor(Math.random()*30);
-          console.log(stock.name+" suspended for "+stock.suspensionDays+" days");
-          break;
-        case EVENT_TAX_RETURN:
-          players.forEach(function(player)
-          {
-            var totalTax=0;
-            stocks.forEach(function(stock)
-            {
-              var playerStock = player.getStockHolding(stock.name);
-              if (playerStock > 0)
-              {
-                var taxShares = playerStock*TAX_PERCENTAGE/100;
-                totalTax+= taxShares*stock.price;
-              }
-            });
-            player.taxBill=totalTax;
-            console.log("Tax bill for "+player.name+" = "+formatMoney(player.taxBill));
-            removeCash(player,totalTax);
-            player.status= getPlayerStatusMsg(MSG_TAX,player.lang,formatMoney(totalTax));
-          });
-          break;
-        case EVENT_INTEREST_RATE_UP:
-          interestRate++;
-          break;
-        case EVENT_INTEREST_RATE_DOWN:
-          interestRate--;
-          break;
-        case EVENT_INFLATION_RATE_UP:
-          inflationRate++;
-          break;
-        case EVENT_INFLATION_RATE_DOWN:
-          inflationRate--;
-          break;
-      }
+          player.taxBill=totalTax;
+          log("Tax bill for "+player.name+" = "+formatMoney(player.taxBill));
+          removeCash(player,totalTax);
+          player.status= getPlayerStatusMsg(MSG_TAX,player.lang,formatMoney(totalTax));
+        });
+        break;
+      case EVENT_INTEREST_RATE_UP:
+        interestRate++;
+        break;
+      case EVENT_INTEREST_RATE_DOWN:
+        interestRate--;
+        break;
+      case EVENT_INFLATION_RATE_UP:
+        inflationRate++;
+        break;
+      case EVENT_INFLATION_RATE_DOWN:
+        inflationRate--;
+        break;
     }
-   return monthEvent;
+  }
+  return monthEvent;
 }
 
 getLotteryWinnerIndex=function()
@@ -543,9 +567,11 @@ setupHack = function(hackingPlayerName,hackedPlayerName)
 {
   if (gameOver())
   {
-    console.log("setupHack ignored - game over");
+    log("setupHack ignored - game over");
     return;
   }
+  log("setupHack: "+hackingPlayerName+" is trying to hack "+hackedPlayerName);
+
   var hackedPlayer=getPlayer(hackedPlayerName);
   var hackingPlayer=getPlayer(hackingPlayerName);
   if (hackingPlayer.prisonDaysRemaining > 0)
@@ -568,12 +594,12 @@ setupHack = function(hackingPlayerName,hackedPlayerName)
     hackingPlayer.status=getPlayerStatusMsg(MSG_ALREADY_BEING_HACKED,hackingPlayer.lang,hackedPlayerName);
     return;
   }
-    hackingPlayer.hacking=hackedPlayerName;
-    hackingPlayer.cash-=HACKING_FEE;
-    hackingPlayer.status=getPlayerStatusMsg(MSG_HACK_INITIATED,hackingPlayer.lang,hackedPlayerName,formatMoney(HACKING_FEE));
-    hackingPlayer.hackingCompletionDate=new Date(gameDate);
-    hackingPlayer.hackingCompletionDate.setDate(gameDate.getDate() + HACKING_DURATION_DAYS);
-    hackedPlayer.beingHacked=true;
+  hackingPlayer.hacking=hackedPlayerName;
+  removeCash(hackingPlayer,HACKING_FEE);
+  hackingPlayer.status=getPlayerStatusMsg(MSG_HACK_INITIATED,hackingPlayer.lang,hackedPlayerName,formatMoney(HACKING_FEE));
+  hackingPlayer.hackingCompletionDate=new Date(gameDate);
+  hackingPlayer.hackingCompletionDate.setDate(gameDate.getDate() + HACKING_DURATION_DAYS);
+  hackedPlayer.beingHacked=true;
 }
 exports.setupHack = setupHack;
 
@@ -581,9 +607,11 @@ suspectHacker = function(suspectingPlayerName,suspectedPlayerName)
 {
   if (gameOver())
   {
-    console.log("suspectHacker ignored - game over");
+    log("suspectHacker ignored - game over");
     return;
   }
+  log("suspectHacker: "+suspectingPlayerName+" is suspecting "+suspectedPlayerName);
+
   var suspectingPlayer=getPlayer(suspectingPlayerName);
   if (suspectingPlayer.prisonDaysRemaining > 0)
   {
@@ -593,7 +621,7 @@ suspectHacker = function(suspectingPlayerName,suspectedPlayerName)
   if (!suspectingPlayer.beingHacked)
   {
     suspectingPlayer.status=getPlayerStatusMsg(MSG_SUSPICION_IGNORED,suspectingPlayer.lang);
-    console.log("Game: suspectHacker: Suspicion ignored - player not being hacked");
+    log("Game: suspectHacker: Suspicion ignored - player not being hacked");
     return;
   }
 
@@ -603,6 +631,7 @@ suspectHacker = function(suspectingPlayerName,suspectedPlayerName)
       var amount = HACKING_FINE;
       removeCash(suspectedPlayer,amount);
       addCash(suspectingPlayer,amount);
+      log("suspectHacker: "+suspectedPlayer.name+" goes to prison for "+HACKING_PRISON_SENTENCE+" days");
       suspectedPlayer.prisonDaysRemaining=HACKING_PRISON_SENTENCE;
       suspectedPlayer.status = getPlayerStatusMsg(MSG_HACK_DETECTED,suspectedPlayer.lang,suspectingPlayerName,HACKING_FINE,suspectedPlayer.prisonDaysRemaining);
       suspectingPlayer.status = getPlayerStatusMsg(MSG_HACK_COMPENSATION,suspectingPlayer.lang,suspectedPlayer.name,formatMoney(amount));
@@ -614,6 +643,7 @@ suspectHacker = function(suspectingPlayerName,suspectedPlayerName)
       var amount = HACKING_INCORRECT_SUSPICION_FINE;
       removeCash(suspectingPlayer,amount);
       addCash(suspectedPlayer,amount);
+      log("suspectHacker: "+suspectingPlayer.name+" incorrectly suspected "+suspectedPlayer.name+" and is fined "+formatMoney(HACKING_INCORRECT_SUSPICION_FINE));
       suspectedPlayer.status =  getPlayerStatusMsg(MSG_WRONG_SUSPICION,suspectedPlayer.lang,suspectingPlayer.name,formatMoney(amount));
       suspectingPlayer.status = getPlayerStatusMsg(MSG_NOT_HACKING,suspectingPlayer.lang,suspectedPlayer.name,formatMoney(amount));
    }
@@ -636,6 +666,7 @@ function checkHackers()
             else
             {
               var amount = Math.max(MIN_HACKING_AMOUNT,hackedPlayer.cash*HACKING_FRACTION);
+              log("checkHackers: Successful hack("+formatMoney(amount)+") of "+hackedPlayer.name+" by "+player.name);
               removeCash(hackedPlayer,amount);
               addCash(player,amount);
               hackedPlayer.status = getPlayerStatusMsg(MSG_HACK_STEAL,hackedPlayer.lang,player.name,formatMoney(amount));
@@ -658,15 +689,22 @@ setupInsider = function(insiderPlayerName)
 {
   if (gameOver())
   {
-    console.log("setupInsider ignored - game over");
+    log("setupInsider ignored - game over");
     return;
   }
+  log("setupInsider: "+insiderPlayerName+" asking for Insider information");
   var insiderPlayer=getPlayer(insiderPlayerName);
   if (insiderPlayer.prisonDaysRemaining > 0)
   {
     insiderPlayer.status=getPlayerStatusMsg(MSG_IN_PRISON,insiderPlayer.lang);
     return;
   }
+  if (insiderPlayer.cash < INSIDER_FEE)
+  {
+    insiderPlayer.status = getPlayerStatusMsg(MSG_CANNOT_AFFORD_INSIDER,insiderPlayer.lang,formatMoney(INSIDER_FEE));
+    return;
+  }
+
   var upcomingEvent = events.findUpcomingEvent(gameDate,INSIDER_LOOKAHEAD_MONTHS);
   if (upcomingEvent == null)
   {
@@ -675,9 +713,10 @@ setupInsider = function(insiderPlayerName)
   }
   insiderPlayer.status=getInsiderEventPlayerStatus(upcomingEvent,insiderPlayer.lang);
   
-  console.log("setupInsider: "+insiderPlayer.status);
+  log("setupInsider: "+insiderPlayer.status);
+  removeCash(insiderPlayer,INSIDER_FEE);
   insiderPlayer.numInsiderDeals++;
-  insiderPlayer.lastInsiderTradeDate=gameDate; 
+  insiderPlayer.lastInsiderTradeDate=new Date(gameDate); 
 }
 exports.setupInsider = setupInsider;
 
@@ -685,35 +724,42 @@ function checkInsiderTrading()
 {
   players.forEach(function(player)
   {
-    if (playerConvicted(player))
+    if (player.prisonDaysRemaining==0 && playerConvicted(player))
     {
        // Player convicted of Insider Trading.
       var fine = INSIDER_BASE_FINE * player.numInsiderDeals;
       removeCash(player,fine);
       player.prisonReason="Insider Trading";
       player.prisonDaysRemaining = PRISON_DAYS_INCREMENT*(1+player.numInsiderDeals);
+      log("checkInsiderTrading: "+player.name+" goes to prison for "+player.prisonDaysRemaining+" days");
       player.numInsiderDeals = 0;
+      player.lastInsiderTradeDate=0;
       player.status=getPlayerStatusMsg(MSG_INSIDER_CONVICTED,player.prisonDaysRemaining);
     }
-    else if (player.numInsiderDeals > 0 && sufficientTimeElapsed(gameDate,player.lastInsiderTradeDate)) // Crime expires after CRIME_EXPIRY_DAYS
+    else if (player.numInsiderDeals > 0)
     {
-      player.numInsiderDeals=0;
-      player.lastInsiderTradeDate=0;
-      player.status=getPlayerStatusMsg(MSG_INSIDER_DROPPED,player.lang);
+      var daysDiff = daysElapsed(gameDate,player.lastInsiderTradeDate); 
+      //log("checkInsiderTrading: daysElapsed="+daysDiff);
+      if (daysDiff > CRIME_EXPIRY_DAYS)
+      {
+        player.numInsiderDeals=0;
+        player.lastInsiderTradeDate=0;
+        log("checkInsiderTrading: Police have dropped their investigation into "+player.name);
+        player.status=getPlayerStatusMsg(MSG_INSIDER_DROPPED,player.lang);
+      }
     }
   });
 }
 
-function sufficientTimeElapsed(nowDate,lastCrimeDate)
+function daysElapsed(nowDate,lastCrimeDate)
 {
   const diffTime = Math.abs(nowDate - lastCrimeDate);
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  return diffDays> CRIME_EXPIRY_DAYS;
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 }
 
 function playerConvicted(player)
 {
-  return Math.random() < player.numInsiderDeals/100;
+  return Math.random() < player.numInsiderDeals/300;
 }
 
 exports.getPlayers=function()
@@ -740,7 +786,7 @@ exports.getPlayer = getPlayer;
 
 exports.registerPlayer = function(playerName,language)
 {
-  console.log("registerPlayer: Registering new player: "+playerName);
+  log("registerPlayer: Registering new player: "+playerName);
   players.push(new player.Player(playerName,getLanguageIndex(language)));
   getPlayer(playerName).status=getPlayerStatusMsg(MSG_REGISTERED,getLanguageIndex(language));
 }
@@ -783,12 +829,12 @@ exports.registerBot = function(botName)
     var p = getPlayer(botName);
     if (p == null)
     {
-        console.log("addPlayer: Registering new BOT: "+botName);
+        log("addPlayer: Registering new BOT: "+botName);
         players.push(new player.Player(botName,LANG_EN));
         numBots++;
     }
     else
-        console.log("addPlayer: Player "+botName+" already exists - ignoring");
+        log("addPlayer: Player "+botName+" already exists - ignoring");
 }
 
 exports.processBots=function()
@@ -815,7 +861,7 @@ exports.processBots=function()
     suspectHacker(rndBotName,chooseRandomPlayer(rndBotName).name);
 
   if (p.status != "")
-    console.log(rndBotName+": "+getPlayer(rndBotName).status);
+    log(rndBotName+": "+getPlayer(rndBotName).status);
 }
 
 chooseRandomPlayer=function(playerName)
@@ -826,4 +872,9 @@ chooseRandomPlayer=function(playerName)
     if (players[rndIndex].name != playerName)
       return players[rndIndex];
   }
+}
+
+log=function(msg)
+{
+  console.log(new Date(gameDate).toLocaleDateString("en-UK")+": "+msg);
 }

@@ -14,7 +14,7 @@ global.EVENT_BOOM_ALL_STOCKS=11;
 global.EVENT_STOCK_IPO =12;
 global.EVENT_STOCK_RELEASE = 13;
 global.EVENT_STOCK_DIVIDEND = 14;
-global.EVENT_SHARES_SUSPENDED = 15;
+global.EVENT_STOCK_SUSPENDED = 15;
 
 global.TAX_RETURN_MONTH=8; //i.e. September 
 
@@ -140,18 +140,18 @@ function createMainEvents(stocks,ipoStockName)
   while(true)
   {
       rndStockID = Math.floor(Math.random()*stocks.length);
-      if (stocks[rndStockID].name != STOCK_GOVT)
+      if (stocks[rndStockID].name != STOCK_GOVT) // GOVT never suspended
         break;
   }
-  events.push(new MonthEvent(EVENT_SHARES_SUSPENDED,stocks[rndStockID].name,getNewsMsg(MSG_NEWS_HEAD_SUSPENDED,stocks[rndStockID].name),getNewsMsg(MSG_NEWS_SUB_SUSPENDED)));
+  events.push(new MonthEvent(EVENT_STOCK_SUSPENDED,stocks[rndStockID].name,getNewsMsg(MSG_NEWS_HEAD_SUSPENDED,stocks[rndStockID].name),getNewsMsg(MSG_NEWS_SUB_SUSPENDED)));
   
   while(true)
   {
       rndStockID = Math.floor(Math.random()*stocks.length);
-      if (stocks[rndStockID].name != STOCK_GOVT)
+      if (stocks[rndStockID].name != STOCK_GOVT) // GOVT never suspended
         break;
   }
-  events.push(new MonthEvent(EVENT_SHARES_SUSPENDED,stocks[rndStockID].name,getNewsMsg(MSG_NEWS_HEAD_SUSPENDED,stocks[rndStockID].name),getNewsMsg(MSG_NEWS_SUB_SUSPENDED)));
+  events.push(new MonthEvent(EVENT_STOCK_SUSPENDED,stocks[rndStockID].name,getNewsMsg(MSG_NEWS_HEAD_SUSPENDED,stocks[rndStockID].name),getNewsMsg(MSG_NEWS_SUB_SUSPENDED)));
 }
 
 function addTaxEvents(gameDurationInMonths)

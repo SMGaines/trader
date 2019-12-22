@@ -40,6 +40,7 @@ var interestRate;
 var inflationRate;
 var gameDate;
 var gameEndDate;
+var weHaveAMillionnaire;
 
 exports.init = function(gameDurationInMonths,gameLang)
 {
@@ -47,6 +48,7 @@ exports.init = function(gameDurationInMonths,gameLang)
   gameEndDate=new Date(gameDate);
   gameEndDate.setMonth(gameDate.getMonth()+gameDurationInMonths);
   log("Game ends on: "+gameEndDate);
+  weHaveAMillionnaire=false;
   setupStock();
   events.setupEvents(gameDate,gameDurationInMonths,stocks,IPO_STOCK,getLanguageIndex(gameLang)); // eg convert "EN" to a number (0)
   startRegistration();
@@ -81,7 +83,10 @@ exports.nextDay = function()
 {
   for (var i=0;i<players.length;i++)
   {
+    if (players[i].netWorth > 1000000)
+      weHaveAMillionnaire=true;
     players[i].status="";
+    players[i].allStockSold=false;
     if (players[i].prisonDaysRemaining > 0)
     {
       players[i].prisonDaysRemaining--;
@@ -99,7 +104,6 @@ exports.nextDay = function()
         log("nextDay: Suspension lifted for "+stocks[i].name);
         stocks[i].liftSuspension();
       }
-        
     }
   }  
   gameDate.setDate(gameDate.getDate() + 1);
@@ -109,7 +113,7 @@ exports.nextDay = function()
 
 gameOver = function()
 {
-  return gameDate >= gameEndDate;
+  return gameDate >= gameEndDate || weHaveAMillionnaire;
 }
 exports.gameOver = gameOver;
 
@@ -203,7 +207,7 @@ getInsiderEventPlayerStatus = function(event,lang)
     case EVENT_STOCK_IPO:return getPlayerStatusMsg(MSG_EVENT_STOCK_IPO,lang,interestingEventDate);
     case EVENT_STOCK_RELEASE: return getPlayerStatusMsg(MSG_EVENT_EXTRA_STOCK,lang,event.stockName,interestingEventDate);
     case EVENT_STOCK_DIVIDEND: return getPlayerStatusMsg(MSG_EVENT_STOCK_DIVIDEND,lang,event.stockName,interestingEventDate);
-    case EVENT_SHARES_SUSPENDED: return getPlayerStatusMsg(MSG_EVENT_STOCK_SUSPENDED,lang,event.stockName,interestingEventDate);
+    case EVENT_STOCK_SUSPENDED: return getPlayerStatusMsg(MSG_EVENT_STOCK_SUSPENDED,lang,event.stockName,interestingEventDate);
     default: log("setupInsider: Unknown event type: "+event.type);return "";
   }
 }
@@ -252,7 +256,7 @@ exports.applyInterestAndInflation = function()
     if (interestRate>inflationRate)
       addCash(player,100*(interestRate-inflationRate));
     else
-      removeCash(player,100*(interestRate-inflationRate));
+      removeCash(player,100*(inflationRate-interestRate));
     }
   });
 }
@@ -276,7 +280,7 @@ function addCash(player,amount)
     return;
   player.cash+=amount;
   player.lastCashChange=amount;
-  log("addCash: "+player.name+": Cash change from "+ formatMoney(player.cash-amount)+" to "+formatMoney(player.cash));
+  //log("addCash: "+player.name+": Cash change from "+ formatMoney(player.cash-amount)+" to "+formatMoney(player.cash));
 }
 
 function sellAllPlayerStock(player)
@@ -286,7 +290,13 @@ function sellAllPlayerStock(player)
   {
     if (stockHolding.amount > 0)
     {
-      sellStock(player.name,stockHolding.name,stockHolding.amount);
+      player.allStockSold=true;
+      var stock = getStock(stockHolding.name);
+      var salePrice = stock.calculateSalePrice();
+      addCash(player,salePrice*stockHolding.amount);
+      log("sellAllPlayerStock: "+player.name+" sells "+stockHolding.amount+" of "+stockHolding.name+" at "+formatMoney(salePrice));
+      stock.sell(stockHolding.amount);
+      player.sellStock(stockHolding.name,stockHolding.amount);
     }
   });
 }
@@ -331,7 +341,7 @@ sellStock = function(playerName,stockName,amount)
   var salePrice = stock.calculateSalePrice();
   if (sellableAmount > 0)
   {
-     player.sellStock(stockName,sellableAmount,salePrice);
+     player.sellStock(stockName,sellableAmount);
      log("sellStock: "+playerName+" sells "+sellableAmount+" of "+stockName+" at "+formatMoney(salePrice));
      addCash(player,salePrice*sellableAmount);
      stock.sell(sellableAmount);
@@ -500,10 +510,10 @@ exports.processMonth = function()
           }
         });
         break;       
-      case EVENT_SHARES_SUSPENDED:
+      case EVENT_STOCK_SUSPENDED:
         getStock(monthEvent.stockName).price=0;
         getStock(monthEvent.stockName).suspensionDays=30+Math.floor(Math.random()*30);
-        log("EVENT_SHARES_SUSPENDED: "+monthEvent.stockName+" suspended for "+getStock(monthEvent.stockName).suspensionDays+" days");
+        log("EVENT_STOCK_SUSPENDED: "+monthEvent.stockName+" suspended for "+getStock(monthEvent.stockName).suspensionDays+" days");
         break;
       case EVENT_TAX_RETURN:
         log("EVENT_TAX_RETURN");
@@ -552,7 +562,7 @@ getLotteryWinnerIndex=function()
     if (playerNetWorth <=10000)
       playerNetWorth=10000; // Set minimum net worth for lottery purposes only
     var playerChance = Math.random()/playerNetWorth; // Lower net worth means higher chance of winning
-    if (players[i].prisonDaysRemaining > 0) // Cannot win the lottery if in prison
+    if (players[i].prisonDaysRemaining > 0 || player.cash < 0) // Cannot win the lottery if in prison or if bankrupt already
       playerChance=0;
     if (playerChance > best)
     {

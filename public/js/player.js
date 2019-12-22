@@ -18,6 +18,7 @@ exports.Player = function(name,aLang)
   this.netWorth=0;
   this.taxBill=0;
   this.lastCashChange=0;
+  this.allStockSold=false;
   
 this.getStockHolding=function(stockName)
 {
@@ -67,7 +68,7 @@ this.buyStock = function (stockName,amount,stockPrice)
       this.stocks.push(new this.PlayerHolding(stockName,amount));
 }
 
-this.sellStock = function (stockName,amount,stockPrice)
+this.sellStock = function (stockName,amount)
 {
   var stockIndex=this.getStockIndex(stockName);
   if (stockIndex != NO_SUCH_STOCK)

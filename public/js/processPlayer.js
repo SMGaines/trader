@@ -24,6 +24,8 @@ const CMD_GAME_ADDRESS="getgameaddress";
 const CMD_GAME_LANGUAGE="gamelanguage";
 const CMD_GET_GAME_LANGUAGE="getgamelanguage";
 
+const NONE = "NONE";
+
 var stocks=[];
 var numStocks;
 var numPlayers;
@@ -114,6 +116,10 @@ socket.on(CMD_PLAYER_LIST,function(data)
   {
     showStatus(myPlayer.status);
   }
+  if (myPlayer.allStockSold)
+  {
+    document.getElementById("allstocksold").play();
+  }
 });
   
 // Any changes in stock levels, play a 'trade' sound
@@ -154,8 +160,8 @@ init = function()
     buildPrisonForm();
     buildBankruptForm();
     buildRegistrationForm();
-    var storedPlayerName=getStoredPlayerName();
-    openRegistration(storedPlayerName);
+    
+    openRegistration(getStoredPlayerName());
 };
 
 buy = function()
@@ -190,7 +196,7 @@ hack = function()
   closeForm('hackForm');
   var hackedPlayerName = getSelectedPlayerName('hack');
   console.log("hack: "+hackedPlayerName);
-  if (hackedPlayerName == "NONE")
+  if (hackedPlayerName == NONE)
     return;
   socket.emit(CMD_HACK,myPlayer.name,hackedPlayerName);
 }
@@ -200,7 +206,7 @@ suspect = function()
   closeForm('suspectForm');
  	var suspectedPlayerName = getSelectedPlayerName('suspect');
   console.log("suspect: "+suspectedPlayerName);
-  if (suspectedPlayerName == "NONE")
+  if (suspectedPlayerName == NONE)
     return;
   socket.emit(CMD_SUSPECT,myPlayer.name,suspectedPlayerName);
 }
@@ -301,7 +307,7 @@ function closeForm(formName)
 function addPlayerDropDown(action,players)
 {
     var html = "<select class='veryLargeText' id='"+action+"SelectPlayer'>";
-    html+= "<option id='selectstock' value='NONE'>"+(myPlayer.lang==LANG_EN?"Select Player":"Wybierz gracza")+"</option>";
+    html+= "<option id='selectstock' value='"+NONE+"'>"+(myPlayer.lang==LANG_EN?"Select Player":"Wybierz gracza")+"</option>";
     console.log("addPlayerDropDown: "+players.length+"/"+players);
     players.forEach(function(player)
     {
@@ -318,7 +324,7 @@ function addPlayerDropDown(action,players)
 function addStockDropDown(action,stocks)
 {
     var html = "<select class='veryLargeText' id='"+action+"SelectStock'>";
-    html+= "<option id='selectstock' value='NONE'>"+(myPlayer.lang==LANG_EN?"Select Stock":"Wybierz Zapas")+"</option>";
+    html+= "<option id='selectstock' value='"+NONE+"'>"+(myPlayer.lang==LANG_EN?"Select Stock":"Wybierz Zapas")+"</option>";
     stocks.forEach(function(stock)
     {
         html+= "<option id = '"+stock.name+"' value = '"+stock.name+"'>"+stock.name+"</option>";

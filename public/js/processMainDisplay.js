@@ -191,6 +191,8 @@ var playerDisplay = function(players,stocks)
             {
                 if (stocks[j].suspensionDays>0)
                     html+=addTH(addText(getPlayerStockHolding(player,stocks[j].name),"courier",FONT_SIZE,"black"));
+                else if (player.allStockSold)
+                    html+=addTH(addText(getPlayerStockHolding(player,stocks[j].name),"courier",FONT_SIZE,"red"));
                 else
                     html+=addTH(addStandardText(getPlayerStockHolding(player,stocks[j].name)));
             }

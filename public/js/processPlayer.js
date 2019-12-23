@@ -80,8 +80,8 @@ socket.on(CMD_REGISTERED,function(data)
 socket.on(CMD_REGISTRATION_ERROR,function(data)
 {
 	var regError = data.msg;
-  	console.log("Error in registration: "+regError);
-  	showRegistrationError(regError);
+  console.log("Error in registration: "+regError);
+  showRegistrationError(regError);
 });
 
 socket.on(CMD_ERROR,function(data)
@@ -101,7 +101,7 @@ socket.on(CMD_PLAYER_LIST,function(data)
   myPlayer=findMyPlayer(players);
   if (myPlayer == null)
   {
-    showStatus(myPlayer.lang==LANG_EN?"Player not registered":"Gracz nie jest zarejestrowany");
+    showStatus("Player not registered");
     return;
   }
   else if (myPlayer.netWorth < 0)
@@ -177,6 +177,8 @@ sell = function()
 {
   closeForm('sellForm');
   var stockName=getSelectedStockName('sell');
+  if (stockName == "NONE")
+    return;
   var numShares=getInputValue('sell');
   console.log("Selling "+numShares+" shares of "+stockName);
   socket.emit(CMD_SELL_STOCK,myPlayer.name,stockName,numShares);
@@ -451,7 +453,8 @@ function buildRegistrationForm()
 function processRegistrationForm()
 {
 	var nameInput=document.getElementById("regName").value;
-	var langInput=document.getElementById("regLang").value;
+  var langInput=document.getElementById("regLang").value;
+  console.log(langInput);
 	if (nameInput.length >=3 && nameInput.length <= 8)
 	{
 		document.getElementById("registrationForm").style.display= "none";

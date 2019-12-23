@@ -7,7 +7,7 @@ const REG_PLAYER_ERROR = 2;
 const MIN_USERNAME_LENGTH = 3;
 const MAX_USERNAME_LENGTH = 8;
 
-const HACKING_DURATION_DAYS = 60;
+const HACKING_DURATION_DAYS = 45;
 const HACKING_FEE = 5000;
 const HACKING_FINE = 25000;
 const HACKING_FRACTION = .3;
@@ -91,7 +91,7 @@ exports.nextDay = function()
     {
       players[i].prisonDaysRemaining--;
       if (players[i].prisonDaysRemaining == 0)
-        player.status = getPlayerStatusMsg(MSG_PRISON_RELEASE,player.lang);
+        players[i].status = getPlayerStatusMsg(MSG_PRISON_RELEASE,players[i].lang);
     }
   }  
   for (var i=0;i<stocks.length;i++)
@@ -562,7 +562,7 @@ getLotteryWinnerIndex=function()
     if (playerNetWorth <=10000)
       playerNetWorth=10000; // Set minimum net worth for lottery purposes only
     var playerChance = Math.random()/playerNetWorth; // Lower net worth means higher chance of winning
-    if (players[i].prisonDaysRemaining > 0 || player.cash < 0) // Cannot win the lottery if in prison or if bankrupt already
+    if (players[i].prisonDaysRemaining > 0 || players[i].cash < 0) // Cannot win the lottery if in prison or if bankrupt already
       playerChance=0;
     if (playerChance > best)
     {
@@ -656,6 +656,8 @@ suspectHacker = function(suspectingPlayerName,suspectedPlayerName)
       log("suspectHacker: "+suspectingPlayer.name+" incorrectly suspected "+suspectedPlayer.name+" and is fined "+formatMoney(HACKING_INCORRECT_SUSPICION_FINE));
       suspectedPlayer.status =  getPlayerStatusMsg(MSG_WRONG_SUSPICION,suspectedPlayer.lang,suspectingPlayer.name,formatMoney(amount));
       suspectingPlayer.status = getPlayerStatusMsg(MSG_NOT_HACKING,suspectingPlayer.lang,suspectedPlayer.name,formatMoney(amount));
+      log("SUSPECTED: "+suspectedPlayer.status);
+      log("SUSPECTING: "+suspectingPlayer.status);
    }
 }
 exports.suspectHacker = suspectHacker;
@@ -769,7 +771,7 @@ function daysElapsed(nowDate,lastCrimeDate)
 
 function playerConvicted(player)
 {
-  return Math.random() < player.numInsiderDeals/300;
+  return player.numInsiderDeals > 2 && Math.random() < player.numInsiderDeals/300;
 }
 
 exports.getPlayers=function()

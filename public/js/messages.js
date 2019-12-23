@@ -50,6 +50,7 @@ global.MSG_EVENT_STOCK_IPO = ["A very interesting new Stock IPOs in $x","Bardzo 
 global.MSG_EVENT_EXTRA_STOCK = ["Extra shares of $x will be released in $y","Dodatkowe akcje $x zostaną uwolnione za $y"];
 global.MSG_EVENT_STOCK_DIVIDEND = ["$x will release a dividend in $y","$x wypłaci dywidendę w $y"];
 global.MSG_EVENT_STOCK_SUSPENDED = ["$x will be suspended in $y","$x zostanie zawieszone za $y"];
+global.MSG_HAPPY_XMAS = ["Merry Christmas: you receive $x","Wesołych świąt: otrzymasz $x"];
 
 global.MSG_NEWS_HEAD_WINNER = ["$name wins!!","$name wygrywa !!"];
 global.MSG_NEWS_SUB_WINNER = ["Crushes opposition with impressive win","Miażdży przeciwników imponującą wygraną"];

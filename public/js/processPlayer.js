@@ -60,7 +60,7 @@ socket.on(CMD_NEW_PRICES,function(data)
 {
   gameStarted=true;
   var pricesInfo=data.msg;
-  gameDate=pricesInfo.date;
+  gameDate=new Date(pricesInfo.date);
   stocks=pricesInfo.stockSummary; 
 });
 
@@ -114,14 +114,23 @@ socket.on(CMD_PLAYER_LIST,function(data)
   }
   else if (myPlayer.status != "")
   {
-    showStatus(myPlayer.status);
+    if (isChristmas())
+    {
+      document.getElementById("xmas").play();
+    }
+   showStatus(myPlayer.status);
   }
   if (myPlayer.allStockSold)
   {
     document.getElementById("allstocksold").play();
   }
 });
-  
+
+isChristmas=function()
+{
+  return gameDate.getDate() == 23 && gameDate.getMonth()==11; // Celebrate on Dec 24th :)
+}
+
 // Any changes in stock levels, play a 'trade' sound
 checkForTrades=function(newPlayers)
 {

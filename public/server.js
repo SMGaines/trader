@@ -62,6 +62,16 @@ app.get('/admin',function(req,res)
      res.sendFile(__dirname+'/admin.html');
 });
 
+app.get('/instructionsEN',function(req,res)
+{
+     res.sendFile(__dirname+'/instructionsEN.html');
+});
+
+app.get('/instructionsPL',function(req,res)
+{
+     res.sendFile(__dirname+'/instructionsPL.html');
+});
+
 server.listen(process.env.PORT || 8081,function()
 {
     console.log('Listening on '+server.address().port);

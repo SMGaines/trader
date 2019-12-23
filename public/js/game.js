@@ -18,6 +18,8 @@ const INSIDER_FEE=5000;
 const INSIDER_BASE_FINE = 10000;
 const INSIDER_LOOKAHEAD_MONTHS = 3;
 
+const BASE_XMAS_PRESENT = 10000;
+
 const NO_PLAYER="NONE";
 
 const PRISON_DAYS_INCREMENT = 10;
@@ -79,14 +81,26 @@ exports.isMonthStart=function()
   return gameDate.getDate() == 1;
 }
 
+isChristmas=function()
+{
+  return gameDate.getDate() == 23 && gameDate.getMonth()==11; // Celebrate on Dec 24th :)
+}
+
 exports.nextDay = function()
 {
   for (var i=0;i<players.length;i++)
   {
-    if (players[i].netWorth > 1000000)
-      weHaveAMillionnaire=true;
     players[i].status="";
     players[i].allStockSold=false;
+    if (isChristmas() && players[i].cash >=0 && players[i].prisonDaysRemaining == 0)
+    {
+     var playerPresent=BASE_XMAS_PRESENT*(1+Math.random()*3);
+     console.log("xmasPresent for "+players[i].name+" is "+formatMoney(playerPresent));
+     addCash(players[i],playerPresent);
+     players[i].status=getPlayerStatusMsg(MSG_HAPPY_XMAS,players[i].lang,formatMoney(playerPresent));
+    }
+    if (players[i].netWorth > 1000000)
+      weHaveAMillionnaire=true;
     if (players[i].prisonDaysRemaining > 0)
     {
       players[i].prisonDaysRemaining--;
@@ -771,7 +785,7 @@ function daysElapsed(nowDate,lastCrimeDate)
 
 function playerConvicted(player)
 {
-  return player.numInsiderDeals > 2 && Math.random() < player.numInsiderDeals/300;
+  return player.numInsiderDeals > 1 && Math.random() < player.numInsiderDeals/300;
 }
 
 exports.getPlayers=function()

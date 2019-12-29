@@ -3,7 +3,7 @@ const STATE_REGISTRATION = 1;
 const STATE_STARTED = 2;
 
 const CMD_NEW_PRICES="newprices";
-const CMD_NEW_MONTH="newmonth";
+const CMD_NEWS_EVENT="newsevent";
 const CMD_SELL_STOCK="sellstock";
 const CMD_BUY_STOCK="buystock";
 const CMD_REGISTER="register";
@@ -135,12 +135,6 @@ function processBots()
 	game.processBots();
 }
 
-function processMonth()
-{
-	var monthEvent=game.processMonth();
-	io.sockets.emit(CMD_NEW_MONTH,{msg:monthEvent});
-}
-
 function processGameOver()
 {
 	stopTimerEvents();
@@ -155,8 +149,12 @@ function newDay()
         io.sockets.emit(CMD_END_OF_GAME,{msg:game.getEndOfGameEvent()}); 
         return;
     }
-    if (game.isMonthStart())
-        processMonth();
+    var newsEvent=game.processNews();
+    if (newsEvent != null)
+    {
+        io.sockets.emit(CMD_NEWS_EVENT,{msg:newsEvent});
+    }
+
     game.updatePrices();
     game.applyInterestAndInflation();
     sendPlayerList();

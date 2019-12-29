@@ -27,6 +27,8 @@ const CRIME_EXPIRY_DAYS = 60;
 
 const BASE_LOTTERY_WIN = 50000;
 
+const RATE_ADJUST_INCREMENT = .15; // How quickly Interest and Inflation rates fluctuate
+
 const TAX_PERCENTAGE=20;
 
 var stk =require("./stock.js");
@@ -43,6 +45,7 @@ var inflationRate;
 var gameDate;
 var gameEndDate;
 var weHaveAMillionnaire;
+var numActiveStocks;
 
 exports.init = function(gameDurationInMonths,gameLang)
 {
@@ -52,7 +55,7 @@ exports.init = function(gameDurationInMonths,gameLang)
   log("Game ends on: "+gameEndDate);
   weHaveAMillionnaire=false;
   setupStock();
-  events.setupEvents(gameDate,gameDurationInMonths,stocks,IPO_STOCK,getLanguageIndex(gameLang)); // eg convert "EN" to a number (0)
+  events.setupEvents(gameDate,gameDurationInMonths,stocks,getLanguageIndex(gameLang)); // eg convert "EN" to a number (0)
   startRegistration();
 }
 
@@ -74,11 +77,6 @@ exports.start =function()
 exports.getDate = function()
 {
   return gameDate;
-}
-
-exports.isMonthStart=function()
-{
-  return gameDate.getDate() == 1;
 }
 
 isChristmas=function()
@@ -121,8 +119,24 @@ exports.nextDay = function()
     }
   }  
   gameDate.setDate(gameDate.getDate() + 1);
+  adjustRates();
   checkHackers();
   checkInsiderTrading();
+}
+
+adjustRates=function()
+{
+  interestRate+=(-RATE_ADJUST_INCREMENT+Math.random()*2*RATE_ADJUST_INCREMENT);
+  if (interestRate < 1)
+    interestRate=1;
+  if (interestRate > 10)
+    interestRate=10;
+
+  inflationRate+=(-RATE_ADJUST_INCREMENT+Math.random()*2*RATE_ADJUST_INCREMENT);
+  if (inflationRate < 1)
+    inflationRate=1;
+  if (inflationRate > 10)
+    inflationRate=10;
 }
 
 gameOver = function()
@@ -159,10 +173,11 @@ function findWinner()
 
 function setupStock()
 {
-  stocks.push(new stk.Stock(STOCK_GOVT,RISK_NONE));
-  stocks.push(new stk.Stock(STOCK_GOLD,RISK_LOW));
-  stocks.push(new stk.Stock(STOCK_OIL,RISK_MEDIUM));
-  stocks.push(new stk.Stock(STOCK_HITECH,RISK_HIGH));
+  for (var i=0;i<NUM_INITIAL_STOCKS;i++)
+  {
+    stocks.push(new stk.Stock(STOCK_NAMES[i],STOCK_RISKINESS[i],STOCK_COLOURS[i]));
+  }
+  numActiveStocks=NUM_INITIAL_STOCKS;
 }
 
 function getStock(stockName)
@@ -447,33 +462,33 @@ function roundStock(amount)
   return STOCK_INCREMENT*Math.floor(amount/STOCK_INCREMENT);
 }
 
-exports.processMonth = function()
+exports.processNews = function()
 {
-  log("processMonth");
-  var monthEvent;
+  log("processNews");
+  var newsEvent;
   if (gameOver())
   {
       return null;
   }
-  monthEvent=events.getMonthEvent(gameDate);
-  if (monthEvent != null)
+  newsEvent=events.getNewsEvent(gameDate);
+  if (newsEvent != null)
   {
-    switch(monthEvent.type)
+    switch(newsEvent.type)
     {
       case EVENT_NONE:
         break;
       case EVENT_CRASH:
-        var stock = getStock(monthEvent.stockName);
+        var stock = getStock(newsEvent.stockName);
         stock.trend=-STOCK_MAX_TREND;
         break;
       case EVENT_BOOM:
-        var stock = getStock(monthEvent.stockName);
+        var stock = getStock(newsEvent.stockName);
         stock.trend=STOCK_MAX_TREND;
         break;
       case EVENT_CRASH_ALL_STOCKS:
         stocks.forEach(function(stock)
         {
-            if (stock.riskiness != RISK_NONE)
+          if (stock.riskiness != RISK_NONE)
             stock.trend=-STOCK_MAX_TREND;
         });
         break;
@@ -490,44 +505,46 @@ exports.processMonth = function()
         if (rndPlayerIndex != -1)
         {
           var win = BASE_LOTTERY_WIN+10000*Math.floor(Math.random()*5);
-          monthEvent.headLine = monthEvent.headLine.replace("$name",players[rndPlayerIndex].name);
-          monthEvent.headLine = monthEvent.headLine.replace("$win",formatMoney(win));
+          newsEvent.headLine = newsEvent.headLine.replace("$name",players[rndPlayerIndex].name);
+          newsEvent.headLine = newsEvent.headLine.replace("$win",formatMoney(win));
           log("EVENT_LOTTERY_WIN: "+players[rndPlayerIndex].name+" wins "+formatMoney(win));
           addCash(players[rndPlayerIndex],win);
         }
         else
         {
-          monthEvent.headLine = monthEvent.headLine=getPlayerStatusMsg(MSG_NEWS_HEAD_NO_LOTTERY_WINNER,player.lang);
-          monthEvent.headLine = monthEvent.tagLine=getPlayerStatusMsg(MSG_NEWS_SUB_NO_LOTTERY_WINNER,player.lang);
+          newsEvent.headLine = newsEvent.headLine=getPlayerStatusMsg(MSG_NEWS_HEAD_NO_LOTTERY_WINNER,player.lang);
+          newsEvent.headLine = newsEvent.tagLine=getPlayerStatusMsg(MSG_NEWS_SUB_NO_LOTTERY_WINNER,player.lang);
         }
         break;
       case EVENT_STOCK_IPO:
-        log("EVENT_STOCK_IPO: "+monthEvent.stockName);
-        stocks.push(new stk.Stock(monthEvent.stockName,RISK_NONE));
+        log("EVENT_STOCK_IPO");
+        stocks.push(new stk.Stock(STOCK_NAMES[numActiveStocks],STOCK_RISKINESS[numActiveStocks],STOCK_COLOURS[numActiveStocks]));
+        newsEvent.headLine = newsEvent.headLine.replace("$name",STOCK_NAMES[numActiveStocks]);
+        numActiveStocks++;
         break;
       case EVENT_STOCK_RELEASE:
-        log("EVENT_STOCK_RELEASE: "+monthEvent.stockName);
-        getStock(monthEvent.stockName).available+=MIN_STOCK_RELEASE_AMOUNT+STOCK_INCREMENT*Math.floor(Math.random()*10);
+        log("EVENT_STOCK_RELEASE: "+newsEvent.stockName);
+        getStock(newsEvent.stockName).available+=MIN_STOCK_RELEASE_AMOUNT+STOCK_INCREMENT*Math.floor(Math.random()*10);
         break;
       case EVENT_STOCK_DIVIDEND:
-        log("EVENT_STOCK_DIVIDEND: "+monthEvent.stockName);
+        log("EVENT_STOCK_DIVIDEND: "+newsEvent.stockName);
         players.forEach(function(player)
         {
-          var playerStock = player.getStockHolding(monthEvent.stockName)
+          var playerStock = player.getStockHolding(newsEvent.stockName)
           if (playerStock > 0 && player.prisonDaysRemaining == 0) // Naughty players dont get stock
           {
             var dividendAmount = roundStock(playerStock*STOCK_DIVIDEND_RATIO);
             if (dividendAmount < STOCK_INCREMENT)
               dividendAmount = STOCK_INCREMENT;
-            player.buyStock(monthEvent.stockName,dividendAmount,0);
-            player.status= getPlayerStatusMsg(MSG_DIVIDEND,player.lang,dividendAmount,monthEvent.stockName);
+            player.buyStock(newsEvent.stockName,dividendAmount,0);
+            player.status= getPlayerStatusMsg(MSG_DIVIDEND,player.lang,dividendAmount,newsEvent.stockName);
           }
         });
         break;       
       case EVENT_STOCK_SUSPENDED:
-        getStock(monthEvent.stockName).price=0;
-        getStock(monthEvent.stockName).suspensionDays=30+Math.floor(Math.random()*30);
-        log("EVENT_STOCK_SUSPENDED: "+monthEvent.stockName+" suspended for "+getStock(monthEvent.stockName).suspensionDays+" days");
+        getStock(newsEvent.stockName).price=0;
+        getStock(newsEvent.stockName).suspensionDays=30+Math.floor(Math.random()*30);
+        log("EVENT_STOCK_SUSPENDED: "+newsEvent.stockName+" suspended for "+getStock(newsEvent.stockName).suspensionDays+" days");
         break;
       case EVENT_TAX_RETURN:
         log("EVENT_TAX_RETURN");
@@ -549,21 +566,9 @@ exports.processMonth = function()
           player.status= getPlayerStatusMsg(MSG_TAX,player.lang,formatMoney(totalTax));
         });
         break;
-      case EVENT_INTEREST_RATE_UP:
-        interestRate++;
-        break;
-      case EVENT_INTEREST_RATE_DOWN:
-        interestRate--;
-        break;
-      case EVENT_INFLATION_RATE_UP:
-        inflationRate++;
-        break;
-      case EVENT_INFLATION_RATE_DOWN:
-        inflationRate--;
-        break;
     }
   }
-  return monthEvent;
+  return newsEvent;
 }
 
 getLotteryWinnerIndex=function()

@@ -3,12 +3,6 @@ global.LANG_PL=1;
 
 global.BOT_NAME_PREFIX = "BOT";
 
-global.STOCK_GOVT="GOVT";
-global.STOCK_GOLD="GOLD";
-global.STOCK_OIL="OIL";
-global.STOCK_HITECH="HITECH";
-global.STOCK_PHARMA="PHARMA";
-
 global.MSG_GAME_STARTED = ["Game started","Gra się rozpoczęła"];
 global.MSG_GAME_ALREADY_IN_PROGRESS = ["Game already in progress","Gra już trwa"];
 global.MSG_REGISTERED = ["Registered","Zarejestrowany"];
@@ -72,7 +66,7 @@ global.MSG_NEWS_HEAD_LOTTERY = ["$name wins $win!!","$name wygrywa $win!!"]; // 
 global.MSG_NEWS_SUB_LOTTERY = ["Massive Lottery win!","Masywna wygrana w loterii!"];
 global.MSG_NEWS_HEAD_NO_LOTTERY_WINNER=["No lottery winner!","Brak zwycięzcy w loterii!"];
 global.MSG_NEWS_SUB_NO_LOTTERY_WINNER=["All players ineligible!","Wszyscy gracze nie kwalifikują się!"];
-global.MSG_NEWS_HEAD_IPO = ["$x issues IPO!","$x wystawia IPO!"];
+global.MSG_NEWS_HEAD_IPO = ["$name issues IPO!","$name wystawia IPO!"]; //// NOTE: $name used in function processMonth in game.js
 global.MSG_NEWS_SUB_IPO = ["Hottest stock on the market!","Najgorętsze akcje na rynku!"];
 global.MSG_NEWS_HEAD_EXTRA_SHARES = ["Extra Shares Available","Dostępne dodatkowe akcje"];
 global.MSG_NEWS_SUB_EXTRA_SHARES = ["$x releases more shares","$x uwalnia więcej akcji"];

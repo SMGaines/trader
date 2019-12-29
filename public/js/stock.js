@@ -6,6 +6,10 @@ global.RISK_MEDIUM=2;
 global.RISK_HIGH=3;
 global.RISK_CRAZY=4;
 
+global.STOCK_COLOURS = ["#0000FF","#CFB53B", "#808080","#FF1493","#9370DB","AAAAAA"];
+global.STOCK_RISKINESS = [RISK_NONE,RISK_LOW,RISK_MEDIUM,RISK_CRAZY,RISK_HIGH];
+global.STOCK_NAMES=["GOVT","GOLD","OIL","HITECH","PHARMA","MINING"];
+
 global.STOCK_MIN_VALUE = 5;
 global.STOCK_MAX_VALUE = 350;
 global.STOCK_ADJUSTMENT_FACTOR = .5;
@@ -14,11 +18,11 @@ global.STOCK_INCREMENT = 50;
 global.MIN_STOCK_RELEASE_AMOUNT = 200;
 global.STOCK_MAX_TREND = 5;
 global.MIN_STOCK_PURCHASE = 50;
-global.IPO_STOCK = "PHARMA";
+global.NUM_INITIAL_STOCKS=4;
 global.STOCK_DIVIDEND_RATIO = .25;
 global.POST_SUSPENSION_PRICE = 10;
 
-exports.Stock = function(name,riskiness)
+exports.Stock = function(name,riskiness,colour)
 {
     this.name = name;
     this.available=NUM_STARTING_STOCK;
@@ -26,6 +30,7 @@ exports.Stock = function(name,riskiness)
     this.riskiness=riskiness;
     this.trend=riskiness==RISK_NONE?1:getRandomTrend();
     this.suspensionDays=0;
+    this.colour=colour;
 
     this.getPrice = function()
     {
@@ -46,7 +51,7 @@ exports.Stock = function(name,riskiness)
 
     this.getSummary = function()
     {
-        return new StockSummary(this.name,this.available,this.price,this.trend,this.suspensionDays);
+        return new StockSummary(this.name,this.available,this.price,this.trend,this.suspensionDays,this.colour);
     }
 
     this.liftSuspension = function()
@@ -87,11 +92,12 @@ function getRandomStartingPrice()
   return STOCK_MAX_VALUE*.1 + STOCK_MAX_VALUE*.2*Math.random();
 }
 
-function StockSummary(name,available,price,trend,sus)
+function StockSummary(name,available,price,trend,sus,colour)
 {
     this.name=name;
     this.available=available;
     this.price=price;
     this.trend=trend;
     this.suspensionDays=sus;
+    this.colour=colour;
 }

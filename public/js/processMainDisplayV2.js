@@ -1,14 +1,13 @@
 const GAME_TITLE = "TRADER v1.0";
-const FONT_SIZE = 8;
+const FONT_SIZE = 40;
 const STOCK_MIN_VALUE = 5;
 const STOCK_MAX_VALUE = 400;
  
 const HISTORY_SIZE = 10;
 const NONE = -1;
-const colors = ["#0000FF","#CFB53B", "#808080","#FF1493","#9370DB"];
 
 const CMD_NEW_PRICES="newprices";
-const CMD_NEW_MONTH="newmonth";
+const CMD_NEWS_EVENT="newsevent";
 const CMD_SELL_STOCK="sellstock";
 const CMD_BUY_STOCK="buystock";
 const CMD_REGISTER="register";
@@ -31,7 +30,7 @@ const TAX_SHOW_TIMER = 10000;
 
 var stockChart,newspaperChart,stockTicker;
 
-var firstPrices;
+var numStocks;
 var players = [];
 var stocks = [];
 var gameDate;
@@ -45,17 +44,16 @@ socket.on(CMD_NEW_PRICES,function(data)
     gameDate=pricesInfo.date;
     showFinancialData(new Date(gameDate),pricesInfo.interestRate,pricesInfo.inflationRate);
     stocks=pricesInfo.stockSummary;
-    if (firstPrices)
+    if (numStocks !=stocks.length)
     {
         stockChart=new StockChart(document.getElementById("stockDisplay"),stocks);
-        stockTicker=new StockTicker();
-        stockTicker.initTicker("stockTicker");
-        firstPrices=false;
+        stockTicker.initTickers("stockTicker",stocks);
+        numStocks=stocks.length;
     }
     else
         stockChart.draw(stocks);
-    stockTicker.createTicker("stockTicker",stocks);
-    //financialsDisplay(stocks);
+    stockTicker.loadTickers(stocks);
+    financialsDisplay(stocks);
     playerDisplay(players,stocks);
 });
 
@@ -65,7 +63,7 @@ socket.on(CMD_GAME_LANGUAGE,function(data)
     console.log("CMD_GAME_LANGUAGE: "+gameLang);
 });
 
-socket.on(CMD_NEW_MONTH,function(data)
+socket.on(CMD_NEWS_EVENT,function(data)
 {  
     var monthEvent=data.msg;
     newspaperChart.initNewsStory(monthEvent);
@@ -92,35 +90,23 @@ socket.on(CMD_PLAYER_LIST,function(data)
 init = function()
 {
     console.log("ProcessMainDisplay: Initialising");
-    firstPrices=true;
-    //playerDisplay(players,stocks);
+    stockTicker=new StockTicker();
+    numStocks=0;
     socket.emit(CMD_GET_GAME_LANGUAGE);
     newspaperChart=new NewsPaperChart();
 };
 
 var financialsDisplay = function(stocks)
 {
-    var html= "<TABLE>";
-    html+=addTR(addTH(addHeaderText(gameLang=="PL"?"Akcje":"Stock"))+addTH(addHeaderText(gameLang=="PL"?"ILOŚĆ":"Avail"))+addTH(addHeaderText(gameLang=="PL"?"CENA":"Price")));
+    var thWidth = 100/stocks.length;
+    var html= "<TABLE align='center'>";
+    html+=addTR(addTH(addHeaderText(gameLang=="PL"?"Avail":"Avail")));
     for (var i=0;i<stocks.length;i++)
     {
-        var priceDisplay,stockNameDisplay,stockAvailDisplay;
-        if (stocks[i].suspensionDays > 0)
-        {
-            priceDisplay = addTH(addText(stocks[i].price.toFixed(2),"courier",7,"black"));
-            stockNameDisplay = addTH(addText(stocks[i].name,"courier",7,"black"));
-            stockAvailDisplay = addTH(addText(stocks[i].available,"courier",7,"black"));
-        }
-        else
-        {
-            priceDisplay = addTH(addStockText(stocks[i].price.toFixed(2),stocks[i].trend >=0));
-            stockNameDisplay = addTH(addText(stocks[i].name,"courier",7,colors[i]));
-            stockAvailDisplay = addTH(addText(stocks[i].available,"courier",7,colors[i]));  
-        }
-        html+=addTR(stockNameDisplay+stockAvailDisplay+priceDisplay);
+        html+=addTR(addTH(addText(stocks[i].available,"courier",FONT_SIZE,stocks[i].suspensionDays > 0?"black":stocks[i].colour)));
     };
     html+="</TABLE>"
-    document.getElementById('stockNamesDisplay').innerHTML=html;
+    document.getElementById('stockAvailDisplay').innerHTML=html;
 }
 
 var playerDisplay = function(players,stocks)
@@ -225,7 +211,7 @@ function addHeaderText(text)
 
 function addText(text,fontName,fontSize,fontColour)
 {
-    return "<font color='"+fontColour+"' size='"+fontSize+"' face='"+fontName+"'>"+text+"</font>";
+    return "<font  style='font-size:"+fontSize+"px' color='"+fontColour+"' face='"+fontName+"'>"+text+"</font>";
 }
 
 function formatMoney(amount)
@@ -255,6 +241,8 @@ function showFinancialData(aDate,interestRate,inflationRate)
     var dateToday = getLongDate(aDate,gameLang);
     document.getElementById('gametitle').innerHTML=addHeaderText(GAME_TITLE);
     document.getElementById('gamedate').innerHTML=addStandardText(dateToday);
-    document.getElementById('interestRate').innerHTML=addStandardText((gameLang=="PL"?"Stopa Procentowa":"Interest")+": "+interestRate+"%");
-    document.getElementById('inflationRate').innerHTML=addStandardText((gameLang=="PL"?"Inflacja":"Inflation")+": "+inflationRate+"%");
+    document.getElementById('interestRateHeader').innerHTML=addHeaderText((gameLang=="PL"?"Oprocentowanie":"Interest"));
+    document.getElementById('inflationRateHeader').innerHTML=addHeaderText((gameLang=="PL"?"Inflacja":"Inflation"));
+    document.getElementById('interestRate').innerHTML=addStandardText(interestRate.toFixed(1)+"%");
+    document.getElementById('inflationRate').innerHTML=addStandardText(inflationRate.toFixed(1)+"%");
 }

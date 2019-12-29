@@ -19,7 +19,7 @@ StockChart = function(canvas,stocks)
         self.ctx.clearRect(xAxisIndent+axisMargin, yAxisIndent+axisMargin, this.canvas.width-2*(xAxisIndent+axisMargin), this.canvas.height-2*(yAxisIndent+axisMargin));
         for (var i=0;i<stocks.length;i++)
         {
-            self.ctx.strokeStyle = colors[i];
+            self.ctx.strokeStyle = stocks[i].colour;
             self.ctx.lineWidth = 4;
             self.ctx.beginPath();
             self.ctx.moveTo(axisMargin+1+xAxisIndent,canvas.height*(1-stockHistory[i*HISTORY_SIZE]/STOCK_MAX_VALUE)-yAxisIndent-axisMargin);

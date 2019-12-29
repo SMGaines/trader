@@ -16,12 +16,14 @@ global.EVENT_STOCK_RELEASE = 13;
 global.EVENT_STOCK_DIVIDEND = 14;
 global.EVENT_STOCK_SUSPENDED = 15;
 
+global.AVERAGE_MONTH_LENGTH=30.5;
+
 global.TAX_RETURN_MONTH=8; //i.e. September 
 
 var events=[];
 var gameLang; // The language that event messages will be in
 
-MonthEvent = function (type,stockName,headLine,tagLine,finalEvent)
+NewsEvent = function (type,stockName,headLine,tagLine,finalEvent)
 {
   this.date=new Date();
   this.type=type;
@@ -41,16 +43,16 @@ isGoodNews = function(type)
            type == EVENT_STOCK_DIVIDEND);
 }
 
-getMonthEvent = function(aDate)
+getNewsEvent = function(aDate)
 {
   for (var i=0;i<events.length;i++)
   {
-    if (aDate.getMonth() == events[i].date.getMonth() && aDate.getYear() == events[i].date.getYear())
+    if (aDate.getMonth() == events[i].date.getMonth() && aDate.getYear() == events[i].date.getYear() && aDate.getDate() == events[i].date.getDate())
       return events[i];
   }
   return null;
 }
-exports.getMonthEvent = getMonthEvent;
+exports.getNewsEvent = getNewsEvent;
 
 getNewsMsg=function(msgType,argX,argY,argZ)
 {
@@ -63,31 +65,31 @@ getNewsMsg=function(msgType,argX,argY,argZ)
 
 getEndOfGameEvent = function(aDate)
 {
-  return new MonthEvent(EVENT_GAME_WINNER,"",getNewsMsg(MSG_NEWS_HEAD_WINNER),getNewsMsg(MSG_NEWS_SUB_WINNER),true); //true==final event
+  return new NewsEvent(EVENT_GAME_WINNER,"",getNewsMsg(MSG_NEWS_HEAD_WINNER),getNewsMsg(MSG_NEWS_SUB_WINNER),true); //true==final event
 }
 exports.getEndOfGameEvent = getEndOfGameEvent;
 
-exports.setupEvents=function(gameStartDate,gameDurationInMonths,stocks,ipoStockName,aLang)
+exports.setupEvents=function(gameStartDate,gameDurationInMonths,stocks,aLang)
 {
   gameLang=aLang; 
-  createMainEvents(stocks,ipoStockName);
-  addInterestInflationEvents(gameDurationInMonths);
+  createMainEvents(stocks);
   addTaxEvents(gameDurationInMonths);
   shuffleEvents();
-  setEventDates(gameStartDate);
+  setEventDates(gameStartDate,gameDurationInMonths);
   adjustForTaxEvents(gameDurationInMonths);
   for (var i=0;i<gameDurationInMonths;i++)
   {
-    console.log(events[i].date.toLocaleDateString('en-US')+": "+events[i].type+","+events[i].stockName+","+events[i].headLine);
+    console.log(events[i].date.toLocaleDateString('en-US')+": "+events[i].type+","+events[i].date+","+events[i].headLine);
   }
 }
 
-function setEventDates(gameStartDate)
+function setEventDates(gameStartDate,gameDurationInMonths)
 {
+  var eventInterval = Math.floor(events.length*AVERAGE_MONTH_LENGTH/gameDurationInMonths);
   for (var i=0;i<events.length;i++)
   {
     events[i].date=new Date(gameStartDate);
-    events[i].date.setMonth(gameStartDate.getMonth()+i);
+    events[i].date.setDate(gameStartDate.getDate()+i*eventInterval);
   }
 }
 
@@ -116,42 +118,50 @@ function adjustForTaxEvents(gameDurationInMonths)
   }
 }
 
-function createMainEvents(stocks,ipoStockName)
+function createMainEvents(stocks)
 {
-  events.push(new MonthEvent(EVENT_NONE,"","","")); // Dummy event since we don't have one in very first month
-  events.push(new MonthEvent(EVENT_CRASH,"OIL",getNewsMsg(MSG_NEWS_HEAD_OIL_CRASH),getNewsMsg(MSG_NEWS_SUB_OIL_CRASH)));
-  events.push(new MonthEvent(EVENT_BOOM,"GOLD",getNewsMsg(MSG_NEWS_HEAD_GOLD_BOOM),getNewsMsg(MSG_NEWS_SUB_GOLD_BOOM)));
-  events.push(new MonthEvent(EVENT_BOOM,"OIL",getNewsMsg(MSG_NEWS_HEAD_OIL_BOOM),getNewsMsg(MSG_NEWS_SUB_OIL_BOOM)));
-  events.push(new MonthEvent(EVENT_CRASH_ALL_STOCKS,"",getNewsMsg(MSG_NEWS_HEAD_MKT_CRASH),getNewsMsg(MSG_NEWS_SUB_MKT_CRASH)));
-  events.push(new MonthEvent(EVENT_BOOM,"HITECH",getNewsMsg(MSG_NEWS_HEAD_TECH_BOOM),getNewsMsg(MSG_NEWS_SUB_TECH_BOOM)));
-  events.push(new MonthEvent(EVENT_CRASH,"HITECH",getNewsMsg(MSG_NEWS_HEAD_TECH_CRASH),getNewsMsg(MSG_NEWS_SUB_TECH_CRASH)));
-  events.push(new MonthEvent(EVENT_BOOM_ALL_STOCKS,"",getNewsMsg(MSG_NEWS_HEAD_MKT_BOOM),getNewsMsg(MSG_NEWS_SUB_MKT_BOOM)));
-  events.push(new MonthEvent(EVENT_LOTTERY_WIN,"",getNewsMsg(MSG_NEWS_HEAD_LOTTERY),getNewsMsg(MSG_NEWS_SUB_LOTTERY)));
-  events.push(new MonthEvent(EVENT_LOTTERY_WIN,"",getNewsMsg(MSG_NEWS_HEAD_LOTTERY),getNewsMsg(MSG_NEWS_SUB_LOTTERY)));
-  events.push(new MonthEvent(EVENT_STOCK_IPO,ipoStockName,getNewsMsg(MSG_NEWS_HEAD_IPO,ipoStockName),getNewsMsg(MSG_NEWS_SUB_IPO)));
+  events.push(new NewsEvent(EVENT_NONE,"","","")); // Dummy event since we don't have one in very first month
+  events.push(new NewsEvent(EVENT_CRASH,"OIL",getNewsMsg(MSG_NEWS_HEAD_OIL_CRASH),getNewsMsg(MSG_NEWS_SUB_OIL_CRASH)));
+  events.push(new NewsEvent(EVENT_BOOM,"GOLD",getNewsMsg(MSG_NEWS_HEAD_GOLD_BOOM),getNewsMsg(MSG_NEWS_SUB_GOLD_BOOM)));
+  events.push(new NewsEvent(EVENT_BOOM,"OIL",getNewsMsg(MSG_NEWS_HEAD_OIL_BOOM),getNewsMsg(MSG_NEWS_SUB_OIL_BOOM)));
+  events.push(new NewsEvent(EVENT_CRASH_ALL_STOCKS,"",getNewsMsg(MSG_NEWS_HEAD_MKT_CRASH),getNewsMsg(MSG_NEWS_SUB_MKT_CRASH)));
+  events.push(new NewsEvent(EVENT_CRASH_ALL_STOCKS,"",getNewsMsg(MSG_NEWS_HEAD_MKT_CRASH),getNewsMsg(MSG_NEWS_SUB_MKT_CRASH)));
+  events.push(new NewsEvent(EVENT_BOOM,"HITECH",getNewsMsg(MSG_NEWS_HEAD_TECH_BOOM),getNewsMsg(MSG_NEWS_SUB_TECH_BOOM)));
+  events.push(new NewsEvent(EVENT_BOOM,"HITECH",getNewsMsg(MSG_NEWS_HEAD_TECH_BOOM),getNewsMsg(MSG_NEWS_SUB_TECH_BOOM)));
+  events.push(new NewsEvent(EVENT_CRASH,"HITECH",getNewsMsg(MSG_NEWS_HEAD_TECH_CRASH),getNewsMsg(MSG_NEWS_SUB_TECH_CRASH)));
+  events.push(new NewsEvent(EVENT_BOOM_ALL_STOCKS,"",getNewsMsg(MSG_NEWS_HEAD_MKT_BOOM),getNewsMsg(MSG_NEWS_SUB_MKT_BOOM)));
+  events.push(new NewsEvent(EVENT_BOOM_ALL_STOCKS,"",getNewsMsg(MSG_NEWS_HEAD_MKT_BOOM),getNewsMsg(MSG_NEWS_SUB_MKT_BOOM)));
+  events.push(new NewsEvent(EVENT_LOTTERY_WIN,"",getNewsMsg(MSG_NEWS_HEAD_LOTTERY),getNewsMsg(MSG_NEWS_SUB_LOTTERY)));
+  events.push(new NewsEvent(EVENT_LOTTERY_WIN,"",getNewsMsg(MSG_NEWS_HEAD_LOTTERY),getNewsMsg(MSG_NEWS_SUB_LOTTERY)));
+  events.push(new NewsEvent(EVENT_STOCK_IPO,"",getNewsMsg(MSG_NEWS_HEAD_IPO),getNewsMsg(MSG_NEWS_SUB_IPO)));
+  events.push(new NewsEvent(EVENT_STOCK_IPO,"",getNewsMsg(MSG_NEWS_HEAD_IPO),getNewsMsg(MSG_NEWS_SUB_IPO)));
   var rndStockID = Math.floor(Math.random()*stocks.length);
-  events.push(new MonthEvent(EVENT_STOCK_RELEASE,stocks[rndStockID].name,getNewsMsg(MSG_NEWS_HEAD_EXTRA_SHARES),getNewsMsg(MSG_NEWS_SUB_EXTRA_SHARES,stocks[rndStockID].name)));
+  events.push(new NewsEvent(EVENT_STOCK_RELEASE,stocks[rndStockID].name,getNewsMsg(MSG_NEWS_HEAD_EXTRA_SHARES),getNewsMsg(MSG_NEWS_SUB_EXTRA_SHARES,stocks[rndStockID].name)));
   rndStockID = Math.floor(Math.random()*stocks.length);
-  events.push(new MonthEvent(EVENT_STOCK_RELEASE,stocks[rndStockID].name,getNewsMsg(MSG_NEWS_HEAD_EXTRA_SHARES),getNewsMsg(MSG_NEWS_SUB_EXTRA_SHARES,stocks[rndStockID].name)));
+  events.push(new NewsEvent(EVENT_STOCK_RELEASE,stocks[rndStockID].name,getNewsMsg(MSG_NEWS_HEAD_EXTRA_SHARES),getNewsMsg(MSG_NEWS_SUB_EXTRA_SHARES,stocks[rndStockID].name)));
   rndStockID = Math.floor(Math.random()*stocks.length);
-  events.push(new MonthEvent(EVENT_STOCK_DIVIDEND,stocks[rndStockID].name,getNewsMsg(MSG_NEWS_HEAD_DIVIDEND),getNewsMsg(MSG_NEWS_SUB_DIVIDEND,stocks[rndStockID].name)));
+  events.push(new NewsEvent(EVENT_STOCK_RELEASE,stocks[rndStockID].name,getNewsMsg(MSG_NEWS_HEAD_EXTRA_SHARES),getNewsMsg(MSG_NEWS_SUB_EXTRA_SHARES,stocks[rndStockID].name)));
   rndStockID = Math.floor(Math.random()*stocks.length);
-  events.push(new MonthEvent(EVENT_STOCK_DIVIDEND,stocks[rndStockID].name,getNewsMsg(MSG_NEWS_HEAD_DIVIDEND),getNewsMsg(MSG_NEWS_SUB_DIVIDEND,stocks[rndStockID].name)));
+  events.push(new NewsEvent(EVENT_STOCK_DIVIDEND,stocks[rndStockID].name,getNewsMsg(MSG_NEWS_HEAD_DIVIDEND),getNewsMsg(MSG_NEWS_SUB_DIVIDEND,stocks[rndStockID].name)));
+  rndStockID = Math.floor(Math.random()*stocks.length);
+  events.push(new NewsEvent(EVENT_STOCK_DIVIDEND,stocks[rndStockID].name,getNewsMsg(MSG_NEWS_HEAD_DIVIDEND),getNewsMsg(MSG_NEWS_SUB_DIVIDEND,stocks[rndStockID].name)));
+  rndStockID = Math.floor(Math.random()*stocks.length);
+  events.push(new NewsEvent(EVENT_STOCK_DIVIDEND,stocks[rndStockID].name,getNewsMsg(MSG_NEWS_HEAD_DIVIDEND),getNewsMsg(MSG_NEWS_SUB_DIVIDEND,stocks[rndStockID].name)));
   while(true)
   {
       rndStockID = Math.floor(Math.random()*stocks.length);
-      if (stocks[rndStockID].name != STOCK_GOVT) // GOVT never suspended
+      if (stocks[rndStockID].name != "GOVT") // GOVT never suspended
         break;
   }
-  events.push(new MonthEvent(EVENT_STOCK_SUSPENDED,stocks[rndStockID].name,getNewsMsg(MSG_NEWS_HEAD_SUSPENDED,stocks[rndStockID].name),getNewsMsg(MSG_NEWS_SUB_SUSPENDED)));
+  events.push(new NewsEvent(EVENT_STOCK_SUSPENDED,stocks[rndStockID].name,getNewsMsg(MSG_NEWS_HEAD_SUSPENDED,stocks[rndStockID].name),getNewsMsg(MSG_NEWS_SUB_SUSPENDED)));
   
   while(true)
   {
       rndStockID = Math.floor(Math.random()*stocks.length);
-      if (stocks[rndStockID].name != STOCK_GOVT) // GOVT never suspended
+      if (stocks[rndStockID].name != "GOVT") // GOVT never suspended
         break;
   }
-  events.push(new MonthEvent(EVENT_STOCK_SUSPENDED,stocks[rndStockID].name,getNewsMsg(MSG_NEWS_HEAD_SUSPENDED,stocks[rndStockID].name),getNewsMsg(MSG_NEWS_SUB_SUSPENDED)));
+  events.push(new NewsEvent(EVENT_STOCK_SUSPENDED,stocks[rndStockID].name,getNewsMsg(MSG_NEWS_HEAD_SUSPENDED,stocks[rndStockID].name),getNewsMsg(MSG_NEWS_SUB_SUSPENDED)));
 }
 
 function addTaxEvents(gameDurationInMonths)
@@ -159,23 +169,7 @@ function addTaxEvents(gameDurationInMonths)
   // One tax event per year
   for (var i=0;i<gameDurationInMonths/12;i++)
   {
-     events.push(new MonthEvent(EVENT_TAX_RETURN,"",getNewsMsg(MSG_NEWS_HEAD_TAX_RETURN),getNewsMsg(MSG_NEWS_SUB_TAX_RETURN)));
-  }
-}
-
-function addInterestInflationEvents(gameDurationInMonths)
-{
-  for (var i=events.length;i<gameDurationInMonths;i++)
-  {
-    var rndEvent=Math.floor(Math.random()*4);
-    switch(rndEvent)
-    {
-      // Set initially with 0 dates since the dates are assigned later in setEventDates()
-      case 0: events.push(new MonthEvent(EVENT_INTEREST_RATE_UP,"",getNewsMsg(MSG_NEWS_HEAD_INTEREST_UP),getNewsMsg(MSG_NEWS_SUB_INTEREST_UP)));break;
-      case 1: events.push(new MonthEvent(EVENT_INTEREST_RATE_DOWN,"",getNewsMsg(MSG_NEWS_HEAD_INTEREST_DOWN),getNewsMsg(MSG_NEWS_SUB_INTEREST_DOWN)));break;
-      case 2: events.push(new MonthEvent(EVENT_INFLATION_RATE_UP,"",getNewsMsg(MSG_NEWS_HEAD_INFLATION_UP),getNewsMsg(MSG_NEWS_SUB_INFLATION_UP)));break;
-      case 3: events.push(new MonthEvent(EVENT_INFLATION_RATE_DOWN,"",getNewsMsg(MSG_NEWS_HEAD_INFLATION_DOWN),getNewsMsg(MSG_NEWS_SUB_INFLATION_DOWN)));break;
-    }
+     events.push(new NewsEvent(EVENT_TAX_RETURN,"",getNewsMsg(MSG_NEWS_HEAD_TAX_RETURN),getNewsMsg(MSG_NEWS_SUB_TAX_RETURN)));
   }
 }
 

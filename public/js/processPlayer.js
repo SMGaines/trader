@@ -487,7 +487,7 @@ function closeRegistration()
 function showRegistrationError(error)
 {
 	if (error == REG_PLAYER_EXISTS)
-		document.getElementById("regStatus").innerHTML=(myPlayer.lang==LANG_EN?"Player name in use":"Nazwa gracza w użyciu");
+		document.getElementById("regStatus").innerHTML="Player name in use";
 	else
 		document.getElementById("regStatus").innerHTML=(myPlayer.lang==LANG_EN?"Name must be between 3 and 8 chars":"Nazwa musi zawierać od 3 do 8 znaków");
 }

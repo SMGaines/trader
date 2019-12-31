@@ -691,26 +691,26 @@ setupInsider = function(insiderPlayerName)
   if (gameOver())
   {
     log("setupInsider ignored - game over");
-    return;
+    return null;
   }
   log("setupInsider: "+insiderPlayerName+" asking for Insider information");
   var insiderPlayer=getPlayer(insiderPlayerName);
   if (insiderPlayer.prisonDaysRemaining > 0)
   {
     insiderPlayer.status=getPlayerStatusMsg(MSG_IN_PRISON,insiderPlayer.lang);
-    return;
+    return null;
   }
   if (insiderPlayer.cash < INSIDER_FEE)
   {
     insiderPlayer.status = getPlayerStatusMsg(MSG_CANNOT_AFFORD_INSIDER,insiderPlayer.lang,formatMoney(INSIDER_FEE));
-    return;
+    return null;
   }
 
   var upcomingEvent = events.findUpcomingEvent(gameDate,INSIDER_LOOKAHEAD_MONTHS);
   if (upcomingEvent == null)
   {
     insiderPlayer.status=getPlayerStatusMsg(MSG_NO_INTERESTING_EVENTS,insiderPlayer.lang);
-    return;
+    return null;
   }
   insiderPlayer.status=getInsiderEventPlayerStatus(upcomingEvent,insiderPlayer.lang);
   
@@ -718,6 +718,8 @@ setupInsider = function(insiderPlayerName)
   removeCash(insiderPlayer,INSIDER_FEE);
   insiderPlayer.numInsiderDeals++;
   insiderPlayer.lastInsiderTradeDate=new Date(gameDate); 
+  if (insiderPlayerName == EINSTEIN) // No advantage - just allows Einstein to parse event more easily
+    return upcomingEvent;
 }
 exports.setupInsider = setupInsider;
 
@@ -832,8 +834,17 @@ processEinstein=function()
   var p = getPlayer(EINSTEIN);
   
   var worstPerformingStockIndex = findWorstPerformingStockIndex(p);
-  if (p.beingHacked && p.cash > 20000)
+  var bestPerformingStockIndex = findBestPerformingStockIndex(p);
+  var interestingStockIndex = findInterestingStockIndex(p);
+  if (p.beingHacked && p.cash > 50000)
     suspectHacker(EINSTEIN,chooseRandomPlayer(EINSTEIN).name);
+  else if (p.numInsiderDeals == 0)
+  {
+    var insiderEvent = setupInsider(EINSTEIN);
+    if (insiderEvent == null)
+      return;
+    processInsiderEvent(p,insiderEvent);
+  }
   else if (worstPerformingStockIndex !=-1)
   {
     var worstStockName=stocks[worstPerformingStockIndex].name;
@@ -841,22 +852,24 @@ processEinstein=function()
     log(EINSTEIN+": "+getPlayer(EINSTEIN).status);
     return;
   }
-  
-  var bestPerformingStockIndex = findBestPerformingStockIndex(p);
-  if (bestPerformingStockIndex !=-1)
+  else if (bestPerformingStockIndex !=-1)
   {
     buyStock(EINSTEIN,stocks[bestPerformingStockIndex].name,1000);
     log(EINSTEIN+": "+getPlayer(EINSTEIN).status);
     return;
   }
+  else if (interestingStockIndex !=-1)
+  {
+    buyStock(EINSTEIN,stocks[interestingStockIndex].name,1000);
+    log(EINSTEIN+": "+getPlayer(EINSTEIN).status);
+    return;
+  }   
   else if (p.cash < 20000 && p.hacking==NO_PLAYER)
   {
     var playerToHackIndex=choosePlayerToHack(EINSTEIN);
     if (playerToHackIndex !=-1)
       setupHack(EINSTEIN,players[playerToHackIndex].name);
   }
-  else if (p.numInsiderDeals == 0)
-    setupInsider(EINSTEIN);
 }
     
 findWorstPerformingStockIndex = function(p)
@@ -874,6 +887,32 @@ findWorstPerformingStockIndex = function(p)
   return worstIndex;
 }
 
+processInsiderEvent=function(p,event)
+{
+  switch(event.type)
+  {
+    case EVENT_CRASH:
+      if (p.getStockHolding(event.stockName) > 0)
+        sellStock(EINSTEIN,event.stockName,p.getStockHolding(event.stockName));
+      log(EINSTEIN+"(sold based on Insider info): "+getPlayer(EINSTEIN).status);
+      break;
+    case EVENT_BOOM:
+      buyStock(EINSTEIN,event.stockName,1000);
+      break;
+    case EVENT_CRASH_ALL_STOCKS:
+       break;
+    case EVENT_BOOM_ALL_STOCKS:
+      break; 
+    case EVENT_STOCK_SUSPENDED:
+      if (p.getStockHolding(event.stockName) > 0)
+        sellStock(EINSTEIN,event.stockName,p.getStockHolding(event.stockName));
+      log(EINSTEIN+"(sold based on Insider info): "+getPlayer(EINSTEIN).status);
+      break;
+    case EVENT_TAX_RETURN:
+      break;
+  }
+}
+
 findBestPerformingStockIndex = function(p)
 {
   var bestTrend = -100;
@@ -881,6 +920,21 @@ findBestPerformingStockIndex = function(p)
   for (var i=0;i<stocks.length;i++)
   {
     if (stocks[i].available > 0 && stocks[i].trend > 0 && stocks[i].price < 300 && stocks[i].trend > bestTrend)
+    {
+      bestTrend=stocks[i].trend;
+      bestIndex=i;
+    }
+  }
+  return bestIndex;
+}
+
+findInterestingStockIndex = function(p)
+{
+  var bestTrend = -100;
+  var bestIndex=-1;
+  for (var i=0;i<stocks.length;i++)
+  {
+    if (stocks[i].available > 0 && stocks[i].price < 50 && stocks[i].trend > bestTrend)
     {
       bestTrend=stocks[i].trend;
       bestIndex=i;

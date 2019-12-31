@@ -36,6 +36,7 @@ var stk =require("./stock.js");
 var player = require('./player.js');
 var events = require('./events.js');
 var msgs = require("./messages.js");
+var utils = require("./utils.js");
 
 var stocks = [];
 var players=[];
@@ -45,7 +46,7 @@ var interestRate;
 var inflationRate;
 var gameDate;
 var gameEndDate;
-var weHaveAMillionnaire;
+var instantWinner;
 var numActiveStocks;
 
 exports.init = function(gameDurationInMonths,gameLang)
@@ -54,7 +55,7 @@ exports.init = function(gameDurationInMonths,gameLang)
   gameEndDate=new Date(gameDate);
   gameEndDate.setMonth(gameDate.getMonth()+gameDurationInMonths);
   log("Game ends on: "+gameEndDate);
-  weHaveAMillionnaire=false;
+  instantWinner=false;
   setupStock();
   events.setupEvents(gameDate,gameDurationInMonths,stocks,getLanguageIndex(gameLang)); // eg convert "EN" to a number (0)
   startRegistration();
@@ -106,7 +107,7 @@ exports.nextDay = function()
       solventIndex=i;
     }
     if (players[i].netWorth > 1000000)
-      weHaveAMillionnaire=true;
+      instantWinner=true;
     if (players[i].prisonDaysRemaining > 0)
     {
       players[i].prisonDaysRemaining--;
@@ -124,6 +125,7 @@ exports.nextDay = function()
   if (numSolvent == 1)
   {
     console.log("One player left: "+players[solventIndex].name);
+    instantWinner=true;
     return;
   }
   for (var i=0;i<stocks.length;i++)
@@ -161,7 +163,7 @@ adjustRates=function()
 
 gameOver = function()
 {
-  return gameDate >= gameEndDate || weHaveAMillionnaire;
+  return gameDate >= gameEndDate || instantWinner;
 }
 exports.gameOver = gameOver;
 
@@ -233,37 +235,6 @@ getStockSummary = function ()
     stockSummary.push(stocks[i].getSummary());
   }
   return stockSummary;
-}
-
-getPlayerStatusMsg=function(msgType,lang,argX,argY,argZ)
-{
-  var msg =msgType[lang];
-  if (argX !== undefined) msg=msg.replace("$x",argX);
-  if (argY !== undefined) msg=msg.replace("$y",argY);
-  if (argZ !== undefined) msg=msg.replace("$z",argZ);
-  return msg;
-}
-
-getInsiderEventPlayerStatus = function(event,lang)
-{
-  var interestingEventDate = getMonthYear(event.date);
-  switch(event.type)
-  {
-    case EVENT_CRASH: return getPlayerStatusMsg(MSG_EVENT_STOCK_CRASH,lang,event.stockName,interestingEventDate);
-    case EVENT_BOOM: return getPlayerStatusMsg(MSG_EVENT_STOCK_BOOM,lang,event.stockName,interestingEventDate);
-    case EVENT_CRASH_ALL_STOCKS: return getPlayerStatusMsg(MSG_EVENT_STOCK_MARKET_CRASH,lang,interestingEventDate);
-    case EVENT_BOOM_ALL_STOCKS: return getPlayerStatusMsg(MSG_EVENT_STOCK_MARKET_BOOM,lang,interestingEventDate);
-    case EVENT_STOCK_IPO:return getPlayerStatusMsg(MSG_EVENT_STOCK_IPO,lang,interestingEventDate);
-    case EVENT_STOCK_RELEASE: return getPlayerStatusMsg(MSG_EVENT_EXTRA_STOCK,lang,event.stockName,interestingEventDate);
-    case EVENT_STOCK_DIVIDEND: return getPlayerStatusMsg(MSG_EVENT_STOCK_DIVIDEND,lang,event.stockName,interestingEventDate);
-    case EVENT_STOCK_SUSPENDED: return getPlayerStatusMsg(MSG_EVENT_STOCK_SUSPENDED,lang,event.stockName,interestingEventDate);
-    default: log("setupInsider: Unknown event type: "+event.type);return "";
-  }
-}
-
-function getMonthYear(aDate)
-{
-    return aDate.toLocaleString('default', { month: 'long' }) + " "+aDate.getFullYear();
 }
 
 exports.updatePrices = function()
@@ -348,23 +319,6 @@ function sellAllPlayerStock(player)
       player.sellStock(stockHolding.name,stockHolding.amount);
     }
   });
-}
-
-function getRandomFactor()
-{
-  return 3*(Math.random()-Math.random());
-}
-
-function getRiskMultiplier(riskiness)
-{
-    switch(riskiness)
-    {
-        case RISK_NONE: return 1;
-        case RISK_LOW: return 1.1;
-        case RISK_MEDIUM: return 1.3;
-        case RISK_HIGH: return 1.5;
-        case RISK_CRAZY: return 2;
-    }
 }
 
 sellStock = function(playerName,stockName,amount)
@@ -484,14 +438,8 @@ buyStock = function(playerName,stockName,amount)
 }
 exports.buyStock = buyStock;
 
-function roundStock(amount)
-{
-  return STOCK_INCREMENT*Math.floor(amount/STOCK_INCREMENT);
-}
-
 exports.processNews = function()
 {
-  log("processNews");
   var newsEvent;
   if (gameOver())
   {
@@ -500,6 +448,7 @@ exports.processNews = function()
   newsEvent=events.getNewsEvent(gameDate);
   if (newsEvent != null)
   {
+    log("processNews: "+newsEvent.headline+"/"+newsEvent.stockName);
     switch(newsEvent.type)
     {
       case EVENT_NONE:
@@ -737,12 +686,6 @@ function checkHackers()
     });
 }
 
-function formatMoney(amount)
-{
-    const formatter = new Intl.NumberFormat('en-US', {style: 'currency',currency: 'USD',maximumFractionDigits: 0, minimumFractionDigits: 0});
-    return formatter.format(amount);
-}
-
 setupInsider = function(insiderPlayerName)
 {
   if (gameOver())
@@ -809,12 +752,6 @@ function checkInsiderTrading()
   });
 }
 
-function daysElapsed(nowDate,lastCrimeDate)
-{
-  const diffTime = Math.abs(nowDate - lastCrimeDate);
-  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-}
-
 function playerConvicted(player)
 {
   return player.numInsiderDeals > 1 && Math.random() < player.numInsiderDeals/300;
@@ -849,15 +786,6 @@ exports.registerPlayer = function(playerName,language)
   getPlayer(playerName).status=getPlayerStatusMsg(MSG_REGISTERED,getLanguageIndex(language));
 }
 
-getLanguageIndex=function(lang)
-{
-  if (lang == "EN")
-    return LANG_EN;
-  if (lang == "PL")
-    return LANG_PL;
-    return LANG_EN;
-}
-
 exports.validateNewPlayer=function(playerName)
 {
   if (playerName.length >= MIN_USERNAME_LENGTH && playerName.length <= MAX_USERNAME_LENGTH && isAlphaNumeric(playerName))
@@ -867,87 +795,98 @@ exports.validateNewPlayer=function(playerName)
   return REG_PLAYER_ERROR;
 }
 
-function isAlphaNumeric(str) 
-{
-  var code, i, len;
-
-  for (i = 0, len = str.length; i < len; i++) 
-  {
-    code = str.charCodeAt(i);
-    if (!(code > 47 && code < 58) && // numeric (0-9)
-        !(code > 64 && code < 91) && // upper alpha (A-Z)
-        !(code > 96 && code < 123)) { // lower alpha (a-z)
-      return false;
-    }
-  }
-  return true;
-}
-exports.registerBot = function(botName)
-{
-    var p = getPlayer(botName);
-    if (p == null)
-    {
-        log("addPlayer: Registering new BOT: "+botName);
-        players.push(new player.Player(botName,LANG_EN));
-        numBots++;
-    }
-    else
-        log("addPlayer: Player "+botName+" already exists - ignoring");
-}
-
 exports.processBots=function()
 {
-  if (numBots==0)
-    return;
-  var rndBotIndex = 1+Math.floor(numBots*Math.random());
-  var rndBotName = BOT_NAME_PREFIX+rndBotIndex;
-  var rndAmount = MIN_STOCK_PURCHASE*(1+Math.floor(Math.random()*20));
-  var rndStock=Math.floor(Math.random()*stocks.length);
-  var p = getPlayer(rndBotName);
-  var stockName=stocks[rndStock].name;
-  
-  if (p.getStockHolding(stockName) > 0 && stocks[rndStock].price > 50 && stocks[rndStock].trend < 0)
-    sellStock(rndBotName,stockName,rndAmount);
-  if (stocks[rndStock].trend > 0 || stocks[rndStock].price < 50)
-      buyStock(rndBotName,stockName,rndAmount);
-
-  if (Math.random() > .95 && p.hacking==NO_PLAYER)
-    setupHack(rndBotName,chooseRandomPlayer(rndBotName).name);
-  if (Math.random() > .95)
-    setupInsider(rndBotName);
-  if (p.beingHacked)
-    suspectHacker(rndBotName,chooseRandomPlayer(rndBotName).name);
-
-  if (p.status != "")
-    log(rndBotName+": "+getPlayer(rndBotName).status);
+  for (var i=0;i<players.length;i++)
+  {
+    if (players[i].name == EINSTEIN)
+      processEinstein();
+    else if (players[i].name.startsWith(BOT_NAME_PREFIX))
+      processBot(players[i]);
+  }
 }
 
-exports.processEinstein=function()
+processBot=function(bot)
 {
-  var botName = "EINSTEIN";
+  var rndAmount = MIN_STOCK_PURCHASE*(1+Math.floor(Math.random()*20));
   var rndStock=Math.floor(Math.random()*stocks.length);
-  var p = getPlayer(botName);
   var stockName=stocks[rndStock].name;
   
-  if (p.getStockHolding(stockName) > 0 && stocks[rndStock].price > 50 && stocks[rndStock].trend < 0)
-    sellStock(botName,stockName,p.getStockHolding(stockName));
-  if (stocks[rndStock].trend > 0 || stocks[rndStock].price < 50)
-      buyStock(botName,stockName,1000);
+  if (bot.getStockHolding(stockName) > 0 && stocks[rndStock].price > 50 && stocks[rndStock].trend < 0)
+    sellStock(bot.name,stockName,rndAmount);
+  else if (stocks[rndStock].trend > 0 || stocks[rndStock].price < 50)
+    buyStock(bot.name,stockName,rndAmount);
+  else if (Math.random() > .95 && bot.hacking==NO_PLAYER)
+    setupHack(bot.name,chooseRandomPlayer(bot.name).name);
+  else if (Math.random() > .95)
+    setupInsider(bot.name);
+  else if (bot.beingHacked)
+    suspectHacker(bot.name,chooseRandomPlayer(bot.name).name);
 
-  if (Math.random() > .95 && p.hacking==NO_PLAYER)
+  if (bot.status != "")
+    log(bot.name+": "+getPlayer(bot.name).status);
+}
+
+processEinstein=function()
+{
+  var p = getPlayer(EINSTEIN);
+  
+  var worstPerformingStockIndex = findWorstPerformingStockIndex(p);
+  if (p.beingHacked && p.cash > 20000)
+    suspectHacker(EINSTEIN,chooseRandomPlayer(EINSTEIN).name);
+  else if (worstPerformingStockIndex !=-1)
   {
-    var playerToHackIndex=choosePlayerToHack(botName);
-    if (playerToHackIndex !=-1)
-      setupHack(botName,players[playerToHackIndex].name);
+    var worstStockName=stocks[worstPerformingStockIndex].name;
+    sellStock(EINSTEIN,worstStockName,p.getStockHolding(worstStockName));
+    log(EINSTEIN+": "+getPlayer(EINSTEIN).status);
+    return;
   }
-   
-  if (Math.random() > .95)
-    setupInsider(botName);
-  if (p.beingHacked)
-    suspectHacker(botName,chooseRandomPlayer(botName).name);
+  
+  var bestPerformingStockIndex = findBestPerformingStockIndex(p);
+  if (bestPerformingStockIndex !=-1)
+  {
+    buyStock(EINSTEIN,stocks[bestPerformingStockIndex].name,1000);
+    log(EINSTEIN+": "+getPlayer(EINSTEIN).status);
+    return;
+  }
+  else if (p.cash < 20000 && p.hacking==NO_PLAYER)
+  {
+    var playerToHackIndex=choosePlayerToHack(EINSTEIN);
+    if (playerToHackIndex !=-1)
+      setupHack(EINSTEIN,players[playerToHackIndex].name);
+  }
+  else if (p.numInsiderDeals == 0)
+    setupInsider(EINSTEIN);
+}
+    
+findWorstPerformingStockIndex = function(p)
+{
+  var worstTrend = 100;
+  var worstIndex=-1;
+  for (var i=0;i<stocks.length;i++)
+  {
+    if (p.getStockHolding(stocks[i].name) > 0 && stocks[i].trend < 0 && stocks[i].price > 50 && stocks[i].trend < worstTrend)
+    {
+      worstTrend=stocks[i].trend;
+      worstIndex=i;
+    }
+  }
+  return worstIndex;
+}
 
-  if (p.status != "")
-    log(botName+": "+getPlayer(botName).status);
+findBestPerformingStockIndex = function(p)
+{
+  var bestTrend = -100;
+  var bestIndex=-1;
+  for (var i=0;i<stocks.length;i++)
+  {
+    if (stocks[i].available > 0 && stocks[i].trend > 0 && stocks[i].price < 300 && stocks[i].trend > bestTrend)
+    {
+      bestTrend=stocks[i].trend;
+      bestIndex=i;
+    }
+  }
+  return bestIndex;
 }
 
 chooseRandomPlayer=function(playerName)

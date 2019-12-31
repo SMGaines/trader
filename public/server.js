@@ -21,7 +21,10 @@ const CMD_GAME_ADDRESS="getgameaddress";
 const CMD_GAME_LANGUAGE="gamelanguage";
 const CMD_GET_GAME_LANGUAGE="getgamelanguage";
 
-const BOT_TIMER = 2000;
+const BOT_TIMER = 10000;
+
+global.EINSTEIN="EINSTEIN";
+global.BOT_NAME_PREFIX="BOT";
 
 var game = require('./js/game.js');
 var express = require('express');
@@ -53,7 +56,7 @@ app.get('/registrationComplete',function(req,res)
 
 app.get('/adminResponse',function(req,res)
 {
-    initialiseGame(req.query.gameMonths,req.query.dayDuration,req.query.numBots,req.query.gameLang);
+    initialiseGame(req.query.gameMonths,req.query.dayDuration,req.query.numBots,req.query.gameLang,req.query.einstein);
     res.sendFile(__dirname+'/registration.html');
 });
 
@@ -92,7 +95,7 @@ function getLocalIP()
  return addresses;
 }
 
-function initialiseGame(gameDuration,dayLength,numBots,aGameLang)
+function initialiseGame(gameDuration,dayLength,numBots,aGameLang,aEinstein)
 {
     gameLang=aGameLang;
     console.log("Server: Initialising: "+gameLang);
@@ -104,8 +107,13 @@ function initialiseGame(gameDuration,dayLength,numBots,aGameLang)
     state=STATE_REGISTRATION;
     for (var i=0;i<numBots;i++)
     {
-        game.registerBot(BOT_NAME_PREFIX+(i+1));
+        game.registerPlayer(BOT_NAME_PREFIX+(i+1),"EN");
         io.sockets.emit(CMD_REGISTERED,{msg:game.getPlayer(BOT_NAME_PREFIX+(i+1))});
+    }
+    if (aEinstein)
+    {
+        game.registerPlayer(EINSTEIN,"EN");
+        io.sockets.emit(CMD_REGISTERED,{msg:game.getPlayer(EINSTEIN)});
     }
 }
 

@@ -34,7 +34,7 @@ this.calcNetWorth=function(stocks)
     var netWorth = this.cash;
     for (var i=0;i<this.stocks.length;i++)
     {
-        netWorth += this.getPlayerStockValue(this.stocks[i].name,stocks);
+      netWorth += this.getPlayerStockValue(this.stocks[i].name,stocks);
     }
     return netWorth;
 }
@@ -44,8 +44,11 @@ this.getPlayerStockValue=function(stockName,stocks)
   for (var i=0;i<this.stocks.length;i++)
   {
     if (this.stocks[i].name == stockName)
+    {
       return this.stocks[i].amount*this.getStockPriceByName(stockName,stocks);
+    }
   }
+      
   return 0;
 }
 

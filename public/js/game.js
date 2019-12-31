@@ -28,7 +28,8 @@ const CRIME_EXPIRY_DAYS = 60;
 const BASE_LOTTERY_WIN = 50000;
 
 const RATE_ADJUST_INCREMENT = .15; // How quickly Interest and Inflation rates fluctuate
-
+const MAX_RATE = 8; // MAx Interest or Inflation rate
+const MIN_RATE=2;
 const TAX_PERCENTAGE=20;
 
 var stk =require("./stock.js");
@@ -86,6 +87,8 @@ isChristmas=function()
 
 exports.nextDay = function()
 {
+  var numSolvent=0;
+  var solventIndex=-1;
   for (var i=0;i<players.length;i++)
   {
     players[i].status="";
@@ -97,6 +100,11 @@ exports.nextDay = function()
      addCash(players[i],playerPresent);
      players[i].status=getPlayerStatusMsg(MSG_HAPPY_XMAS,players[i].lang,formatMoney(playerPresent));
     }
+    if (players[i].cash >=0)
+    {
+      numSolvent++;
+      solventIndex=i;
+    }
     if (players[i].netWorth > 1000000)
       weHaveAMillionnaire=true;
     if (players[i].prisonDaysRemaining > 0)
@@ -106,6 +114,18 @@ exports.nextDay = function()
         players[i].status = getPlayerStatusMsg(MSG_PRISON_RELEASE,players[i].lang);
     }
   }  
+
+  if (numSolvent == 0)
+  {
+    // All lose
+    console.log("ALL players lost");
+    return;
+  }
+  if (numSolvent == 1)
+  {
+    console.log("One player left: "+players[solventIndex].name);
+    return;
+  }
   for (var i=0;i<stocks.length;i++)
   {
     if (stocks[i].suspensionDays > 0)
@@ -127,16 +147,16 @@ exports.nextDay = function()
 adjustRates=function()
 {
   interestRate+=(-RATE_ADJUST_INCREMENT+Math.random()*2*RATE_ADJUST_INCREMENT);
-  if (interestRate < 1)
-    interestRate=1;
-  if (interestRate > 10)
-    interestRate=10;
+  if (interestRate < MIN_RATE)
+    interestRate=MIN_RATE;
+  if (interestRate > MAX_RATE)
+    interestRate=MAX_RATE;
 
   inflationRate+=(-RATE_ADJUST_INCREMENT+Math.random()*2*RATE_ADJUST_INCREMENT);
-  if (inflationRate < 1)
-    inflationRate=1;
-  if (inflationRate > 10)
-    inflationRate=10;
+  if (inflationRate < MIN_RATE)
+    inflationRate=MIN_RATE;
+  if (inflationRate > MAX_RATE)
+    inflationRate=MAX_RATE;
 }
 
 gameOver = function()
@@ -355,6 +375,12 @@ sellStock = function(playerName,stockName,amount)
     return;
   }
   var player = getPlayer(playerName);
+  if (player == null)
+  {
+    console.log("sellStock: Unknown player '"+playerName+"' - ignoring");
+    return;
+  }
+  
   if (player.prisonDaysRemaining > 0)
   {
     player.status=getPlayerStatusMsg(MSG_IN_PRISON,player.lang);
@@ -438,7 +464,8 @@ buyStock = function(playerName,stockName,amount)
       log("buyStock: "+playerName+" buys "+amount+" of "+stockName+" at "+formatMoney(buyPrice));
       removeCash(player,stockValue);
       stock.buy(amount);
-      player.status = getPlayerStatusMsg(MSG_SHARE_BUY,player.lang,amount,stockName,formatMoney(buyPrice));            
+      player.status = getPlayerStatusMsg(MSG_SHARE_BUY,player.lang,amount,stockName,formatMoney(buyPrice));   
+      log("buySTockDebug: "+player.status+"/"+player.cash);         
   }
   else
   {
@@ -449,7 +476,7 @@ buyStock = function(playerName,stockName,amount)
       return;
     }
     player.buyStock(stockName,affordableAmount,buyPrice);
-    log("buyStock: "+playerName+" buys "+amount+" of "+stockName+" at "+formatMoney(buyPrice));
+    log("buyStock(affordable): "+playerName+" buys "+affordableAmount+" of "+stockName+" at "+formatMoney(buyPrice));
     removeCash(player,affordableAmount*buyPrice);
     stock.buy(affordableAmount);
     player.status = getPlayerStatusMsg(MSG_SHARE_BUY,player.lang,affordableAmount,stockName,formatMoney(buyPrice));             
@@ -879,9 +906,9 @@ exports.processBots=function()
   var p = getPlayer(rndBotName);
   var stockName=stocks[rndStock].name;
   
-  if (p.getStockHolding(stockName) > 0 && stocks[rndStock].trend < 0)
+  if (p.getStockHolding(stockName) > 0 && stocks[rndStock].price > 50 && stocks[rndStock].trend < 0)
     sellStock(rndBotName,stockName,rndAmount);
-  if (stocks[rndStock].trend > 0)
+  if (stocks[rndStock].trend > 0 || stocks[rndStock].price < 50)
       buyStock(rndBotName,stockName,rndAmount);
 
   if (Math.random() > .95 && p.hacking==NO_PLAYER)
@@ -895,6 +922,34 @@ exports.processBots=function()
     log(rndBotName+": "+getPlayer(rndBotName).status);
 }
 
+exports.processEinstein=function()
+{
+  var botName = "EINSTEIN";
+  var rndStock=Math.floor(Math.random()*stocks.length);
+  var p = getPlayer(botName);
+  var stockName=stocks[rndStock].name;
+  
+  if (p.getStockHolding(stockName) > 0 && stocks[rndStock].price > 50 && stocks[rndStock].trend < 0)
+    sellStock(botName,stockName,p.getStockHolding(stockName));
+  if (stocks[rndStock].trend > 0 || stocks[rndStock].price < 50)
+      buyStock(botName,stockName,1000);
+
+  if (Math.random() > .95 && p.hacking==NO_PLAYER)
+  {
+    var playerToHackIndex=choosePlayerToHack(botName);
+    if (playerToHackIndex !=-1)
+      setupHack(botName,players[playerToHackIndex].name);
+  }
+   
+  if (Math.random() > .95)
+    setupInsider(botName);
+  if (p.beingHacked)
+    suspectHacker(botName,chooseRandomPlayer(botName).name);
+
+  if (p.status != "")
+    log(botName+": "+getPlayer(botName).status);
+}
+
 chooseRandomPlayer=function(playerName)
 {
   while(true)
@@ -903,6 +958,21 @@ chooseRandomPlayer=function(playerName)
     if (players[rndIndex].name != playerName)
       return players[rndIndex];
   }
+}
+
+choosePlayerToHack=function(playerName)
+{
+  var bestIndex = -1;
+  var best=-1;
+  for (var i=0;i<players.length;i++)
+  {
+    if (players[i].name != playerName && players[i].beingHacked==false && players[i].cash > best)
+    {
+      best=players[i].cash;
+      bestIndex=i;
+    }
+  }
+  return bestIndex;
 }
 
 log=function(msg)

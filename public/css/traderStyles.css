@@ -361,6 +361,31 @@ p{
   z-index: 9;
 }
 
+.rangeslider{ 
+    width: 90%; 
+} 
+  
+.myslider { 
+    -webkit-appearance: none; 
+    background: #4CAF50  ; 
+    width: 90%; 
+    height: 100px; 
+    opacity: 2; 
+   } 
+  
+  
+.myslider::-webkit-slider-thumb { 
+    -webkit-appearance: none; 
+    cursor: pointer; 
+    background: #90EE90  ; 
+    width: 10%; 
+    height: 100px; 
+} 
+  
+  
+.myslider:hover { 
+    opacity: 1; 
+} 
 /*________________________________________________________________________________________________________________________________*/
 /*MEDIAQUERIES*/
 @media only all and (max-width: 1300px) {

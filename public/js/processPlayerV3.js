@@ -53,7 +53,12 @@ socket.on(CMD_NEW_PRICES,function(data)
   var pricesInfo=data.msg;
   gameDate=new Date(pricesInfo.date);
   stocks=pricesInfo.stockSummary; 
-  updateStockButtons();
+  
+  if (numStocks != stocks.length) 
+  {
+    numStocks=stocks.length;
+    updateStockButtons();
+  }
 });
 
 socket.on(CMD_REGISTERED,function(data)
@@ -85,17 +90,23 @@ socket.on(CMD_ERROR,function(data)
 socket.on(CMD_PLAYER_LIST,function(data)
 {
   gameStarted=true;
-  if (myPlayer != null)
-    checkForTrades(data.msg);
-
-  players=data.msg;
-  myPlayer=findMyPlayer(players);
   if (myPlayer == null)
   {
     openStatusForm("Player not registered");
     return;
   }
-  else if (myPlayer.netWorth < 0)
+  
+  var tradeOccurred=checkForTrades(data.msg);
+
+  players=data.msg;
+  if (tradeOccurred)
+  {
+      document.getElementById("trade").play();
+      updateStockButtons();
+  }
+
+  myPlayer=findMyPlayer(players);
+  if (myPlayer.netWorth < 0)
   {
     openBankruptForm(myPlayer);
   }
@@ -206,9 +217,10 @@ function openTransactionForm(stockName)
     else
     {
         selectedStock=stockName;
+        amountMonitor=setInterval(lookForAmountChange,100);
         document.getElementById("selectedStock").innerHTML=selectedStock;
         document.getElementById("selectedStock").style.backgroundColor=getStockByName(selectedStock).colour;
-        document.getElementById("amountSelector").innerHTML="<input id='rangeAmount' type='range' step='50' min='50' max='"+MAX_STOCK+"' value='"+MAX_STOCK/2+"' class='myslider'";
+        document.getElementById("amountSelector").innerHTML="<input id='rangeAmount' type='range' step='50' min='50' max='"+MAX_STOCK+"' value='"+MAX_STOCK/2+"' class='myslider'/>";
         document.getElementById("stockAmount").innerHTML=MAX_STOCK/2;
         document.getElementById("transactionForm").style.display= "block";
     }
@@ -216,13 +228,10 @@ function openTransactionForm(stockName)
 
 function updateStockButtons()
 {
-    if (numStocks == stocks.length) // No need to update since no change
-        return;
-    numStocks=stocks.length;
     selectedStock=NONE;
     var tableBody = document.getElementById('mainTable').getElementsByTagName('tbody')[0];
     var newRow,newCell;
-
+    tableBody.innerHTML="";
     for (var i=0;i<stocks.length;i++)
     {
         if (i%2==0)
@@ -234,7 +243,7 @@ function updateStockButtons()
 
 function addStockButton(stock)
 {
-    return "<button class='veryLargeButton' style='color: white;font-size: 96px;background-color:"+ stock.colour+"; type='button' onclick='openTransactionForm(&quot;"+stock.name+"&quot;)'>"+
+    return "<button id='stockButton"+stock.name+"' class='veryLargeButton' style='color: white;font-size: 96px;background-color:"+ stock.colour+"; type='button' onclick='openTransactionForm(&quot;"+stock.name+"&quot;)'>"+
     getPlayerStockHolding(myPlayer,stock.name)+"</button>";
 }
 
@@ -253,6 +262,7 @@ function closeTransactionForm()
 // ********** END OF TRANSACTION FORM FUNCTIONS **********
 
 // ********** START OF SUSPECT FORM FUNCTIONS **********
+
 function openSuspectForm()
 {
     if (!gameStarted)
@@ -424,10 +434,10 @@ checkForTrades=function(newPlayers)
     
     if (getPlayerStockHolding(newMyPlayer,stockName) != getPlayerStockHolding(myPlayer,stockName))
     {
-      var traderAudio=document.getElementById("trade");     
-      traderAudio.play();
+      return true;
     }
   }
+  return false;
 }
 
 getPlayerStockHolding = function(player,stockName)

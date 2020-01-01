@@ -45,7 +45,7 @@ app.use('/audio',express.static(__dirname + '/audio'));
 
 app.get('/player',function(req,res)
 {
-    res.sendFile(__dirname+'/playerDisplay.html');
+    res.sendFile(__dirname+'/playerDisplayV3.html');
 });
 
 app.get('/registrationComplete',function(req,res)

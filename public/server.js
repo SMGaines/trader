@@ -45,13 +45,13 @@ app.use('/audio',express.static(__dirname + '/audio'));
 
 app.get('/player',function(req,res)
 {
-    res.sendFile(__dirname+'/playerDisplayV3.html');
+    res.sendFile(__dirname+'/playerDisplay.html');
 });
 
 app.get('/registrationComplete',function(req,res)
 {
     startGame();
-    res.sendFile(__dirname+'/mainDisplayV2.html');
+    res.sendFile(__dirname+'/mainDisplay.html');
 });
 
 app.get('/adminResponse',function(req,res)
@@ -110,7 +110,7 @@ function initialiseGame(gameDuration,dayLength,numBots,aGameLang,aEinstein)
         game.registerPlayer(BOT_NAME_PREFIX+(i+1),"EN");
         io.sockets.emit(CMD_REGISTERED,{msg:game.getPlayer(BOT_NAME_PREFIX+(i+1))});
     }
-    if (aEinstein)
+    if (aEinstein == "Yes")
     {
         game.registerPlayer(EINSTEIN,"EN");
         io.sockets.emit(CMD_REGISTERED,{msg:game.getPlayer(EINSTEIN)});

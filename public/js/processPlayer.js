@@ -36,19 +36,10 @@ var gameStarted;
 var gameDate;
 var policeAudioPlayed;
 var bankruptAudioPlayed;
+var selectedStock,selectedAmount;
+var amountMonitor;
 
 socket = io.connect();
-
-registerPlayer = function(playerName,lang)
-{
-  if (playerName != "" && playerName != null) 
-  {
-    setCookie(playerName);
-    myPlayerName=playerName;
-    console.log("Registering player: "+playerName);
-    socket.emit(CMD_REGISTER,playerName,lang);
-  }
- };
 
 socket.on(CMD_GAME_STARTED,function(data)
 {
@@ -62,6 +53,12 @@ socket.on(CMD_NEW_PRICES,function(data)
   var pricesInfo=data.msg;
   gameDate=new Date(pricesInfo.date);
   stocks=pricesInfo.stockSummary; 
+  
+  if (numStocks != stocks.length) 
+  {
+    numStocks=stocks.length;
+    updateStockButtons();
+  }
 });
 
 socket.on(CMD_REGISTERED,function(data)
@@ -70,47 +67,52 @@ socket.on(CMD_REGISTERED,function(data)
   if (newPlayer.name==myPlayerName)
   {
     myPlayer=newPlayer;
-    closeRegistration();
+    closeRegistrationForm();
     console.log("Registered");
-    showStatus(newPlayer.status);
-    setFieldLanguage(myPlayer.lang);
+    openStatusForm(newPlayer.status);
   }
 });
 
 socket.on(CMD_REGISTRATION_ERROR,function(data)
 {
-	var regError = data.msg;
-  console.log("Error in registration: "+regError);
-  showRegistrationError(regError);
+    var regError = data.msg;
+    console.log("Error in registration: "+regError);
+    openRegistrationErrorForm(regError);
 });
 
 socket.on(CMD_ERROR,function(data)
 {
   var msg=data.msg;
   console.log("Error: "+msg);
-  showStatus("Error: "+msg);
+  openStatusForm("Error: "+msg);
 });
 
 socket.on(CMD_PLAYER_LIST,function(data)
 {
   gameStarted=true;
-  if (myPlayer != null)
-    checkForTrades(data.msg);
-
-  players=data.msg;
-  myPlayer=findMyPlayer(players);
   if (myPlayer == null)
   {
-    showStatus("Player not registered");
+    openStatusForm("Player not registered");
     return;
   }
-  else if (myPlayer.netWorth < 0)
+  
+  var tradeOccurred=checkForTrades(data.msg);
+
+  players=data.msg;
+  if (tradeOccurred)
   {
-    showBankrupt(myPlayer);
+      document.getElementById("trade").play();
+      updateStockButtons();
+  }
+
+  myPlayer=findMyPlayer(players);
+  if (myPlayer.netWorth < 0)
+  {
+    openBankruptForm(myPlayer);
   }
   else if (myPlayer.prisonDaysRemaining > 0)
   {
-  	showPrison(myPlayer);
+    openPrisonForm(myPlayer);
   }
   else if (myPlayer.status != "")
   {
@@ -118,13 +120,304 @@ socket.on(CMD_PLAYER_LIST,function(data)
     {
       document.getElementById("xmas").play();
     }
-   showStatus(myPlayer.status);
+    openStatusForm(myPlayer.status);
   }
   if (myPlayer.allStockSold)
   {
     document.getElementById("allstocksold").play();
   }
 });
+
+init = function()
+{
+    console.log("Init");
+    numStocks=0;
+    numPlayers=0;
+    gameStarted=false;
+    policeAudioPlayed=false;
+    bankruptAudioPlayed=false;
+    openRegistrationForm(getStoredPlayerName());
+};
+
+registerPlayer = function(playerName,lang)
+{
+  if (playerName != "" && playerName != null) 
+  {
+    setCookie(playerName);
+    myPlayerName=playerName;
+    console.log("Registering player: "+playerName);
+    socket.emit(CMD_REGISTER,playerName,lang);
+  }
+};
+
+buy = function()
+{
+  closeTransactionForm();
+  console.log("Buying "+selectedAmount+" shares of "+selectedStock);
+  socket.emit(CMD_BUY_STOCK,myPlayer.name,selectedStock,selectedAmount);
+}
+
+sell = function()
+{
+    closeTransactionForm();
+    if (selectedStock == "NONE")
+        return;
+    console.log("Selling "+selectedAmount+" shares of "+selectedStock);
+    socket.emit(CMD_SELL_STOCK,myPlayer.name,selectedStock,selectedAmount);
+}
+
+insider = function()
+{    
+  document.getElementById("insider").play();
+  socket.emit(CMD_INSIDER,myPlayer.name);
+}
+
+hack = function()
+{
+    closeHackForm();
+    var hackedPlayerName = getHackedPlayerName();
+    if (hackedPlayerName == NONE)
+        return;
+    socket.emit(CMD_HACK,myPlayer.name,hackedPlayerName);
+}
+
+suspect = function()
+{
+    closeSuspectForm();
+    var suspectedPlayerName = getSuspectedPlayerName();
+    if (suspectedPlayerName == NONE)
+        return;
+    socket.emit(CMD_SUSPECT,myPlayer.name,suspectedPlayerName);
+}
+
+// ********** Start OF STATUS FORM FUNCTIONS **********
+
+function openStatusForm(statusMsg) 
+{
+  document.getElementById('playerStatus').innerHTML=statusMsg;
+  document.getElementById('statusForm').style.display= "block";
+}
+
+function closeStatusForm(statusMsg) 
+{
+  document.getElementById('statusForm').style.display= "none";
+}
+
+// ********** END OF STATUS FORM FUNCTIONS **********
+
+// ********** START OF TRANSACTION FORM FUNCTIONS **********
+
+function openTransactionForm(stockName)
+{
+    if (!gameStarted)
+        openStatusForm(myPlayer.lang==LANG_EN?"Game not started":"Gra się nie rozpoczęła");
+    else
+        if (myPlayer.prisonDaysRemaining > 0)
+            return;
+    else
+    {
+        selectedStock=stockName;
+        amountMonitor=setInterval(lookForAmountChange,100);
+        document.getElementById("selectedStock").innerHTML=selectedStock;
+        document.getElementById("selectedStock").style.backgroundColor=getStockByName(selectedStock).colour;
+        document.getElementById("amountSelector").innerHTML="<input id='rangeAmount' type='range' step='50' min='50' max='"+MAX_STOCK+"' value='"+MAX_STOCK/2+"' class='myslider'/>";
+        document.getElementById("stockAmount").innerHTML=MAX_STOCK/2;
+        document.getElementById("transactionForm").style.display= "block";
+    }
+}
+
+function updateStockButtons()
+{
+    selectedStock=NONE;
+    var tableBody = document.getElementById('mainTable').getElementsByTagName('tbody')[0];
+    var newRow,newCell;
+    tableBody.innerHTML="";
+    for (var i=0;i<stocks.length;i++)
+    {
+        if (i%2==0)
+            newRow=tableBody.insertRow();
+        newCell = newRow.insertCell();     
+        newCell.innerHTML =addStockButton(stocks[i]);
+    }
+}
+
+function addStockButton(stock)
+{
+    return "<button id='stockButton"+stock.name+"' class='stockButton' style='background-color:"+ stock.colour+"; type='button' onclick='openTransactionForm(&quot;"+stock.name+"&quot;)'>"+
+    getPlayerStockHolding(myPlayer,stock.name)+"</button>";
+}
+
+function lookForAmountChange()
+{
+  selectedAmount = parseInt(document.getElementById("rangeAmount").value);
+  document.getElementById("stockAmount").innerHTML = selectedAmount;
+}
+
+function closeTransactionForm()
+{
+    clearInterval(amountMonitor);
+	document.getElementById("transactionForm").style.display= "none";
+}
+
+// ********** END OF TRANSACTION FORM FUNCTIONS **********
+
+// ********** START OF SUSPECT FORM FUNCTIONS **********
+
+function openSuspectForm()
+{
+    if (!gameStarted)
+        openStatusForm(myPlayer.lang==LANG_EN?"Game not started":"Gra się nie rozpoczęła");
+    else
+	    if (myPlayer.prisonDaysRemaining > 0)
+		    return;
+    else
+    {
+        if (numPlayers != players.length)
+        {
+            updateHackFormPlayers(players);
+            numPlayers=players.length;
+        }  
+        document.getElementById('suspectPlayers').innerHTML=addSuspectPlayerDropDown();
+        document.getElementById('suspectForm').style.display= "block";
+    }
+}
+
+getSuspectedPlayerName = function(action)
+{
+    var dd = document.getElementById('suspectSelectPlayer');
+    return dd.options[dd.selectedIndex].value;
+}
+
+function addSuspectPlayerDropDown()
+{
+    return addPlayerDropDown("suspectSelectPlayer");
+}
+
+function closeSuspectForm()
+{
+	document.getElementById("suspectForm").style.display= "none";
+}
+
+// ********** END OF SUSPECT FORM FUNCTIONS **********
+
+// ********** START OF HACK FORM FUNCTIONS **********
+
+function openHackForm()
+{
+  if (!gameStarted)
+    openStatusForm(myPlayer.lang==LANG_EN?"Game not started":"Gra się nie rozpoczęła");
+  else
+	if (myPlayer.prisonDaysRemaining > 0)
+		return;
+  else
+  {
+    if (numPlayers != players.length)
+    {
+        document.getElementById('hackPlayers').innerHTML=addPlayerDropDown();
+        numPlayers=players.length;
+    }
+    document.getElementById('hackForm').style.display= "block";
+  }
+}
+
+function addHackPlayerDropDown(players)
+{
+    return addPlayerDropDown("hackSelectPlayer");
+}
+
+getHackedPlayerName = function(action)
+{
+    var dd = document.getElementById('hackSelectPlayer');
+    return dd.options[dd.selectedIndex].value;
+}
+
+function closeHackForm()
+{
+	document.getElementById("hackForm").style.display= "none";
+}
+
+// ********** START OF REGISTRATION FORM FUNCTIONS **********
+
+function openRegistrationForm(playerName)
+{
+  document.getElementById("regName").value= playerName;
+  document.getElementById("registrationForm").style.display= "block";
+}
+
+function processRegistrationForm()
+{
+    var nameInput=document.getElementById("regName").value;
+    var langInput=document.getElementById("regLang").value;
+	if (nameInput.length >=3 && nameInput.length <= 8)
+	{
+		document.getElementById("registrationForm").style.display= "none";
+		registerPlayer(nameInput,langInput);
+	}
+	else
+		openRegistrationErrorForm(0);
+}
+
+function closeRegistrationForm()
+{
+	document.getElementById("registrationForm").style.display= "none";
+}
+
+function openRegistrationErrorForm(error)
+{
+	if (error == REG_PLAYER_EXISTS)
+		document.getElementById("regStatus").innerHTML="Player name in use";
+	else
+		document.getElementById("regStatus").innerHTML=(myPlayer.lang==LANG_EN?"Name must be between 3 and 8 chars":"Nazwa musi zawierać od 3 do 8 znaków");
+}
+
+// ********** END OF REGISTRATION FORM FUNCTIONS **********
+
+// ********** START OF PRISON FORM FUNCTIONS **********
+
+function openPrisonForm(player)
+{
+  if(!policeAudioPlayed)
+  {
+    var policeAudio=document.getElementById("police");     
+    policeAudio.play();
+    policeAudioPlayed=true;
+  }
+  if (player.prisonDaysRemaining==1)
+  {
+    document.getElementById('prisonForm').style.display= "none";
+    policeAudioPlayed=false;
+    return;
+  }
+  document.getElementById('prisonReason').innerHTML = player.prisonReason;
+  document.getElementById('prisonStatus').innerHTML = (myPlayer.lang==LANG_EN?"Days left: ":"Pozostało Dni:")+(player.prisonDaysRemaining-1);
+  document.getElementById('prisonForm').style.display= "block";
+}
+
+function closePrisonForm()
+{
+	document.getElementById("prisonForm").style.display= "none";
+}
+
+// ********** END OF PRISON FORM FUNCTIONS **********
+
+// ********** START OF BANKRUPT FORM FUNCTIONS **********
+
+function openBankruptForm(player)
+{
+  if(!bankruptAudioPlayed)
+  {
+    var bankruptAudio=document.getElementById("bankrupt");     
+    bankruptAudio.play();
+    bankruptAudioPlayed=true;
+  }
+  
+  document.getElementById('bankruptStatus').innerHTML = (myPlayer.lang==LANG_EN?"BANKRUPT":"UPADŁY");
+  document.getElementById('bankruptForm').style.display= "block";
+}
+
+// ********** END OF BANKRUPT FORM FUNCTIONS **********
+
+// ********** START OF UTILITY FUNCTIONS **********
 
 isChristmas=function()
 {
@@ -141,10 +434,10 @@ checkForTrades=function(newPlayers)
     
     if (getPlayerStockHolding(newMyPlayer,stockName) != getPlayerStockHolding(myPlayer,stockName))
     {
-      var traderAudio=document.getElementById("trade");     
-      traderAudio.play();
+      return true;
     }
   }
+  return false;
 }
 
 getPlayerStockHolding = function(player,stockName)
@@ -157,69 +450,30 @@ getPlayerStockHolding = function(player,stockName)
   return 0;
 }
 
-init = function()
+function getStockByName(stockName)
 {
-    console.log("Init");
-    numStocks=0;
-    numPlayers=0;
-    gameStarted=false;
-    policeAudioPlayed=false;
-    bankruptAudioPlayed=false;
-    buildStatusForm();
-    buildPrisonForm();
-    buildBankruptForm();
-    buildRegistrationForm();
-    
-    openRegistration(getStoredPlayerName());
-};
-
-buy = function()
-{
-  closeForm('buyForm');
-  var stockName=getSelectedStockName('buy');
-  var numShares=getInputValue('buy');
-  console.log("Buying "+numShares+" shares of "+stockName);
-  socket.emit(CMD_BUY_STOCK,myPlayer.name,stockName,numShares);
+    for (var i=0;i<stocks.length;i++)
+    {
+        if (stocks[i].name == stockName)
+            return stocks[i];
+    }
+    return null;
 }
 
-sell = function()
+function addPlayerDropDown(selectID)
 {
-  closeForm('sellForm');
-  var stockName=getSelectedStockName('sell');
-  if (stockName == "NONE")
-    return;
-  var numShares=getInputValue('sell');
-  console.log("Selling "+numShares+" shares of "+stockName);
-  socket.emit(CMD_SELL_STOCK,myPlayer.name,stockName,numShares);
-}
-
-insider = function()
-{
-  console.log("Insider");
-  var insiderAudio=document.getElementById("insider");     
-  insiderAudio.play();
-
-  socket.emit(CMD_INSIDER,myPlayer.name);
-}
-
-hack = function()
-{
-  closeForm('hackForm');
-  var hackedPlayerName = getSelectedPlayerName('hack');
-  console.log("hack: "+hackedPlayerName);
-  if (hackedPlayerName == NONE)
-    return;
-  socket.emit(CMD_HACK,myPlayer.name,hackedPlayerName);
-}
-
-suspect = function()
-{
-  closeForm('suspectForm');
- 	var suspectedPlayerName = getSelectedPlayerName('suspect');
-  console.log("suspect: "+suspectedPlayerName);
-  if (suspectedPlayerName == NONE)
-    return;
-  socket.emit(CMD_SUSPECT,myPlayer.name,suspectedPlayerName);
+    var html = "<select class='veryLargeText' id='"+selectID+"'>";
+    html+= "<option value='"+NONE+"'>"+(myPlayer.lang==LANG_EN?"Select Player":"Wybierz gracza")+"</option>";
+    players.forEach(function(player)
+    {
+      if (player.name != myPlayer.name)
+      {
+         html+= "<option value = '"+player.name+"'>"+player.name+"</option>";
+      }
+    });
+   
+  html+="</select>";
+  return html;
 }
 
 findMyPlayer = function(players)
@@ -230,11 +484,6 @@ findMyPlayer = function(players)
       return players[i];
   }
   return null;
-}
-
-roundValue = function(amount)
-{
-    return amount.toFixed(2);
 }
 
 function setCookie(userName) 
@@ -267,290 +516,4 @@ function getCookie()
 function getStoredPlayerName() 
 {
   return getCookie(COOKIE_USER_PARAMETER);
-}
-
-function setFieldLanguage(lang)
-{
-  document.getElementById('buttonBuy').innerHTML=lang=="EN"?"Buy":"Kup";
-  document.getElementById('buttonSell').innerHTML=lang=="EN"?"Sell":"Sprzedaj";
-  document.getElementById('buttonHack').innerHTML=lang=="EN"?"Hack":"Zhakuj";
-  document.getElementById('buttonSuspect').innerHTML=lang=="EN"?"Suspect":"Podejrzewaj ";
-  document.getElementById('buttonInsider').innerHTML=lang=="EN"?"Insider":"Insider";
-}
-
-function showStatus(statusMsg) 
-{
-  document.getElementById('playerStatus').innerHTML=statusMsg;
-  document.getElementById('statusForm').style.display= "block";
-}
-
-function openForm(formName) 
-{
-  if (!gameStarted)
-    showStatus(myPlayer.lang==LANG_EN?"Game not started":"Gra się nie rozpoczęła");
-  else
-	if (myPlayer.prisonDaysRemaining > 0)
-		return;
-  else
-  {
-    // Only rebuild the forms if we have added new stocks or new players
-    if (numStocks != stocks.length)
-    {
-      buildStockForm('buy',stocks);
-      buildStockForm('sell',stocks);
-      numStocks = stocks.length;
-    }
-    if (numPlayers != players.length)
-    {
-      buildPlayerForm('hack',players);
-      buildPlayerForm('suspect',players);
-      numPlayers=players.length;
-    }
-    document.getElementById(formName).style.display= "block";
-  }
-}
-
-function closeForm(formName) 
-{
-  document.getElementById(formName).style.display = "none";
-}
-
-function addPlayerDropDown(action,players)
-{
-    var html = "<select class='veryLargeText' id='"+action+"SelectPlayer'>";
-    html+= "<option id='selectstock' value='"+NONE+"'>"+(myPlayer.lang==LANG_EN?"Select Player":"Wybierz gracza")+"</option>";
-    console.log("addPlayerDropDown: "+players.length+"/"+players);
-    players.forEach(function(player)
-    {
-      if (player.name != myPlayer.name)
-      {
-         html+= "<option id = '"+player.name+"' value = '"+player.name+"'>"+player.name+"</option>";
-      }
-    });
-   
-  html+="</select>";
-  return html;
-}
-
-function addStockDropDown(action,stocks)
-{
-    var html = "<select class='veryLargeText' id='"+action+"SelectStock'>";
-    html+= "<option id='selectstock' value='"+NONE+"'>"+(myPlayer.lang==LANG_EN?"Select Stock":"Wybierz Zapas")+"</option>";
-    stocks.forEach(function(stock)
-    {
-        html+= "<option id = '"+stock.name+"' value = '"+stock.name+"'>"+stock.name+"</option>";
-    });
-   
-  html+="</select>";
-  return html;
-}
-
-function getStockByName(stockName,stocks)
-{
-    for (var i=0;i<stocks.length;i++)
-    {
-      return stocks[i];
-    }
-    return null;
-}
-
-function inc(action)
-{
-  var currentAmount = getInputValue(action);
-  currentAmount+=STOCK_INCREMENT;
-  if (currentAmount > MAX_STOCK)
-    currentAmount=MAX_STOCK;
-  setInputValue(action,currentAmount);
-}
-
-function dec(action)
-{
-  var currentAmount = getInputValue(action);
-  if (currentAmount > STOCK_INCREMENT)
-    currentAmount-=STOCK_INCREMENT;
-  setInputValue(action,currentAmount);
-}
-
-function max(action)
-{
-  setInputValue(action,"MAX");
-}
-
-getInputValue = function(action)
-{
-  var inputValue=document.getElementById(action+"Amount").innerHTML;
-  if (inputValue == "MAX")
-    return MAX_STOCK;
-  else
-    return parseInt(inputValue);
-}
-
-setInputValue = function(action,val)
-{
-  if (val == MAX_STOCK)
-    document.getElementById(action+"Amount").innerHTML="MAX";
-  else
-    document.getElementById(action+"Amount").innerHTML=val;
-}
-
-getSelectedPlayerName = function(action)
-{
-    var dd = document.getElementById(action+'SelectPlayer');
-    return dd.options[dd.selectedIndex].value;
-}
-
-getSelectedStockName = function(action)
-{
-    var dd = document.getElementById(action+'SelectStock');
-    return dd.options[dd.selectedIndex].value;
-}
-
-function addEmptyRow()
-{
-  return "<TR height=50px></TR>";
-}
-
-function buildStockForm(action,stocks)
-{
-  var html="<TABLE align='center'>";
-  html+="<TR><TH>&nbsp;</TH><TH align='center' class='headerText'>"+action.charAt(0).toUpperCase() + action.slice(1)+"</TH></TR>";
-  html+=addEmptyRow();
-  html+="<TR><TH colspan='3'>"+addStockDropDown(action,stocks)+"</TH></TR>";
-  html+=addEmptyRow();
-  html+="<TR><TH>&nbsp;</TH><TH class='veryLargeText' id='"+action+"Amount'>"+STOCK_INCREMENT+"</TH><TH>&nbsp;</TH></TR>";
-  html+=addEmptyRow();
-  html+="<TR>";
-  html+="<TH><button class='veryLargeText' type='button' onclick='dec(&quot;"+action+"&quot;)' >-50</button></TH>";
-  html+="<TH><button class='veryLargeText' type='button' onclick='inc(&quot;"+action+"&quot;)' >+50</button></TH>";
-  html+="<TH><button class='veryLargeText' type='button' onclick='max(&quot;"+action+"&quot;)' >MAX</button></TH>";
-  html+="</TR>";
-  html+=addEmptyRow();
-  html+="<TR><TH colspan='3'><button class='veryLargeText' type='button' onclick='"+action+"()'>OK</button></TH></TR>";
-  html+="<TR><TH colspan='3'><button class='veryLargeText' type='button' onclick='closeForm(&quot;"+action+"Form&quot;)'>"+(myPlayer.lang==LANG_EN?"Cancel":"Anuluj")+"</button></TH></TR>";
-  html+="</TABLE>";
-  document.getElementById(action+'Form').innerHTML=html;
-}
-
-function buildPlayerForm(action,players)
-{
-  var html="<TABLE align='center'>";
-  html+="<TR><TH class='headerText'>"+action.charAt(0).toUpperCase() + action.slice(1)+"</TH></TR>";
-  html+=addEmptyRow();
-  html+="<TR><TH>"+addPlayerDropDown(action,players)+"</TH></TR>";
-  html+=addEmptyRow();
-  html+="<TR><TH><button class='veryLargeText' type='submit' onclick='"+action+"()'>OK</button></TH></TR>";
-  html+="<TR><TH><button class='largeText' type='button' onclick='closeForm(&quot;"+action+"Form&quot;)'>"+(myPlayer.lang==LANG_EN?"Cancel":"Anuluj")+"</button></TH></TR>";
-  html+="</TABLE>";
-  document.getElementById(action+'Form').innerHTML=html;
-}
-
-function buildRegistrationForm()
-{
-  var html="<TABLE align='center'>";
-  html+="<TR><TH class='headerText'>Register</TH></TR>";
-  html+=addEmptyRow();
-  html+="<TR><TH><input class='veryLargeText' id='regName' type='text' maxlength='8' size='8'/></TH></TR>"; 
-  html+=addEmptyRow();
-  html+= "<TR><TH><select class='veryLargeText' id='regLang'><option value='PL'>Polski</option><option value='EN'>English</option><option value='PL'>Polski</option></select></TH></TR>";
-  html+=addEmptyRow();
-  html+="<TR><TH><button class='veryLargeText' type='button' onclick='processRegistrationForm()'>OK</button></TH></TR>";
-  html+="<TR><TH class='veryLargeText' id='regStatus'></TH></TR>";
-  html+="</TABLE>";
-  document.getElementById("registrationForm").innerHTML=html;
-}
-
-function processRegistrationForm()
-{
-	var nameInput=document.getElementById("regName").value;
-  var langInput=document.getElementById("regLang").value;
-  console.log(langInput);
-	if (nameInput.length >=3 && nameInput.length <= 8)
-	{
-		document.getElementById("registrationForm").style.display= "none";
-		registerPlayer(nameInput,langInput);
-	}
-	else
-		showRegistrationError(0);
-}
-
-function openRegistration(playerName)
-{
-  document.getElementById("regName").value= playerName;
-  document.getElementById("registrationForm").style.display= "block";
-}
-
-function closeRegistration()
-{
-	document.getElementById("registrationForm").style.display= "none";
-}
-
-function showRegistrationError(error)
-{
-	if (error == REG_PLAYER_EXISTS)
-		document.getElementById("regStatus").innerHTML="Player name in use";
-	else
-		document.getElementById("regStatus").innerHTML=(myPlayer.lang==LANG_EN?"Name must be between 3 and 8 chars":"Nazwa musi zawierać od 3 do 8 znaków");
-}
-
-function buildStatusForm()
-{
-  var html="<TABLE align='center'>";
-  html+="<TR><TH class='headerText'>Status</TH></TR>";
-  html+=addEmptyRow();
-  html+="<TR><TH class='veryLargeText' id='playerStatus'>A</TH></TR>";
-  html+=addEmptyRow();
-  html+="<TR><TH><button class='veryLargeText' type='button' onclick='closeForm(&quot;statusForm&quot;)'>OK</button></TH></TR>";
-  html+="</TABLE>";
-  document.getElementById('statusForm').innerHTML=html;
-}
-
-function showPrison(player)
-{
-  if(!policeAudioPlayed)
-  {
-    var policeAudio=document.getElementById("police");     
-    policeAudio.play();
-    policeAudioPlayed=true;
-  }
-  if (player.prisonDaysRemaining==1)
-  {
-    document.getElementById('prisonForm').style.display= "none";
-    policeAudioPlayed=false;
-    return;
-  }
-  document.getElementById('prisonReason').innerHTML = player.prisonReason;
-  document.getElementById('prisonStatus').innerHTML = (myPlayer.lang==LANG_EN?"Days left: ":"Pozostało Dni:")+(player.prisonDaysRemaining-1);
-  document.getElementById('prisonForm').style.display= "block";
-}
-
-function buildPrisonForm()
-{
-  var html="<TABLE align='center'>";
-  html+="<TR><TH><img align='center' src='images/prison.jpg'/></TH></TR>";
-  html+="<TR><TH align='center' class='veryLargeText' id='prisonReason'></TH></TR>";
-  html+="<TR><TH align='center' class='veryLargeText' id='prisonStatus'></TH></TR>";
-  html+="</TABLE>";
-  document.getElementById('prisonForm').innerHTML=html;
-}
-
-function showBankrupt(player)
-{
-  if(!bankruptAudioPlayed)
-  {
-    var bankruptAudio=document.getElementById("bankrupt");     
-    bankruptAudio.play();
-    bankruptAudioPlayed=true;
-  }
-  
-  document.getElementById('bankruptStatus').innerHTML = (myPlayer.lang==LANG_EN?"BANKRUPT":"UPADŁY");
-  document.getElementById('bankruptForm').style.display= "block";
-}
-
-function buildBankruptForm()
-{
-  var html="<TABLE align='center'>";
-  html+="<TR><TH><img align='center' src='images/bankrupt.png'/></TH></TR>";
-  html+="<TR><TH align='center' class='veryLargeText' id='bankruptStatus'></TH></TR>";
-  html+="</TABLE>";
-  document.getElementById('bankruptForm').innerHTML=html;
 }

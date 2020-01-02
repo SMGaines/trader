@@ -419,7 +419,6 @@ buyStock = function(playerName,stockName,amount)
       removeCash(player,stockValue);
       stock.buy(amount);
       player.status = getPlayerStatusMsg(MSG_SHARE_BUY,player.lang,amount,stockName,formatMoney(buyPrice));   
-      log("buySTockDebug: "+player.status+"/"+player.cash);         
   }
   else
   {

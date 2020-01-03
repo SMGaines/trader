@@ -5,7 +5,7 @@ StockChart = function(canvas,stocks)
     this.canvas = canvas;
     this.ctx = this.canvas.getContext("2d");
     var self=this;
-    var xAxisIndent=35; // Allows for axis labelling
+    var xAxisIndent=90; // Allows for axis labelling
     var yAxisIndent=15;
     var axisMargin=5;
     fixDPI(this.canvas);
@@ -22,14 +22,15 @@ StockChart = function(canvas,stocks)
             self.ctx.strokeStyle = stocks[i].colour;
             self.ctx.lineWidth = 4;
             self.ctx.beginPath();
-            self.ctx.moveTo(axisMargin+1+xAxisIndent,canvas.height*(1-stockHistory[i*HISTORY_SIZE]/STOCK_MAX_VALUE)-yAxisIndent-axisMargin);
+            self.ctx.moveTo(axisMargin+10+xAxisIndent,canvas.height*(1-stockHistory[i*HISTORY_SIZE]/STOCK_MAX_VALUE)-yAxisIndent-axisMargin);
               
             for (var j=0;j<HISTORY_SIZE;j++)
             {
                 var stkValue = stockHistory[i*HISTORY_SIZE+j];
                 stkValue=Math.max(stkValue,STOCK_MIN_VALUE);
                 stkValue=Math.min(stkValue,STOCK_MAX_VALUE);
-                self.ctx.lineTo(axisMargin+1+xAxisIndent+j*(canvas.width-xAxisIndent-axisMargin)/HISTORY_SIZE,canvas.height*(1-stkValue/STOCK_MAX_VALUE)-yAxisIndent-axisMargin);
+                self.ctx.lineTo(axisMargin+10+xAxisIndent+j*(canvas.width-xAxisIndent-axisMargin)/HISTORY_SIZE,
+                                canvas.height*(1-stkValue/STOCK_MAX_VALUE)-yAxisIndent-axisMargin);
                 self.ctx.stroke();
             }
         };
@@ -38,7 +39,8 @@ StockChart = function(canvas,stocks)
     function drawStockGrid(ctx,width,height)
     {
         ctx.strokeStyle = "#4CAF50";
-        ctx.lineWidth = .5;
+        ctx.font="30px Courier";
+        ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(width-xAxisIndent,yAxisIndent);
         ctx.lineTo(width-xAxisIndent,height-yAxisIndent);
@@ -54,16 +56,12 @@ StockChart = function(canvas,stocks)
         ctx.lineTo(width-xAxisIndent,height-yAxisIndent);
         ctx.stroke();
 
+        ctx.strokeStyle="#FFFFFF";
+    
         for (var i=0;i<=STOCK_MAX_VALUE;i+=50) // y-axis shows increments of 50
         {
-            ctx.beginPath();
-            ctx.moveTo(width-xAxisIndent+5,Math.floor(height*(i/STOCK_MAX_VALUE)));
-            ctx.strokeText(STOCK_MAX_VALUE-i,width-25,Math.floor(height*(i/STOCK_MAX_VALUE))-yAxisIndent);
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.moveTo(xAxisIndent-20,height*(i/STOCK_MAX_VALUE));
+            ctx.strokeText(STOCK_MAX_VALUE-i,width-xAxisIndent+10,Math.floor(height*(i/STOCK_MAX_VALUE))-yAxisIndent);
             ctx.strokeText(STOCK_MAX_VALUE-i,15,height*(i/STOCK_MAX_VALUE)-yAxisIndent);
-            ctx.stroke();
         }
     }
 

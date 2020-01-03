@@ -287,17 +287,35 @@ p{
   margin: auto;
 }
 
-.largeText {
-    border-radius: 25px;
+.mainDisplayText {
     display: block;
-    background-color: #4CAF50;
     color: white;
-    font-size: 96px;
+    font-size: 40px;
     font-family: "Courier";
-    text-align: center;
     z-index: 10;
     margin: auto;
   }
+  
+  .mainHeaderText {
+    display: block;
+    color: #4CAF50;
+    font-size: 40px;
+    font-family: "Courier";
+    z-index: 10;
+    margin: auto;
+  }
+
+  .largeText {
+      border-radius: 25px;
+      display: block;
+      background-color: #4CAF50;
+      color: white;
+      font-size: 96px;
+      font-family: "Courier";
+      text-align: center;
+      z-index: 10;
+      margin: auto;
+    }
   
   .mediumText {
     border-radius: 25px;

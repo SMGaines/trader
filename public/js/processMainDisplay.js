@@ -1,5 +1,7 @@
 const GAME_TITLE = "TRADER v1.0";
 const FONT_SIZE = 40;
+const FONT_NAME = "courier";
+
 const STOCK_MIN_VALUE = 5;
 const STOCK_MAX_VALUE = 400;
  
@@ -35,6 +37,15 @@ var players = [];
 var stocks = [];
 var gameDate;
 var gameLang;
+
+init = function()
+{
+    console.log("ProcessMainDisplay: Initialising");
+    stockTicker=new StockTicker();
+    numStocks=0;
+    socket.emit(CMD_GET_GAME_LANGUAGE);
+    newspaperChart=new NewsPaperChart();
+};
 
 socket = io.connect();
 
@@ -87,61 +98,67 @@ socket.on(CMD_PLAYER_LIST,function(data)
     playerDisplay(players,stocks);
 });
 
-init = function()
-{
-    console.log("ProcessMainDisplay: Initialising");
-    stockTicker=new StockTicker();
-    numStocks=0;
-    socket.emit(CMD_GET_GAME_LANGUAGE);
-    newspaperChart=new NewsPaperChart();
-};
-
 var financialsDisplay = function(stocks)
 {
-    var thWidth = 100/stocks.length;
-    var html= "<TABLE align='center'>";
-    html+=addTR(addTH(addHeaderText(gameLang=="PL"?"Avail":"Avail")));
+    var tableBody = document.getElementById('stockAvailDisplay').getElementsByTagName('tbody')[0];
+    var newRow,newCell;
+    tableBody.innerHTML="";
     for (var i=0;i<stocks.length;i++)
     {
-        html+=addTR(addTH(addText(stocks[i].available,"courier",FONT_SIZE,stocks[i].suspensionDays > 0?"black":stocks[i].colour)));
+        newRow=tableBody.insertRow();
+        newCell = newRow.insertCell();    
+        newCell.innerHTML = createSpan(stocks[i].available,stocks[i].suspensionDays > 0?"black":stocks[i].colour);
     };
-    html+="</TABLE>"
-    document.getElementById('stockAvailDisplay').innerHTML=html;
 }
 
 var playerDisplay = function(players,stocks)
 {
-    var html= "<TABLE style='width:100%'>";
-    html+="<TR>";
-    html+=addTH(addHeaderText(gameLang=="PL"?"Gracz":"Player"));
-    html+=addTH(addHeaderText(gameLang=="PL"?"Gotówka":"Cash"));
-    html+=addTH(addHeaderText(gameLang=="PL"?"Wartość Netto":"Net Worth"));
-    html+="</TR>";
-
+    var tableBody = document.getElementById('leaderBoardTable').getElementsByTagName('tbody')[0];
+    var newRow,newCell;
+    tableBody.innerHTML="";
+ 
     var sortedPlayerList=sortOnNetWorth(players,stocks);
     for (var i=0;i<sortedPlayerList.length;i++)
     {
-        html+="<TR>";
         var player = sortedPlayerList[i];
+
+        newRow=tableBody.insertRow();
+        newCell = newRow.insertCell();  
+        newCell.style.width="40%";   
+        var col="white";
         if (player.prisonDaysRemaining > 0 && player.netWorth > 0)
-            html+=addTH(addText(player.name,"courier",FONT_SIZE,"black"));
+            col ="black";
         else if (player.beingHacked && player.netWorth > 0)
-            html+=addTH(addText(player.name,"courier",FONT_SIZE,"red"));
-        else
-            html+=addTH(addStandardText(player.name));
-         if (player.netWorth<0)
-            html+=addTH(addText(gameLang=="PL"?"UPADŁY":"BANKRUPT","courier",FONT_SIZE,"red"));
-        else
-            html+=addTHWithID("cash"+player.name,addStandardText(formatMoney(player.cash)));
+            col="red";
+        newCell.innerHTML = createSpan(player.name,col);
+
+        newCell = newRow.insertCell();     
+        newCell.style.width="30%";   
         if (player.netWorth<0)
-            html+=addTH(addText(gameLang=="PL"?"UPADŁY":"BANKRUPT","courier",FONT_SIZE,"red"));
+            newCell.innerHTML = createSpan("BANKRUPT","red");
         else
-            html+=addTH(addStandardText(formatMoney(player.netWorth)));
-        html+="</TR>";
+            newCell.innerHTML = createSpan(formatMoney(player.cash),"white");
+         
+        newCell = newRow.insertCell();     
+        newCell.style.width="30%";   
+        if (player.netWorth<0)
+            newCell.innerHTML = createSpan("BANKRUPT","red");
+        else
+            newCell.innerHTML = createSpan(formatMoney(player.netWorth),"white");
     };
-    html+="</TABLE>"
-    document.getElementById('leaderBoardDisplay').innerHTML=html;
 }
+
+function showFinancialData(aDate,interestRate,inflationRate)
+{
+    document.getElementById('gametitle').innerHTML=GAME_TITLE;
+    document.getElementById('gamedate').innerHTML=getLongDate(aDate,gameLang);
+    document.getElementById('interestRateHeader').innerHTML="Interest";
+    document.getElementById('inflationRateHeader').innerHTML="Inflation";
+    document.getElementById('interestRate').innerHTML=createSpan(interestRate.toFixed(1)+"%","white");
+    document.getElementById('inflationRate').innerHTML=createSpan(inflationRate.toFixed(1)+"%","white");
+}
+
+// Utilities
 
 function sortOnNetWorth(players)
 {
@@ -172,46 +189,9 @@ function sortOnNetWorth(players)
     return sortedPlayerList;
 }
 
-// Utilities
-
-function getMonthYear(aDate)
+function createSpan(text,colour)
 {
-    return aDate.toLocaleString('default', { month: 'long' }) + " "+aDate.getYear();
-}
-
-function addTH(text)
-{
-    return "<TH>"+text+"</TH>";
-}
-
-function addTHWithID(id,text)
-{
-    return "<TH id='"+id+"'>"+text+"</TH>";
-}
-
-function addTR(text)
-{
-    return "<TR>"+text+"</TR>";
-}
-
-function addStockText(text,risingPrice)
-{
-    return addText(text,"courier",FONT_SIZE,risingPrice?"#00FF00":"#FF0000");
-}
-
-function addStandardText(text)
-{
-    return addText(text,"courier",FONT_SIZE,"white");
-}
-
-function addHeaderText(text)
-{
-    return addText(text,"courier",FONT_SIZE,"#4CAF50");
-}
-
-function addText(text,fontName,fontSize,fontColour)
-{
-    return "<font  style='font-size:"+fontSize+"px' color='"+fontColour+"' face='"+fontName+"'>"+text+"</font>";
+    return "<span class='mainDisplayText' style='color:"+colour+"'>"+text+"</span>";
 }
 
 function formatMoney(amount)
@@ -220,29 +200,8 @@ function formatMoney(amount)
     return formatter.format(amount);
 }
 
-function roundValue(amount)
-{
-    return Math.round(amount * 100) / 100;
-}
-
-function stocksReady()
-{
-    return Array.isArray(stocks) && stocks.length;
-}
-
 function getLongDate(aDate,lang)
 {
     var options = {year: 'numeric', month: 'long', day: 'numeric' };
     return aDate.toLocaleDateString(lang=="PL"?"PL":"en-US", options);
-}
-
-function showFinancialData(aDate,interestRate,inflationRate)
-{
-    var dateToday = getLongDate(aDate,gameLang);
-    document.getElementById('gametitle').innerHTML=addHeaderText(GAME_TITLE);
-    document.getElementById('gamedate').innerHTML=addStandardText(dateToday);
-    document.getElementById('interestRateHeader').innerHTML=addHeaderText((gameLang=="PL"?"Oprocentowanie":"Interest"));
-    document.getElementById('inflationRateHeader').innerHTML=addHeaderText((gameLang=="PL"?"Inflacja":"Inflation"));
-    document.getElementById('interestRate').innerHTML=addStandardText(interestRate.toFixed(1)+"%");
-    document.getElementById('inflationRate').innerHTML=addStandardText(inflationRate.toFixed(1)+"%");
 }

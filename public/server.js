@@ -2,6 +2,8 @@ const STATE_INITIALISING = 0;
 const STATE_REGISTRATION = 1;
 const STATE_STARTED = 2;
 
+const MIN_GAME_ID=10000;
+
 const CMD_NEW_PRICES="newprices";
 const CMD_NEWS_EVENT="newsevent";
 const CMD_SELL_STOCK="sellstock";
@@ -37,6 +39,7 @@ var state;
 var dayTimer,botTimer;
 var dayDuration;
 var gameLang;
+var gameID;
 
 app.use('/css',express.static(__dirname + '/css'));
 app.use('/js',express.static(__dirname + '/js'));
@@ -98,7 +101,8 @@ function getLocalIP()
 function initialiseGame(gameDuration,dayLength,numBots,aGameLang,aEinstein)
 {
     gameLang=aGameLang;
-    console.log("Server: Initialising: "+gameLang);
+    gameID=MIN_GAME_ID+9*Math.floor(MIN_GAME_ID*Math.random());
+    console.log("Server: Initialising: "+gameLang+"/"+gameID);
     state=STATE_INITIALISING;
     dayDuration=dayLength*1000;
     game.init(gameDuration,gameLang);
@@ -187,7 +191,7 @@ function sendPlayerList()
 
 io.on('connection',function(socket)
 {
-    socket.on(CMD_REGISTER,function(playerName,lang)
+    socket.on(CMD_REGISTER,function(playerName,lang,aGameID)
     {
         if (state == STATE_REGISTRATION)
         {
@@ -196,20 +200,19 @@ io.on('connection',function(socket)
             {
                 console.log("Server: New player registered: "+playerName+"("+lang+")");
                 game.registerPlayer(playerName,lang);
-                io.sockets.emit(CMD_REGISTERED,{msg:game.getPlayer(playerName)});
+                io.sockets.emit(CMD_REGISTERED,{msg:gameID});
             }
             else
                 io.sockets.emit(CMD_REGISTRATION_ERROR,{msg:regStatus});
         }
         else if (state == STATE_STARTED)
         {
-            var aPlayer = game.getPlayer(playerName);
-            if (aPlayer != null)
+            if (game.getPlayer(playerName) != null && aGameID==gameID)
             {
                 console.log("Server: Ignoring player already registered: "+playerName);
             }
             else
-                io.sockets.emit(CMD_ERROR,{msg:"Game already in progress"});
+                io.sockets.emit(CMD_ERROR,{msg:"Player not registered for game: "+gameID});
         }
         else
             console.log("Ignoring registration attempt");
@@ -220,12 +223,14 @@ io.on('connection',function(socket)
         io.sockets.emit(CMD_GAME_LANGUAGE,{msg:gameLang});
     });
  
-    socket.on(CMD_BUY_STOCK,function(playerName,stockName,amount)
+    socket.on(CMD_BUY_STOCK,function(aGameID,playerName,stockName,amount)
     {
-        console.log("Server: buystock: "+playerName+"/"+stockName+"/"+amount);
-        game.buyStock(playerName,stockName,amount);
-        sendPlayerList();
-        //sendNewPrices();
+        console.log("Server: buystock: "+aGameID+"/"+playerName+"/"+stockName+"/"+amount);
+        if (game.getPlayer(playerName) != null && aGameID==gameID)
+        {
+            game.buyStock(playerName,stockName,amount);
+            sendPlayerList();
+        }
     });
 
     socket.on(CMD_GET_GAME_ADDRESS,function()
@@ -235,32 +240,43 @@ io.on('connection',function(socket)
         io.sockets.emit(CMD_GAME_ADDRESS,{msg:myIP[0]});
    });
 
-    socket.on(CMD_SELL_STOCK,function(playerName,stockName,amount)
+    socket.on(CMD_SELL_STOCK,function(aGameID,playerName,stockName,amount)
     {
-        console.log("Server: sellstock: "+playerName+"/"+stockName+"/"+amount);
-        game.sellStock(playerName,stockName,amount);
-        sendPlayerList();
-        //sendNewPrices();
+        console.log("Server: sellstock: "+aGameID+"/"+playerName+"/"+stockName+"/"+amount);
+        if (game.getPlayer(playerName) != null && aGameID==gameID)
+        {
+            game.sellStock(playerName,stockName,amount);
+            sendPlayerList();
+        }
    });    
 
-    socket.on(CMD_HACK,function(hackingPlayerName,hackedPlayerName)
+    socket.on(CMD_HACK,function(aGameID,hackingPlayerName,hackedPlayerName)
     {
         console.log("Server: hack of "+hackedPlayerName+" by "+hackingPlayerName);
-        game.setupHack(hackingPlayerName,hackedPlayerName);
-        sendPlayerList();
+        if (game.getPlayer(hackingPlayerName) != null && aGameID==gameID)
+        {
+            game.setupHack(hackingPlayerName,hackedPlayerName);
+            sendPlayerList();
+        }
    });
 
-    socket.on(CMD_SUSPECT,function(suspectingPlayerName,suspectedPlayerName)
+    socket.on(CMD_SUSPECT,function(aGameID,suspectingPlayerName,suspectedPlayerName)
     {
         console.log("Server: suspect: "+suspectingPlayerName+"/"+suspectedPlayerName);
-        game.suspectHacker(suspectingPlayerName,suspectedPlayerName);
-        sendPlayerList();
+        if (game.getPlayer(suspectingPlayerName) != null && aGameID==gameID)
+        {
+            game.suspectHacker(suspectingPlayerName,suspectedPlayerName);
+            sendPlayerList();
+        }
     });    
 
-    socket.on(CMD_INSIDER,function(insiderPlayerName)
+    socket.on(CMD_INSIDER,function(aGameID,insiderPlayerName)
     {
         console.log("Server: insider: "+insiderPlayerName);
-        game.setupInsider(insiderPlayerName);
-        sendPlayerList();
+        if (game.getPlayer(insiderPlayerName) != null && aGameID==gameID)
+        {
+            game.setupInsider(insiderPlayerName);
+            sendPlayerList();
+        }
     });
 });

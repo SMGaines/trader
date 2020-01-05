@@ -16,24 +16,45 @@
 		<audio id="allstocksold" preload="auto"> <source src="audio/allstocksold.mp3" type="audio/mpeg"/></audio>
         <audio id="xmas" preload="auto"> <source src="audio/xmas.mp3" type="audio/mpeg"/></audio>
     </div>
-    <TABLE id="mainTable" style="margin:auto;">
-        <THEAD style="margin:auto;">
-            <TR colspan='2'><TH class="headerText">TRADER v1.0</TH></TR>
-        </THEAD>
-        <TBODY>
-            <!--This is where the stock buttons will be inserted dynamically in processPlayer.js: updateStockButtons--> 
-        </TBODY>
-        <TFOOT style="margin:auto;">
-            <TR colspan='2'><TH><button id='buttonHack' class='veryLargeButton' onclick="openHackForm()">Hack</button></TH></TR>
-            <TR colspan='2'><TH><button id='buttonSuspect' class='veryLargeButton' onclick="openSuspectForm()">Suspect</button></TH></TR>
-            <TR colspan='2'><TH><button id='buttonInsider' class='veryLargeButton' onclick="insider()">Insider</button></TH></TR>
-        </TFOOT>
-	</TABLE>
+    <div style="border-radius: 25px;margin:auto;background-color:#003200;">
+        <span id="gameTitle" class='mainHeaderText'></span>
+    </div>
+    <div style='border-radius: 25px;margin:auto;border: 5px solid #003200; border-collapse: collapse;'>
+        <TABLE id="mainTable" style="margin:auto;">
+            <TBODY >
+                <TR>
+                    <TH id='stock0'><button class='stockButton' style='background-color:#4CAF50;' type='button'>&nbsp;</button></TH>
+                    <TH id='stock1'><button class='stockButton' style='background-color:#4CAF50;' type='button'>&nbsp;</button></TH>
+                </TR>
+                <TR>
+                    <TH id='stock2'><button class='stockButton' style='background-color:#4CAF50;' type='button'>&nbsp;</button></TH>
+                    <TH id='stock3'><button class='stockButton' style='background-color:#4CAF50;' type='button'>&nbsp;</button></TH>
+                </TR>
+                <TR>
+                    <TH id='stock4'><button class='stockButton' style='background-color:#4CAF50;' type='button'>&nbsp;</button></TH>
+                    <TH id='stock5'><button class='stockButton' style='background-color:#4CAF50;' type='button'>&nbsp;</button></TH>
+                </TR>
+            </TBODY>
+        </TABLE>
+    </div>
+    <div style='margin:auto;'>
+        <button id='buttonHack' class='veryLargeButton' onclick="openHackForm()">Hack</button>
+        <button id='buttonSuspect' class='veryLargeButton' onclick="openSuspectForm()">Suspect</button>
+        <button id='buttonInsider' class='veryLargeButton' onclick="insider()">Insider</button>
+    </div>
 	<div class='bigpopup' id='hackForm'>
         <TABLE style="margin:auto;">
-            <TR><TH class='headerText'>Hack</TH></TR>
+            <TR>
+                <TH>
+                    <span class='mainHeaderText'>Hack</span>
+                </TH>
+            </TR>
             <TR height=50px></TR>
-            <TR><TH id='hackPlayers'></TH></TR>
+            <TR>
+                <TH>
+                    <span id='hackPlayers' class='mainHeaderText'>Hack</span>
+                </TH>
+            </TR>
             <TR height=50px></TR>
             <TR><TH><button class='veryLargeText' type='submit' onclick="hack()">OK</button></TH></TR>
             <TR><TH><button class='largeText' type='button' onclick="closeHackForm()"></button></TH></TR>

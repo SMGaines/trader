@@ -1,5 +1,10 @@
+const GAME_NAME="TRADER";
+const GAME_VERSION="0.5";
+
 const COOKIE_EXPIRY_MS = 60*60*1000;
 const COOKIE_USER_PARAMETER = "username";
+const COOKIE_GAME_ID_PARAMETER = "gameid";
+
 const STOCK_INCREMENT = 50;
 const MAX_STOCK = 1000;
 const REG_PLAYER_EXISTS=1;
@@ -38,6 +43,7 @@ var policeAudioPlayed;
 var bankruptAudioPlayed;
 var selectedStock,selectedAmount;
 var amountMonitor;
+var gameID;
 
 socket = io.connect();
 
@@ -63,14 +69,18 @@ socket.on(CMD_NEW_PRICES,function(data)
 
 socket.on(CMD_REGISTERED,function(data)
 {
-  var newPlayer=data.msg;
+  gameID=data.msg;
+  setCookie(COOKIE_GAME_ID_PARAMETER,gameID);
+  document.getElementById("gameTitle").innerHTML= GAME_NAME+" "+GAME_VERSION+": "+ gameID;
+  openStatusForm(myPlayerName+" registered for game: "+gameID);
+  /*var newPlayer=data.msg;
   if (newPlayer.name==myPlayerName)
   {
     myPlayer=newPlayer;
     closeRegistrationForm();
     console.log("Registered");
     openStatusForm(newPlayer.status);
-  }
+  }*/
 });
 
 socket.on(CMD_REGISTRATION_ERROR,function(data)
@@ -90,22 +100,25 @@ socket.on(CMD_ERROR,function(data)
 socket.on(CMD_PLAYER_LIST,function(data)
 {
   gameStarted=true;
-  if (myPlayer == null)
-  {
-    openStatusForm("Player not registered");
-    return;
-  }
-  
-  var tradeOccurred=checkForTrades(data.msg);
+  var tradeOccurred=false;;
+  if (myPlayer != null)
+    tradeOccurred=checkForTrades(data.msg);
 
   players=data.msg;
-  if (tradeOccurred)
+  myPlayer=findMyPlayer(players);
+  if (myPlayer == null)
   {
-      document.getElementById("trade").play();
-      updateStockButtons();
+    console.log("Player not found: "+myPlayerName);
+    return;
   }
 
-  myPlayer=findMyPlayer(players);
+  if (tradeOccurred)
+  {
+    console.log("Trade occurred");
+    document.getElementById("trade").play();
+    updateStockButtons();
+  }
+  
   if (myPlayer.netWorth < 0)
   {
     openBankruptForm(myPlayer);
@@ -136,59 +149,9 @@ init = function()
     gameStarted=false;
     policeAudioPlayed=false;
     bankruptAudioPlayed=false;
-    openRegistrationForm(getStoredPlayerName());
+    gameID=getCookie(COOKIE_GAME_ID_PARAMETER);
+    openRegistrationForm();
 };
-
-registerPlayer = function(playerName,lang)
-{
-  if (playerName != "" && playerName != null) 
-  {
-    setCookie(playerName);
-    myPlayerName=playerName;
-    console.log("Registering player: "+playerName);
-    socket.emit(CMD_REGISTER,playerName,lang);
-  }
-};
-
-buy = function()
-{
-  closeTransactionForm();
-  console.log("Buying "+selectedAmount+" shares of "+selectedStock);
-  socket.emit(CMD_BUY_STOCK,myPlayer.name,selectedStock,selectedAmount);
-}
-
-sell = function()
-{
-    closeTransactionForm();
-    if (selectedStock == "NONE")
-        return;
-    console.log("Selling "+selectedAmount+" shares of "+selectedStock);
-    socket.emit(CMD_SELL_STOCK,myPlayer.name,selectedStock,selectedAmount);
-}
-
-insider = function()
-{    
-  document.getElementById("insider").play();
-  socket.emit(CMD_INSIDER,myPlayer.name);
-}
-
-hack = function()
-{
-    closeHackForm();
-    var hackedPlayerName = getHackedPlayerName();
-    if (hackedPlayerName == NONE)
-        return;
-    socket.emit(CMD_HACK,myPlayer.name,hackedPlayerName);
-}
-
-suspect = function()
-{
-    closeSuspectForm();
-    var suspectedPlayerName = getSuspectedPlayerName();
-    if (suspectedPlayerName == NONE)
-        return;
-    socket.emit(CMD_SUSPECT,myPlayer.name,suspectedPlayerName);
-}
 
 // ********** Start OF STATUS FORM FUNCTIONS **********
 
@@ -205,7 +168,23 @@ function closeStatusForm(statusMsg)
 
 // ********** END OF STATUS FORM FUNCTIONS **********
 
-// ********** START OF TRANSACTION FORM FUNCTIONS **********
+// ********** START OF TRANSACTION FUNCTIONS **********
+
+buy = function()
+{
+  closeTransactionForm();
+  console.log("Buying "+selectedAmount+" shares of "+selectedStock);
+  socket.emit(CMD_BUY_STOCK,gameID,myPlayer.name,selectedStock,selectedAmount);
+}
+
+sell = function()
+{
+    closeTransactionForm();
+    if (selectedStock == "NONE")
+        return;
+    console.log("Selling "+selectedAmount+" shares of "+selectedStock);
+    socket.emit(CMD_SELL_STOCK,gameID,myPlayer.name,selectedStock,selectedAmount);
+}
 
 function openTransactionForm(stockName)
 {
@@ -229,22 +208,20 @@ function openTransactionForm(stockName)
 function updateStockButtons()
 {
     selectedStock=NONE;
-    var tableBody = document.getElementById('mainTable').getElementsByTagName('tbody')[0];
-    var newRow,newCell;
-    tableBody.innerHTML="";
+    if (typeof stocks == 'undefined' || typeof myPlayer == 'undefined')
+      return;
     for (var i=0;i<stocks.length;i++)
     {
-        if (i%2==0)
-            newRow=tableBody.insertRow();
-        newCell = newRow.insertCell();     
-        newCell.innerHTML =addStockButton(stocks[i]);
+        stockCell=document.getElementById("stock"+i);
+        stockCell.innerHTML =addStockButton(stocks[i]);
     }
 }
 
 function addStockButton(stock)
 {
-    return "<button id='stockButton"+stock.name+"' class='stockButton' style='background-color:"+ stock.colour+"; type='button' onclick='openTransactionForm(&quot;"+stock.name+"&quot;)'>"+
-    getPlayerStockHolding(myPlayer,stock.name)+"</button>";
+  console.log("Stock "+stock.name+"="+getPlayerStockHolding(myPlayer,stock.name));
+  return "<button id='stockButton"+stock.name+"' class='stockButton' style='background-color:"+ stock.colour+"; type='button' onclick='openTransactionForm(&quot;"+stock.name+"&quot;)'>"+
+  getPlayerStockHolding(myPlayer,stock.name)+"</button>";
 }
 
 function lookForAmountChange()
@@ -261,7 +238,16 @@ function closeTransactionForm()
 
 // ********** END OF TRANSACTION FORM FUNCTIONS **********
 
-// ********** START OF SUSPECT FORM FUNCTIONS **********
+// ********** START OF SUSPECT FUNCTIONS **********
+
+suspect = function()
+{
+    closeSuspectForm();
+    var suspectedPlayerName = getSuspectedPlayerName();
+    if (suspectedPlayerName == NONE)
+        return;
+    socket.emit(CMD_SUSPECT,gameID,myPlayer.name,suspectedPlayerName);
+}
 
 function openSuspectForm()
 {
@@ -274,10 +260,9 @@ function openSuspectForm()
     {
         if (numPlayers != players.length)
         {
-            updateHackFormPlayers(players);
-            numPlayers=players.length;
+          document.getElementById('suspectPlayers').innerHTML=addSuspectPlayerDropDown();
+          numPlayers=players.length;
         }  
-        document.getElementById('suspectPlayers').innerHTML=addSuspectPlayerDropDown();
         document.getElementById('suspectForm').style.display= "block";
     }
 }
@@ -300,7 +285,16 @@ function closeSuspectForm()
 
 // ********** END OF SUSPECT FORM FUNCTIONS **********
 
-// ********** START OF HACK FORM FUNCTIONS **********
+// ********** START OF HACK FUNCTIONS **********
+
+hack = function()
+{
+    closeHackForm();
+    var hackedPlayerName = getHackedPlayerName();
+    if (hackedPlayerName == NONE)
+        return;
+    socket.emit(CMD_HACK,gameID,myPlayer.name,hackedPlayerName);
+}
 
 function openHackForm()
 {
@@ -313,14 +307,14 @@ function openHackForm()
   {
     if (numPlayers != players.length)
     {
-        document.getElementById('hackPlayers').innerHTML=addPlayerDropDown();
+        document.getElementById('hackPlayers').innerHTML=addHackPlayerDropDown();
         numPlayers=players.length;
     }
     document.getElementById('hackForm').style.display= "block";
   }
 }
 
-function addHackPlayerDropDown(players)
+function addHackPlayerDropDown()
 {
     return addPlayerDropDown("hackSelectPlayer");
 }
@@ -336,18 +330,43 @@ function closeHackForm()
 	document.getElementById("hackForm").style.display= "none";
 }
 
-// ********** START OF REGISTRATION FORM FUNCTIONS **********
+// ********** END OF HACK FORM FUNCTIONS **********
 
-function openRegistrationForm(playerName)
+// ********** START OF INSIDER FUNCTIONS **********
+
+insider = function()
+{    
+  document.getElementById("insider").play();
+  socket.emit(CMD_INSIDER,gameID,myPlayer.name);
+}
+
+// ********** END OF INSIDER FUNCTIONS **********
+
+// ********** START OF REGISTRATION FUNCTIONS **********
+
+registerPlayer = function(playerName,lang)
 {
-  document.getElementById("regName").value= playerName;
+  if (playerName != "" && playerName != null) 
+  {
+    setCookie(COOKIE_USER_PARAMETER,playerName);
+    myPlayerName=playerName;
+    console.log("Registering player: "+playerName);
+    socket.emit(CMD_REGISTER,playerName,lang,gameID);
+  }
+};
+
+function openRegistrationForm()
+{
+  var storedPlayerName=getCookie(COOKIE_USER_PARAMETER);
+ 
+  document.getElementById("regName").value= storedPlayerName;
   document.getElementById("registrationForm").style.display= "block";
 }
 
 function processRegistrationForm()
 {
-    var nameInput=document.getElementById("regName").value;
-    var langInput=document.getElementById("regLang").value;
+  var nameInput=document.getElementById("regName").value;
+  var langInput=document.getElementById("regLang").value;
 	if (nameInput.length >=3 && nameInput.length <= 8)
 	{
 		document.getElementById("registrationForm").style.display= "none";
@@ -442,6 +461,8 @@ checkForTrades=function(newPlayers)
 
 getPlayerStockHolding = function(player,stockName)
 {
+  if (typeof player == 'undefined' || player == null)
+    return 0;
   for (var i=0;i<player.stocks.length;i++)
   {
     if (player.stocks[i].name == stockName)
@@ -480,23 +501,23 @@ findMyPlayer = function(players)
 {
   for (var i=0;i<players.length;i++)
   {
-    if (players[i].name == myPlayer.name)
+    if (players[i].name == myPlayerName)
       return players[i];
   }
   return null;
 }
 
-function setCookie(userName) 
+function setCookie(name,value) 
 {
   var d = new Date();
   d.setTime(d.getTime() + COOKIE_EXPIRY_MS);
   var expires = "expires="+d.toUTCString();
-  document.cookie = COOKIE_USER_PARAMETER + "=" + userName + ";" + expires + ";path=/";
+  document.cookie = name + "=" + value + ";" + expires + ";path=/";
 }
 
-function getCookie() 
+function getCookie(name) 
 {
-  var name = COOKIE_USER_PARAMETER + "=";
+  var name = name + "=";
   var ca = document.cookie.split(';');
   for(var i = 0; i < ca.length; i++) 
   {
@@ -511,9 +532,4 @@ function getCookie()
     }
   }
   return "";
-}
-
-function getStoredPlayerName() 
-{
-  return getCookie(COOKIE_USER_PARAMETER);
 }

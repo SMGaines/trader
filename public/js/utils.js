@@ -78,9 +78,14 @@ getPlayerStatusMsg=function(msgType,lang,argX,argY,argZ)
   return msg;
 }
 
+getFormattedDate = function(aDate)
+{
+  return aDate.toLocaleDateString("en-US", {year: 'numeric', month: 'long', day: 'numeric' }); 
+}
+
 getInsiderEventPlayerStatus = function(event,lang)
 {
-  var interestingEventDate = getMonthYear(event.date);
+  var interestingEventDate = getFormattedDate(event.date);
   switch(event.type)
   {
     case EVENT_CRASH: return getPlayerStatusMsg(MSG_EVENT_STOCK_CRASH,lang,event.stockName,interestingEventDate);
@@ -91,6 +96,7 @@ getInsiderEventPlayerStatus = function(event,lang)
     case EVENT_STOCK_RELEASE: return getPlayerStatusMsg(MSG_EVENT_EXTRA_STOCK,lang,event.stockName,interestingEventDate);
     case EVENT_STOCK_DIVIDEND: return getPlayerStatusMsg(MSG_EVENT_STOCK_DIVIDEND,lang,event.stockName,interestingEventDate);
     case EVENT_STOCK_SUSPENDED: return getPlayerStatusMsg(MSG_EVENT_STOCK_SUSPENDED,lang,event.stockName,interestingEventDate);
+    case EVENT_STOCK_SPLIT: return getPlayerStatusMsg(MSG_EVENT_STOCK_SPLIT,lang,event.stockName,interestingEventDate);
     default: log("setupInsider: Unknown event type: "+event.type);return "";
   }
 }

@@ -27,7 +27,7 @@ const CRIME_EXPIRY_DAYS = 60;
 
 const BASE_LOTTERY_WIN = 50000;
 
-const RATE_ADJUST_INCREMENT = .15; // How quickly Interest and Inflation rates fluctuate
+const RATE_ADJUST_INCREMENT = .1; // How quickly Interest and Inflation rates fluctuate
 const MAX_RATE = 8; // MAx Interest or Inflation rate
 const MIN_RATE=2;
 const TAX_PERCENTAGE=20;
@@ -515,6 +515,20 @@ exports.processNews = function()
             player.status= getPlayerStatusMsg(MSG_DIVIDEND,player.lang,dividendAmount,newsEvent.stockName);
           }
         });
+        break;       
+      case EVENT_STOCK_SPLIT:
+        log("EVENT_STOCK_SPLIT: "+newsEvent.stockName);
+        players.forEach(function(player)
+        {
+          var playerStock = player.getStockHolding(newsEvent.stockName)
+          if (playerStock > 0) 
+          {
+            player.buyStock(newsEvent.stockName,playerStock*2,0);
+            player.status= getPlayerStatusMsg(MSG_SPLIT,player.lang,newsEvent.stockName);
+          }
+        });
+        getStock(newsEvent.stockName).price*=.5; // Split doubles the stock but halves the price
+        getStock(newsEvent.stockName).available*=2;
         break;       
       case EVENT_STOCK_SUSPENDED:
         getStock(newsEvent.stockName).price=0;

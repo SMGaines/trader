@@ -15,6 +15,7 @@ global.EVENT_STOCK_IPO =12;
 global.EVENT_STOCK_RELEASE = 13;
 global.EVENT_STOCK_DIVIDEND = 14;
 global.EVENT_STOCK_SUSPENDED = 15;
+global.EVENT_STOCK_SPLIT=16;
 
 global.AVERAGE_MONTH_LENGTH=30.5;
 
@@ -40,7 +41,7 @@ isGoodNews = function(type)
   return  (type == EVENT_NONE || type == EVENT_INTEREST_RATE_UP  || type==EVENT_INFLATION_RATE_DOWN ||
            type == EVENT_GAME_WINNER || type == EVENT_LOTTERY_WIN || type == EVENT_BOOM ||
            type == EVENT_BOOM_ALL_STOCKS || type == EVENT_STOCK_IPO || type == EVENT_STOCK_RELEASE ||
-           type == EVENT_STOCK_DIVIDEND);
+           type == EVENT_STOCK_DIVIDEND || type==EVENT_STOCK_SPLIT);
 }
 
 getNewsEvent = function(aDate)
@@ -135,33 +136,53 @@ function createMainEvents(stocks)
   events.push(new NewsEvent(EVENT_LOTTERY_WIN,"",getNewsMsg(MSG_NEWS_HEAD_LOTTERY),getNewsMsg(MSG_NEWS_SUB_LOTTERY)));
   events.push(new NewsEvent(EVENT_STOCK_IPO,"",getNewsMsg(MSG_NEWS_HEAD_IPO),getNewsMsg(MSG_NEWS_SUB_IPO)));
   events.push(new NewsEvent(EVENT_STOCK_IPO,"",getNewsMsg(MSG_NEWS_HEAD_IPO),getNewsMsg(MSG_NEWS_SUB_IPO)));
-  var rndStockID = Math.floor(Math.random()*stocks.length);
-  events.push(new NewsEvent(EVENT_STOCK_RELEASE,stocks[rndStockID].name,getNewsMsg(MSG_NEWS_HEAD_EXTRA_SHARES),getNewsMsg(MSG_NEWS_SUB_EXTRA_SHARES,stocks[rndStockID].name)));
-  rndStockID = Math.floor(Math.random()*stocks.length);
-  events.push(new NewsEvent(EVENT_STOCK_RELEASE,stocks[rndStockID].name,getNewsMsg(MSG_NEWS_HEAD_EXTRA_SHARES),getNewsMsg(MSG_NEWS_SUB_EXTRA_SHARES,stocks[rndStockID].name)));
-  rndStockID = Math.floor(Math.random()*stocks.length);
-  events.push(new NewsEvent(EVENT_STOCK_RELEASE,stocks[rndStockID].name,getNewsMsg(MSG_NEWS_HEAD_EXTRA_SHARES),getNewsMsg(MSG_NEWS_SUB_EXTRA_SHARES,stocks[rndStockID].name)));
-  rndStockID = Math.floor(Math.random()*stocks.length);
-  events.push(new NewsEvent(EVENT_STOCK_DIVIDEND,stocks[rndStockID].name,getNewsMsg(MSG_NEWS_HEAD_DIVIDEND),getNewsMsg(MSG_NEWS_SUB_DIVIDEND,stocks[rndStockID].name)));
-  rndStockID = Math.floor(Math.random()*stocks.length);
-  events.push(new NewsEvent(EVENT_STOCK_DIVIDEND,stocks[rndStockID].name,getNewsMsg(MSG_NEWS_HEAD_DIVIDEND),getNewsMsg(MSG_NEWS_SUB_DIVIDEND,stocks[rndStockID].name)));
-  rndStockID = Math.floor(Math.random()*stocks.length);
-  events.push(new NewsEvent(EVENT_STOCK_DIVIDEND,stocks[rndStockID].name,getNewsMsg(MSG_NEWS_HEAD_DIVIDEND),getNewsMsg(MSG_NEWS_SUB_DIVIDEND,stocks[rndStockID].name)));
+  var stockName= getRandomStock(stocks,"");
+  events.push(new NewsEvent(EVENT_STOCK_RELEASE,stockName,getNewsMsg(MSG_NEWS_HEAD_EXTRA_SHARES),getNewsMsg(MSG_NEWS_SUB_EXTRA_SHARES,stockName)));
+  stockName= getRandomStock(stocks,"");
+  events.push(new NewsEvent(EVENT_STOCK_RELEASE,stockName,getNewsMsg(MSG_NEWS_HEAD_EXTRA_SHARES),getNewsMsg(MSG_NEWS_SUB_EXTRA_SHARES,stockName)));
+  stockName= getRandomStock(stocks,"");
+  events.push(new NewsEvent(EVENT_STOCK_RELEASE,stockName,getNewsMsg(MSG_NEWS_HEAD_EXTRA_SHARES),getNewsMsg(MSG_NEWS_SUB_EXTRA_SHARES,stockName)));
+  stockName= getRandomStock(stocks,"");
+  events.push(new NewsEvent(EVENT_STOCK_DIVIDEND,stockName,getNewsMsg(MSG_NEWS_HEAD_DIVIDEND),getNewsMsg(MSG_NEWS_SUB_DIVIDEND,stockName)));
+  stockName= getRandomStock(stocks,"");
+  events.push(new NewsEvent(EVENT_STOCK_DIVIDEND,stockName,getNewsMsg(MSG_NEWS_HEAD_DIVIDEND),getNewsMsg(MSG_NEWS_SUB_DIVIDEND,stockName)));
+  stockName= getRandomStock(stocks,"");
+  events.push(new NewsEvent(EVENT_STOCK_DIVIDEND,stockName,getNewsMsg(MSG_NEWS_HEAD_DIVIDEND),getNewsMsg(MSG_NEWS_SUB_DIVIDEND,stockName)));
+  stockName= getRandomStock(stocks,"GOVT");
+  events.push(new NewsEvent(EVENT_STOCK_SUSPENDED,stockName,getNewsMsg(MSG_NEWS_HEAD_SUSPENDED,stockName),getNewsMsg(MSG_NEWS_SUB_SUSPENDED)));
+  stockName= getRandomStock(stocks,"GOVT");
+  events.push(new NewsEvent(EVENT_STOCK_SUSPENDED,stockName,getNewsMsg(MSG_NEWS_HEAD_SUSPENDED,stockName),getNewsMsg(MSG_NEWS_SUB_SUSPENDED)));
+  stockName=findHighestPriceStock(stocks);
+  events.push(new NewsEvent(EVENT_STOCK_SPLIT,stockName,getNewsMsg(MSG_NEWS_HEAD_SPLIT,stockName),getNewsMsg(MSG_NEWS_SUB_SPLIT)));
+  stockName=findHighestPriceStock(stocks);
+  events.push(new NewsEvent(EVENT_STOCK_SPLIT,stockName,getNewsMsg(MSG_NEWS_HEAD_SPLIT,stockName),getNewsMsg(MSG_NEWS_SUB_SPLIT)));
+  stockName=findHighestPriceStock(stocks);
+  events.push(new NewsEvent(EVENT_STOCK_SPLIT,stockName,getNewsMsg(MSG_NEWS_HEAD_SPLIT,stockName),getNewsMsg(MSG_NEWS_SUB_SPLIT)));
+}
+
+function getRandomStock(stocks,exceptStock)
+{
   while(true)
   {
-      rndStockID = Math.floor(Math.random()*stocks.length);
-      if (stocks[rndStockID].name != "GOVT") // GOVT never suspended
-        break;
+      var rndStockID = Math.floor(Math.random()*stocks.length);
+      if (stocks[rndStockID].name != exceptStock) // Don't choose the 'exceptStock'
+        return stocks[rndStockID].name;
   }
-  events.push(new NewsEvent(EVENT_STOCK_SUSPENDED,stocks[rndStockID].name,getNewsMsg(MSG_NEWS_HEAD_SUSPENDED,stocks[rndStockID].name),getNewsMsg(MSG_NEWS_SUB_SUSPENDED)));
-  
-  while(true)
+}
+
+function findHighestPriceStock(stocks)
+{
+  var best=-999;
+  bestIndex=-1;
+  for (var i=0;i<stocks.length;i++)
   {
-      rndStockID = Math.floor(Math.random()*stocks.length);
-      if (stocks[rndStockID].name != "GOVT") // GOVT never suspended
-        break;
+    if (stocks[i].price > best)
+    {
+      best=stocks[i].price;
+      bestIndex=i;
+    }
   }
-  events.push(new NewsEvent(EVENT_STOCK_SUSPENDED,stocks[rndStockID].name,getNewsMsg(MSG_NEWS_HEAD_SUSPENDED,stocks[rndStockID].name),getNewsMsg(MSG_NEWS_SUB_SUSPENDED)));
+  return stocks[bestIndex].name;
 }
 
 function addTaxEvents(gameDurationInMonths)

@@ -109,16 +109,17 @@ function initialiseGame(gameDuration,dayLength,numBots,aGameLang,aEinstein)
     
     console.log("Server: Starting registration");
     state=STATE_REGISTRATION;
-    for (var i=0;i<numBots;i++)
-    {
-        game.registerPlayer(BOT_NAME_PREFIX+(i+1),"EN");
-        io.sockets.emit(CMD_REGISTERED,{msg:game.getPlayer(BOT_NAME_PREFIX+(i+1))});
-    }
     if (aEinstein == "Yes")
     {
         game.registerPlayer(EINSTEIN,"EN");
         io.sockets.emit(CMD_REGISTERED,{msg:game.getPlayer(EINSTEIN)});
     }
+    for (var i=0;i<numBots;i++)
+    {
+        game.registerPlayer(BOT_NAME_PREFIX+(i+1),"EN");
+        io.sockets.emit(CMD_REGISTERED,{msg:game.getPlayer(BOT_NAME_PREFIX+(i+1))});
+    }
+    sendPlayerList();
 }
 
 function startGame()
@@ -201,6 +202,7 @@ io.on('connection',function(socket)
                 console.log("Server: New player registered: "+playerName+"("+lang+")");
                 game.registerPlayer(playerName,lang);
                 io.sockets.emit(CMD_REGISTERED,{msg:gameID});
+                sendPlayerList();
             }
             else
                 io.sockets.emit(CMD_REGISTRATION_ERROR,{msg:regStatus});

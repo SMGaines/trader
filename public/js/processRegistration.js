@@ -19,11 +19,9 @@ var players = [];
 
 socket = io.connect();
 
-socket.on('registered',function(data)
+socket.on(CMD_PLAYER_LIST,function(data)
 {
-    player=data.msg;
-    players.push(player);
-    console.log("new player"+player.name);
+    players=data.msg;
     playerDisplay();
 });
 
@@ -41,6 +39,7 @@ init = function()
 
 var playerDisplay = function()
 {
+    document.getElementById('registrationDisplay').innerHTML="";
     var html= "<TABLE style='width:100%'>";
     html+=addTR(addTH(addStandardText("Registered Players")));
 

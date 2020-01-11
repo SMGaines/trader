@@ -72,18 +72,24 @@
     </div>
     <div id='transactionForm' class='popup'>
         <TABLE style="margin:auto;">
-            <TR><TH colspan='2' id='selectedStock' class='veryLargeText'></TH></TR>
-            <TR><TH colspan='2' id='stockAmount' class='veryLargeText'></TH></TR>
-            <TR><TH colspan='2' id='amountSelector' class='rangeSlider'></TH></TR>
+            <TR><TH style='padding: 20px;' id='selectedStock' class='veryLargeText'></TH></TR>
+            <TR><TH style='padding: 20px;' id='stockAmount' class='veryLargeText'></TH></TR>
+            <TR><TH style='padding: 20px;' id='amountSelector' class='rangeSlider'></TH></TR>
             <TR>
-                <TH>
+                <TH style='padding: 20px;'>
                     <button width='100%' class='veryLargeText' type='button' onclick='buy()'>Buy</button>
                 </TH>
-                <TH>
+            </TR>
+            <TR>
+                <TH style='padding: 20px;'>
                     <button width='100%' class='veryLargeText' type='button' onclick='sell()'>Sell</button>
                 </TH>
             </TR>
-            <TR><TH colspan='2'><button class='veryLargeText' type='button' onclick="closeTransactionForm()">Cancel</button></TH></TR>
+            <TR>
+                <TH style='padding: 20px;'>
+                    <button class='veryLargeText' type='button' onclick="closeTransactionForm()">Cancel</button>
+                </TH>
+            </TR>
         </TABLE>
     </div>
 	<div class='popup' id='statusForm'>

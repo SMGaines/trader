@@ -10,6 +10,7 @@ const MAX_STOCK = 1000;
 const REG_PLAYER_EXISTS=1;
 const LANG_EN=0;
 const LANG_PL=1;
+
 const CMD_NEW_PRICES="newprices";
 const CMD_NEWS_EVENT="newsevent";
 const CMD_SELL_STOCK="sellstock";
@@ -28,6 +29,8 @@ const CMD_GET_GAME_ADDRESS="getgameaddress";
 const CMD_GAME_ADDRESS="getgameaddress";
 const CMD_GAME_LANGUAGE="gamelanguage";
 const CMD_GET_GAME_LANGUAGE="getgamelanguage";
+const CMD_GAME_ID="gameID";
+const CMD_GET_GAME_ID="getgameID";
 
 const NONE = "NONE";
 

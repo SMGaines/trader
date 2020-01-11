@@ -22,6 +22,8 @@ const CMD_GET_GAME_ADDRESS="getgameaddress";
 const CMD_GAME_ADDRESS="getgameaddress";
 const CMD_GAME_LANGUAGE="gamelanguage";
 const CMD_GET_GAME_LANGUAGE="getgamelanguage";
+const CMD_GAME_ID="gameID";
+const CMD_GET_GAME_ID="getgameID";
 
 const BOT_TIMER = 10000;
 
@@ -223,6 +225,11 @@ io.on('connection',function(socket)
     socket.on(CMD_GET_GAME_LANGUAGE,function()
     {
         io.sockets.emit(CMD_GAME_LANGUAGE,{msg:gameLang});
+    });
+
+    socket.on(CMD_GET_GAME_ID,function()
+    {
+        io.sockets.emit(CMD_GAME_ID,{msg:gameID});
     });
  
     socket.on(CMD_BUY_STOCK,function(aGameID,playerName,stockName,amount)

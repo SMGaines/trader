@@ -26,6 +26,8 @@ const CMD_GET_GAME_ADDRESS="getgameaddress";
 const CMD_GAME_ADDRESS="getgameaddress";
 const CMD_GAME_LANGUAGE="gamelanguage";
 const CMD_GET_GAME_LANGUAGE="getgamelanguage";
+const CMD_GAME_ID="gameID";
+const CMD_GET_GAME_ID="getgameID";
 
 const TAX_BEGIN_TIMER = 10000;
 const TAX_SHOW_TIMER = 10000;
@@ -37,6 +39,7 @@ var players = [];
 var stocks = [];
 var gameDate;
 var gameLang;
+var gameID;
 
 init = function()
 {
@@ -44,6 +47,7 @@ init = function()
     stockTicker=new StockTicker();
     numStocks=0;
     socket.emit(CMD_GET_GAME_LANGUAGE);
+    socket.emit(CMD_GET_GAME_ID);
     newspaperChart=new NewsPaperChart();
 };
 
@@ -72,6 +76,12 @@ socket.on(CMD_GAME_LANGUAGE,function(data)
 {  
     gameLang=data.msg;
     console.log("CMD_GAME_LANGUAGE: "+gameLang);
+});
+
+socket.on(CMD_GAME_ID,function(data)
+{  
+    gameID=data.msg;
+    console.log("CMD_GAME_ID: "+gameID);
 });
 
 socket.on(CMD_NEWS_EVENT,function(data)
@@ -152,6 +162,7 @@ function showFinancialData(aDate,interestRate,inflationRate)
 {
     document.getElementById('gametitle').innerHTML=GAME_TITLE;
     document.getElementById('gamedate').innerHTML=getLongDate(aDate,gameLang);
+    document.getElementById('gameID').innerHTML=gameID;
     document.getElementById('interestRateHeader').innerHTML="Interest";
     document.getElementById('inflationRateHeader').innerHTML="Inflation";
     document.getElementById('interestRate').innerHTML=createSpan(interestRate.toFixed(1)+"%","white");

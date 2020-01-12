@@ -456,7 +456,7 @@ exports.processNews = function()
   newsEvent=events.getNewsEvent(gameDate);
   if (newsEvent != null)
   {
-    log("processNews: "+newsEvent.headline+"/"+newsEvent.stockName);
+    log("processNews: "+newsEvent.headLine+"/"+newsEvent.stockName);
     switch(newsEvent.type)
     {
       case EVENT_NONE:

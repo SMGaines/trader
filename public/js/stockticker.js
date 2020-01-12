@@ -51,7 +51,6 @@ StockTicker = function()
             divPos[i]--;
             if (divPos[i] < -TICKER_SPACING)
             {
-                console.log(divPos[i]);
                 var newPos=(stocks.length+1)*TICKER_SPACING;
                 if (newPos < window.innerWidth)
                     newPos=window.innerWidth;

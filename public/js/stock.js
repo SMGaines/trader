@@ -21,6 +21,7 @@ global.MIN_STOCK_PURCHASE = 50;
 global.NUM_INITIAL_STOCKS=4;
 global.STOCK_DIVIDEND_RATIO = .25;
 global.POST_SUSPENSION_PRICE = 10;
+global.TREND_MODIFIER = .001;
 
 exports.Stock = function(name,riskiness,colour)
 {
@@ -40,13 +41,15 @@ exports.Stock = function(name,riskiness,colour)
     this.buy = function(amount)
     {
         this.available-=amount;
-        this.trend*=(1+amount/NUM_STARTING_STOCK);
+        if (riskiness!=RISK_NONE)
+            this.trend+=amount*TREND_MODIFIER;
    }
 
     this.sell = function(amount)
     {
         this.available+=amount;
-        this.trend*=(1-amount/NUM_STARTING_STOCK);
+        if (riskiness!=RISK_NONE)
+            this.trend-=amount*TREND_MODIFIER;
     }
 
     this.getSummary = function()

@@ -158,7 +158,7 @@ function openStatusForm(statusMsg)
   document.getElementById('statusForm').style.display= "block";
 }
 
-function closeStatusForm(statusMsg) 
+function closeStatusForm() 
 {
   document.getElementById('statusForm').style.display= "none";
 }
@@ -455,6 +455,8 @@ function openBankruptForm(player)
 
 isChristmas=function()
 {
+  if (gameDate == null)
+    return false;
   return gameDate.getDate() == 23 && gameDate.getMonth()==11; // Celebrate on Dec 24th :)
 }
 

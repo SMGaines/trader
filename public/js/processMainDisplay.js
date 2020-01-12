@@ -82,6 +82,7 @@ socket.on(CMD_GAME_ID,function(data)
 {  
     gameID=data.msg;
     console.log("CMD_GAME_ID: "+gameID);
+    document.getElementById("openingBell").play();
 });
 
 socket.on(CMD_NEWS_EVENT,function(data)
@@ -100,7 +101,6 @@ socket.on(CMD_END_OF_GAME,function(data)
 socket.on(CMD_GAME_STARTED,function(data)
 {  
     console.log("Game started");
-    document.getElementById("openingBell").play();
 });
 
 socket.on(CMD_PLAYER_LIST,function(data)

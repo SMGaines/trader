@@ -55,8 +55,8 @@ app.get('/player',function(req,res)
 
 app.get('/registrationComplete',function(req,res)
 {
-    startGame();
-    res.sendFile(__dirname+'/mainDisplay.html');
+   res.sendFile(__dirname+'/mainDisplay.html');
+   startGame();
 });
 
 app.get('/adminResponse',function(req,res)

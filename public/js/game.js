@@ -7,7 +7,7 @@ const REG_PLAYER_ERROR = 2;
 const MIN_USERNAME_LENGTH = 3;
 const MAX_USERNAME_LENGTH = 8;
 
-const HACKING_DURATION_DAYS = 45;
+const HACKING_DURATION_DAYS = 30;
 const HACKING_FEE = 5000;
 const HACKING_FINE = 25000;
 const HACKING_FRACTION = .3;
@@ -812,7 +812,7 @@ exports.registerPlayer = function(playerName,language)
 {
   log("registerPlayer: Registering new player: "+playerName);
   players.push(new player.Player(playerName,getLanguageIndex(language)));
-  getPlayer(playerName).status=getPlayerStatusMsg(MSG_REGISTERED,getLanguageIndex(language));
+  //getPlayer(playerName).status=getPlayerStatusMsg(MSG_REGISTERED,getLanguageIndex(language));
 }
 
 exports.validateNewPlayer=function(playerName)

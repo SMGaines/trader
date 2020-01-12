@@ -15,6 +15,7 @@
         <audio id="goodNews" preload="auto"> <source src="audio/goodNews.mp3" type="audio/mpeg"/>
         <audio id="taxReturn" preload="auto"> <source src="audio/tax.mp3" type="audio/mpeg"/>
         <audio id="newsGameOver" preload="auto"> <source src="audio/applause.mp3" type="audio/mpeg"/>    
+        <audio id="openingBell" preload="auto"> <source src="audio/bell.mp3" type="audio/mpeg"/>    
     </div>
     <div id='dateDisplay' style="border-radius: 25px;background-color:#003200;position:absolute;width:95%; height: 75px; top:10px; left:10px; z-index:1">  
         <TABLE>
@@ -25,25 +26,23 @@
            </TR>
         </TABLE>
     </div>
-    <div id='ratesDisplay' style="border-radius: 25px;background-color:#003200;position:absolute;width:500px; height: 150px; top:650px; left:50%; z-index:1">  
-        <TABLE>
+    <div id='ratesDisplay' style="border-radius: 25px;background-color:#003200;position:absolute;width:1000px; height: 50px; top:770px; left:820px; z-index:1">  
+        <TABLE style="margin:auto;">
             <TR>
-                <TD width='50%'><span id="interestRateHeader" class='mainHeaderText'></span></TD>
-                <TD width='50%'><span id="inflationRateHeader" class='mainHeaderText'></span></TD>
-           </TR>
-           <TR>
-                <TD width='50%'><span id="interestRate" class='mainDisplayText'></span></TD>
-                <TD width='50%'><span id="inflationRate" class='mainDisplayText'></span></TD>
+                <TD><span class='mainHeaderText'>Interest:</span></TD>
+                <TD><span id="interestRate" class='mainDisplayText'>0%</span></TD>
+                <TD><span class='mainHeaderText'>Inflation:</span></TD>
+                <TD><span id="inflationRate" class='mainDisplayText'>0%</span></TD>
             </TR>
         </TABLE>
     </div>
     <div id='leaderBoardDisplay' style="border-radius: 25px;background-color:#003200;position:absolute;width:800px; height: 720px;top:100px; left:10px; z-index:1">
-        <TABLE id="leaderBoardTable">
+        <TABLE id="leaderBoardTable" style="margin:auto;">
             <THEAD>
                 <TR>
-                    <TH width='40%'><span class='mainHeaderText'>Player</TH>span</TH>
-                    <TH width='30%'><span class='mainHeaderText'>Cash</span></TH>
-                    <TH width='30%'><span class='mainHeaderText'>Net Worth</span></TH>
+                    <TH width='40%' style='padding: 10px;'><span class='mainHeaderText'>Player</span></TH>
+                    <TH width='30%' style='padding: 10px;'><span class='mainHeaderText'>Cash</span></TH>
+                    <TH width='30%' style='padding: 10px;'><span class='mainHeaderText'>Net Worth</span></TH>
                 </TR>
             </THEAD>
             <TBODY>
@@ -54,12 +53,12 @@
          </TABLE>   
     </div>
 
-    <canvas id="stockDisplay" style="border-radius: 25px;background-color:#003200;position:absolute; height:500px;width:700px; top:100px; left:820px; z-index:1"></canvas>
-    <div id="stockAvailDisplay" style="border-radius: 25px;background-color:#003200;position:absolute;width:140px; height: 500px;top:100px; left:1530px; z-index:1">
-         <TABLE>
-            <THEAD style="margin:auto;">
+    <canvas id="stockDisplay" style="border-radius: 25px;background-color:#003200;position:absolute; height:650px;width:840px; top:100px; left:820px; z-index:1"></canvas>
+    <div id="stockAvailDisplay" style="border-radius: 25px;background-color:#003200;position:absolute;width:140px; height: 500px;top:100px; left:1680px; z-index:1">
+         <TABLE style="margin:auto;">
+            <THEAD>
                 <TR>
-                    <TH><span class='mainHeaderText'>Avail</span></TH>
+                    <TH><span style="text-align: center;" class='mainHeaderText'>Avail</span></TH>
                 </TR>
             </THEAD>
             <TBODY>

@@ -28,7 +28,7 @@ socket.on(CMD_PLAYER_LIST,function(data)
 socket.on(CMD_GAME_ADDRESS,function(data)
 {
     var serverIP=data.msg;
-    document.getElementById('gameConnectDetails').innerHTML=addStandardText("Connect to http://"+serverIP+":8081/player");
+    document.getElementById('gameConnectDetails').innerHTML=createSpan("Connect to http://"+serverIP+":8081/player");
 });
 
 init = function()
@@ -39,36 +39,21 @@ init = function()
 
 var playerDisplay = function()
 {
-    document.getElementById('registrationDisplay').innerHTML="";
-    var html= "<TABLE style='width:100%'>";
-    html+=addTR(addTH(addStandardText("Registered Players")));
+    var regTable = document.getElementById('registrationTable');
+    var newRow,newCell;
+    regTable.innerHTML="";
 
     for (var i=0;i<players.length;i++)
     {
-        html+=addTR(addTH(addStandardText(players[i].name)));
+        if (i%2==0)
+            newRow=regTable.insertRow();
+        newCell = newRow.insertCell();  
+        newCell.style.width="40%";   
+        newCell.innerHTML = createSpan(players[i].name);
     };
-    html+="</TABLE>"
-    document.getElementById('registrationDisplay').innerHTML=html;
 }
 
-// Utilities
-
-function addTH(text)
+function createSpan(text)
 {
-    return "<TH>"+text+"</TH>";
-}
-
-function addTR(text)
-{
-    return "<TR>"+text+"</TR>";
-}
-
-function addStandardText(text)
-{
-    return addText(text,"courier",10,"white");
-}
-
-function addText(text,fontName,fontSize,fontColour)
-{
-    return "<font color='"+fontColour+"' size='"+fontSize+"' face='"+fontName+"'>"+text+"</font>";
+    return "<span class='regDisplayText' style='color:white'>"+text+"</span>";
 }

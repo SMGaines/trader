@@ -12,7 +12,7 @@ const HACKING_FEE = 5000;
 const HACKING_FINE = 25000;
 const HACKING_FRACTION = .3;
 const MIN_HACKING_AMOUNT = 10000;
-const HACKING_INCORRECT_SUSPICION_FINE = 10000;
+const HACKING_INCORRECT_SUSPICION_FINE = 40000;
 const HACKING_PRISON_SENTENCE=30;
 const INSIDER_FEE=5000;
 const INSIDER_BASE_FINE = 10000;
@@ -68,6 +68,7 @@ startRegistration = function()
 
 exports.start =function()
 {
+  adjustStockAmounts(); // Now we know how many players there are, adjust amounts accordingly
   interestRate=INITIAL_INTEREST_RATE;
   inflationRate=INITIAL_INFLATION_RATE;
   players.forEach(function(player)
@@ -200,6 +201,14 @@ function setupStock()
     stocks.push(new stk.Stock(STOCK_NAMES[i],STOCK_RISKINESS[i],STOCK_COLOURS[i]));
   }
   numActiveStocks=NUM_INITIAL_STOCKS;
+}
+
+function adjustStockAmounts()
+{
+  for (var i=0;i<stocks.length;i++)
+  {
+    stocks[i].available=getStartingStock();
+  }
 }
 
 function getStock(stockName)
@@ -560,6 +569,11 @@ exports.processNews = function()
   return newsEvent;
 }
 
+getStartingStock=function()
+{
+  return roundStock(NUM_STARTING_STOCK+players.length*.1*NUM_STARTING_STOCK);
+}
+
 getLotteryWinnerIndex=function()
 {
   var best=0;
@@ -658,7 +672,7 @@ suspectHacker = function(suspectingPlayerName,suspectedPlayerName)
     }
   else
   {
-      var amount = HACKING_INCORRECT_SUSPICION_FINE;
+      var amount = HACKING_INCORRECT_SUSPICION_FINE/players.length;
       removeCash(suspectingPlayer,amount);
       addCash(suspectedPlayer,amount);
       log("suspectHacker: "+suspectingPlayer.name+" incorrectly suspected "+suspectedPlayer.name+" and is fined "+formatMoney(HACKING_INCORRECT_SUSPICION_FINE));
@@ -867,14 +881,24 @@ processEinstein=function()
   }
   else if (bestPerformingStockIndex !=-1)
   {
-    buyStock(EINSTEIN,stocks[bestPerformingStockIndex].name,1000);
-    log(EINSTEIN+": "+getPlayer(EINSTEIN).status);
+    var availableCash=p.cash-10000; // make sure he has some cash
+    if (availableCash > 0)
+    {
+      var sharesToBuy=roundStock(availableCash/stocks[bestPerformingStockIndex].price);
+      buyStock(EINSTEIN,stocks[bestPerformingStockIndex].name,sharesToBuy);
+      log(EINSTEIN+": "+getPlayer(EINSTEIN).status);
+    }
     return;
   }
   else if (interestingStockIndex !=-1)
   {
-    buyStock(EINSTEIN,stocks[interestingStockIndex].name,1000);
-    log(EINSTEIN+": "+getPlayer(EINSTEIN).status);
+    var availableCash=p.cash-10000; // make sure he has some cash
+    if (availableCash > 0)
+    {
+      var sharesToBuy=roundStock(availableCash/stocks[interestingStockIndex].price);
+      buyStock(EINSTEIN,stocks[interestingStockIndex].name,sharesToBuy);
+      log(EINSTEIN+": "+getPlayer(EINSTEIN).status);
+    }
     return;
   }   
   else if (p.cash < 20000 && p.hacking==NO_PLAYER)
@@ -910,18 +934,22 @@ processInsiderEvent=function(p,event)
       log(EINSTEIN+"(sold based on Insider info): "+getPlayer(EINSTEIN).status);
       break;
     case EVENT_BOOM:
-      buyStock(EINSTEIN,event.stockName,1000);
+      var availableCash=p.cash-10000; // make sure he has some cash
+      if (availableCash > 0)
+      {
+        var sharesToBuy=roundStock(availableCash/getStock(event.stockName).price);
+        buyStock(EINSTEIN,event.stockName,sharesToBuy);
+        log(EINSTEIN+": "+getPlayer(EINSTEIN).status);
+      }
       break;
     case EVENT_CRASH_ALL_STOCKS:
-       break;
+      break;
     case EVENT_BOOM_ALL_STOCKS:
       break; 
     case EVENT_STOCK_SUSPENDED:
       if (p.getStockHolding(event.stockName) > 0)
         sellStock(EINSTEIN,event.stockName,p.getStockHolding(event.stockName));
       log(EINSTEIN+"(sold based on Insider info): "+getPlayer(EINSTEIN).status);
-      break;
-    case EVENT_TAX_RETURN:
       break;
   }
 }

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <link rel="stylesheet" href="css/traderStyles.css">
+    <link rel="stylesheet" type="text/css" href="css/traderStyles.css">
     <script src="/socket.io/socket.io.js" type="text/javascript"></script>
 	<script src="./js/processPlayer.js" type="text/javascript"></script>
 	<title>Trader!</title>
@@ -10,6 +10,7 @@
 <body background="images/stockbackground.jpg" onload="init()">	
 	<div id='audio'>
         <audio id="police" preload="auto"> <source src="audio/police.mp3" type="audio/mpeg"/></audio>
+        <audio id="liftMusic" preload="auto" loop> <source src="audio/liftMusic.wav" type="audio/wav"/></audio>
         <audio id="trade" preload="auto"> <source src="audio/ChaChing.mp3" type="audio/mpeg"/></audio>
         <audio id="insider" preload="auto"> <source src="audio/insider.mp3" type="audio/mpeg"/></audio>
 		<audio id="bankrupt" preload="auto"> <source src="audio/bankrupt.mp3" type="audio/mpeg"/></audio>
@@ -38,9 +39,9 @@
         </TABLE>
     </div>
     <div style='margin:auto;'>
-        <button id='buttonHack' class='veryLargeButton' onclick="openHackForm()">Hack</button>
-        <button id='buttonSuspect' class='veryLargeButton' onclick="openSuspectForm()">Suspect</button>
-        <button id='buttonInsider' class='veryLargeButton' onclick="insider()">Insider</button>
+        <button style='padding: 20px;' id='buttonHack' class='veryLargeButton' onclick="openHackForm()">Hack</button>
+        <button style='padding: 20px;' id='buttonSuspect' class='veryLargeButton' onclick="openSuspectForm()">Suspect</button>
+        <button style='padding: 20px;' id='buttonInsider' class='veryLargeButton' onclick="insider()">Insider</button>
     </div>
 	<div class='bigpopup' id='hackForm'>
         <TABLE style="margin:auto;">
@@ -77,12 +78,12 @@
             <TR><TH style='padding: 20px;' id='amountSelector' class='rangeSlider'></TH></TR>
             <TR>
                 <TH style='padding: 20px;'>
-                    <button width='100%' class='veryLargeText' type='button' onclick='buy()'>Buy</button>
+                    <button class='veryLargeText' type='button' onclick='buy()'>Buy</button>
                 </TH>
             </TR>
             <TR>
                 <TH style='padding: 20px;'>
-                    <button width='100%' class='veryLargeText' type='button' onclick='sell()'>Sell</button>
+                    <button class='veryLargeText' type='button' onclick='sell()'>Sell</button>
                 </TH>
             </TR>
             <TR>
@@ -94,11 +95,9 @@
     </div>
 	<div class='popup' id='statusForm'>
         <TABLE style="margin:auto;">
-            <TR><TH class='headerText'>Status</TH></TR>
-            <TR height=50px></TR>
-            <TR><TH class='veryLargeText' id='playerStatus'></TH></TR>
-            <TR height=50px></TR>
-            <TR><TH><button class='veryLargeText' type='button' onclick="closeStatusForm()">OK</button></TH></TR>
+            <TR><TH style='padding: 20px;' class='headerText'>Status</TH></TR>
+            <TR><TH style='padding: 20px;'class='veryLargeText' id='playerStatus'></TH></TR>
+            <TR><TH style='padding: 20px;'><button id='buttonStatus' class='veryLargeText' type='button' onclick="closeStatusForm()">OK</button></TH></TR>
         </TABLE>
     </div>
 	<div class='prison' id='prisonForm'>
@@ -106,6 +105,12 @@
             <TR><TH style="margin:auto;"> <img src='images/prison.jpg'/></TH></TR>
             <TR><TH style="margin:auto;" class='veryLargeText' id='prisonReason'></TH></TR>
             <TR><TH style="margin:auto;" class='veryLargeText' id='prisonStatus'></TH></TR>
+        </TABLE>
+    </div>
+	<div class='prison' id='gameWaitForm'>
+        <TABLE style="margin:auto;">
+            <TR><TH style='padding: 20px;' class='headerText'>Waiting for Start</TH></TR>
+            <TR><TH style="margin:auto;"><span id="gameWaitStatus" class='veryLargeText'></span></TH></TR>
         </TABLE>
     </div>
 	<div class='prison' id='bankruptForm'>
@@ -116,21 +121,18 @@
     </div>
     <div class='bigpopup' id='registrationForm'>
         <TABLE style="margin:auto;">
-            <TR><TH class='headerText'>Register</TH></TR>
-            <TR height=50px></TR>
-            <TR><TH><input class='veryLargeText' id='regName' type='text' maxlength='8' size='8'/></TH></TR>
-            <TR height=50px></TR>
-            <TR>
-                <TH>
+            <TR><TH style='padding: 20px;' class='headerText'>Register</TH></TR>
+            <TR><TH style='padding: 20px;'><input class='veryLargeText' id='regName' type='text' maxlength='8' size='8'/></TH></TR>
+             <TR>
+                <TH style='padding: 20px;'>
                     <select class='veryLargeText' id='regLang'>
                         <option value='EN'>English</option>
                         <option value='PL'>Polski</option>
                     </select>
                 </TH>
             </TR>
-            <TR height=50px></TR>
-            <TR><TH><button class='veryLargeText' type='button' onclick='processRegistrationForm()'>OK</button></TH></TR>
-            <TR><TH class='veryLargeText' id='regStatus'></TH></TR>
+            <TR><TH style='padding: 20px;'><button id = 'regButton' class='veryLargeText' type='button' onclick='processRegistrationForm()'>OK</button></TH></TR>
+            <TR><TH style='padding: 20px;' class='veryLargeText' id='regStatus'></TH></TR>
         </TABLE>
     </div>
 </body>

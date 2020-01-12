@@ -1,5 +1,6 @@
 StockChart = function(canvas,stocks)
 {
+    console.log("Canvas: W:"+canvas.width+" / Height: "+canvas.height);
     var stockHistory = [];
     initStockHistory(stocks);
     this.canvas = canvas;
@@ -16,23 +17,25 @@ StockChart = function(canvas,stocks)
     this.draw=function(stocks)
     {  
         updateStockHistory(stocks);
-        self.ctx.clearRect(xAxisIndent+axisMargin, yAxisIndent+axisMargin, this.canvas.width-2*(xAxisIndent+axisMargin), this.canvas.height-2*(yAxisIndent+axisMargin));
+        var tickStart=axisMargin+xAxisIndent;
+        var tickWidth=(this.canvas.width-2*tickStart)/HISTORY_SIZE;
+        self.ctx.clearRect(tickStart-2, yAxisIndent+axisMargin, this.canvas.width+2-2*tickStart, this.canvas.height-2*(yAxisIndent+axisMargin));
         for (var i=0;i<stocks.length;i++)
         {
-            self.ctx.strokeStyle = stocks[i].colour;
-            self.ctx.lineWidth = 4;
             self.ctx.beginPath();
-            self.ctx.moveTo(axisMargin+10+xAxisIndent,canvas.height*(1-stockHistory[i*HISTORY_SIZE]/STOCK_MAX_VALUE)-yAxisIndent-axisMargin);
-              
+            self.ctx.strokeStyle = stocks[i].colour;
+            self.ctx.lineWidth = 2;
+            self.ctx.moveTo(tickStart,this.canvas.height*(1-stockHistory[i*HISTORY_SIZE]/STOCK_MAX_VALUE)-yAxisIndent-axisMargin);
+            
             for (var j=0;j<HISTORY_SIZE;j++)
             {
                 var stkValue = stockHistory[i*HISTORY_SIZE+j];
                 stkValue=Math.max(stkValue,STOCK_MIN_VALUE);
                 stkValue=Math.min(stkValue,STOCK_MAX_VALUE);
-                self.ctx.lineTo(axisMargin+10+xAxisIndent+j*(canvas.width-xAxisIndent-axisMargin)/HISTORY_SIZE,
-                                canvas.height*(1-stkValue/STOCK_MAX_VALUE)-yAxisIndent-axisMargin);
-                self.ctx.stroke();
+                self.ctx.lineTo(tickStart+(j+1)*tickWidth,
+                                this.canvas.height*(1-stkValue/STOCK_MAX_VALUE)-yAxisIndent-axisMargin);
             }
+            self.ctx.stroke();
         };
     }
 

@@ -295,6 +295,15 @@ p{
     z-index: 10;
     margin: auto;
   }
+
+  .regDisplayText {
+    display: block;
+    color: white;
+    font-size: 48px;
+    font-family: "Courier";
+    z-index: 10;
+    margin: auto;
+  }
   
   .mainHeaderText {
     display: block;

@@ -85,21 +85,6 @@ server.listen(process.env.PORT || 8081,function()
     console.log('Listening on '+server.address().port);
 });
 
-function getLocalIP() 
-{
- const interfaces = os.networkInterfaces();
- const addresses = [];
-
-    Object.keys(interfaces).forEach((netInterface) => {
-    interfaces[netInterface].forEach((interfaceObject) => {
-    if (interfaceObject.family === 'IPv4' && !interfaceObject.internal) {
-    addresses.push(interfaceObject.address);
-   }
-  });
- });
- return addresses;
-}
-
 function initialiseGame(gameDuration,dayLength,numBots,aGameLang,aEinstein)
 {
     gameLang=aGameLang;
@@ -183,7 +168,7 @@ function sendNewPrices()
 
 function informPlayersGameStarted() 
 {
-    console.log("Server: game started");
+    console.log("Server: informing players game started");
     io.sockets.emit(CMD_GAME_STARTED,{msg:game.getDate()});
 }
 
@@ -289,3 +274,18 @@ io.on('connection',function(socket)
         }
     });
 });
+
+function getLocalIP() 
+{
+ const interfaces = os.networkInterfaces();
+ const addresses = [];
+
+    Object.keys(interfaces).forEach((netInterface) => {
+    interfaces[netInterface].forEach((interfaceObject) => {
+    if (interfaceObject.family === 'IPv4' && !interfaceObject.internal) {
+    addresses.push(interfaceObject.address);
+   }
+  });
+ });
+ return addresses;
+}

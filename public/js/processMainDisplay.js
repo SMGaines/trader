@@ -3,9 +3,9 @@ const FONT_SIZE = 40;
 const FONT_NAME = "courier";
 
 const STOCK_MIN_VALUE = 5;
-const STOCK_MAX_VALUE = 400;
+const STOCK_MAX_VALUE = 500;
  
-const HISTORY_SIZE = 10;
+const HISTORY_SIZE = 50;
 const NONE = -1;
 
 const CMD_NEW_PRICES="newprices";
@@ -99,7 +99,8 @@ socket.on(CMD_END_OF_GAME,function(data)
 
 socket.on(CMD_GAME_STARTED,function(data)
 {  
-    showDate(new Date(data.msg));
+    console.log("Game started");
+    document.getElementById("openingBell").play();
 });
 
 socket.on(CMD_PLAYER_LIST,function(data)
@@ -162,9 +163,7 @@ function showFinancialData(aDate,interestRate,inflationRate)
 {
     document.getElementById('gametitle').innerHTML=GAME_TITLE;
     document.getElementById('gamedate').innerHTML=getLongDate(aDate,gameLang);
-    document.getElementById('gameID').innerHTML=gameID;
-    document.getElementById('interestRateHeader').innerHTML="Interest";
-    document.getElementById('inflationRateHeader').innerHTML="Inflation";
+    document.getElementById('gameID').innerHTML="Game:"+gameID;
     document.getElementById('interestRate').innerHTML=createSpan(interestRate.toFixed(1)+"%","white");
     document.getElementById('inflationRate').innerHTML=createSpan(inflationRate.toFixed(1)+"%","white");
 }
@@ -202,7 +201,7 @@ function sortOnNetWorth(players)
 
 function createSpan(text,colour)
 {
-    return "<span class='mainDisplayText' style='color:"+colour+"'>"+text+"</span>";
+    return "<span class='mainDisplayText' style='text-align: center;color:"+colour+"'>"+text+"</span>";
 }
 
 function formatMoney(amount)

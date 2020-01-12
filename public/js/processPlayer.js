@@ -47,12 +47,14 @@ var bankruptAudioPlayed;
 var selectedStock,selectedAmount;
 var amountMonitor;
 var gameID;
+var liftMusic;
 
 socket = io.connect();
 
 socket.on(CMD_GAME_STARTED,function(data)
 {
   console.log("processPlayer: Game Started");
+  closeGameWaitForm();
   gameStarted=true;
 });
 
@@ -75,15 +77,7 @@ socket.on(CMD_REGISTERED,function(data)
   gameID=data.msg;
   setCookie(COOKIE_GAME_ID_PARAMETER,gameID);
   document.getElementById("gameTitle").innerHTML= GAME_NAME+" "+GAME_VERSION+": "+ gameID;
-  openStatusForm(myPlayerName+" registered for game: "+gameID);
-  /*var newPlayer=data.msg;
-  if (newPlayer.name==myPlayerName)
-  {
-    myPlayer=newPlayer;
-    closeRegistrationForm();
-    console.log("Registered");
-    openStatusForm(newPlayer.status);
-  }*/
+  openGameWaitForm(myPlayerName,gameID);
 });
 
 socket.on(CMD_REGISTRATION_ERROR,function(data)
@@ -421,6 +415,24 @@ function closePrisonForm()
 }
 
 // ********** END OF PRISON FORM FUNCTIONS **********
+
+// ********** START OF GAME WAIT FORM FUNCTIONS **********
+
+function openGameWaitForm(pName,gID)
+{
+  liftMusic = document.getElementById("liftMusic");
+  liftMusic.play();
+  document.getElementById('gameWaitStatus').innerHTML=pName+" registered for Game: "+gID;
+  document.getElementById('gameWaitForm').style.display= "block";
+}
+
+function closeGameWaitForm()
+{
+  liftMusic.pause();
+	document.getElementById("gameWaitForm").style.display= "none";
+}
+
+// ********** END OF GAME WAIT FORM FUNCTIONS **********
 
 // ********** START OF BANKRUPT FORM FUNCTIONS **********
 

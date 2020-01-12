@@ -1,4 +1,4 @@
-const NUM_STARTING_STOCK = 1000;
+global.NUM_STARTING_STOCK = 750;
 
 global.RISK_NONE=0;
 global.RISK_LOW=1;
@@ -11,7 +11,7 @@ global.STOCK_RISKINESS = [RISK_NONE,RISK_LOW,RISK_MEDIUM,RISK_CRAZY,RISK_MEDIUM,
 global.STOCK_NAMES=["GOVT","GOLD","OIL","HITECH","PHARMA","MINING"];
 
 global.STOCK_MIN_VALUE = 5;
-global.STOCK_MAX_VALUE = 350;
+global.STOCK_MAX_VALUE = 450;
 global.STOCK_ADJUSTMENT_FACTOR = .5;
 global.STOCK_DAMPING_FACTOR = .98; // How quickly does stock growth/decline slow down. Nearer to 1 means more slowly
 global.STOCK_INCREMENT = 50;

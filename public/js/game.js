@@ -23,16 +23,16 @@ const BASE_XMAS_PRESENT = 10000;
 const NO_PLAYER="NONE";
 
 const PRISON_DAYS_INCREMENT = 10;
-const CRIME_EXPIRY_DAYS = 60;
+const CRIME_EXPIRY_DAYS = 60; //
 
 const BASE_LOTTERY_WIN = 50000;
 
 const RATE_ADJUST_INCREMENT = .1; // How quickly Interest and Inflation rates fluctuate
-const MAX_RATE = 8; // MAx Interest or Inflation rate
-const MIN_RATE=2;
-const TAX_PERCENTAGE=20;
+const MAX_RATE = 7; // MAx Interest or Inflation rate
+const MIN_RATE=3;
+const TAX_PERCENTAGE=20; // Percentage tax rate on shares for a tax return
 
-var stk =require("./stock.js");
+var stk = require("./stock.js");
 var player = require('./player.js');
 var events = require('./events.js');
 var msgs = require("./messages.js");

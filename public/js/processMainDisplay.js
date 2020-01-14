@@ -83,6 +83,9 @@ socket.on(CMD_GAME_ID,function(data)
     gameID=data.msg;
     console.log("CMD_GAME_ID: "+gameID);
     document.getElementById("openingBell").play();
+    var tFloor = document.getElementById("tradingFloor")
+    tFloor.loop = true;
+    tFloor.play();
 });
 
 socket.on(CMD_NEWS_EVENT,function(data)
@@ -145,17 +148,11 @@ var playerDisplay = function(players,stocks)
 
         newCell = newRow.insertCell();     
         newCell.style.width="30%";   
-        if (player.netWorth<0)
-            newCell.innerHTML = createSpan("BANKRUPT","red");
-        else
-            newCell.innerHTML = createSpan(formatMoney(player.cash),"white");
+        newCell.innerHTML = formatMoney(player.cash);
          
         newCell = newRow.insertCell();     
         newCell.style.width="30%";   
-        if (player.netWorth<0)
-            newCell.innerHTML = createSpan("BANKRUPT","red");
-        else
-            newCell.innerHTML = createSpan(formatMoney(player.netWorth),"white");
+        newCell.innerHTML = formatMoney(player.netWorth);
     };
 }
 
@@ -206,8 +203,14 @@ function createSpan(text,colour)
 
 function formatMoney(amount)
 {
+    if (amount < 0)
+        return createSpan("BUST","red");
+    if (amount < 1000)
+        return createSpan("VLOW","red");
+    if (amount < 10000)
+        return createSpan("LOW","orange");
     const formatter = new Intl.NumberFormat('en-US', {style: 'currency',currency: 'USD',maximumFractionDigits: 0, minimumFractionDigits: 0});
-    return formatter.format(amount);
+    return createSpan(formatter.format(amount/1000)+"K","white");
 }
 
 function getLongDate(aDate,lang)

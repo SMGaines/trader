@@ -1,3 +1,5 @@
+var os = require( 'os' );
+
 getLanguageIndex=function(lang)
 {
   if (lang == "EN")
@@ -101,3 +103,34 @@ getInsiderEventPlayerStatus = function(event,lang)
   }
 }
 exports.getInsiderEventPlayerStatus=getInsiderEventPlayerStatus;
+
+isChristmas=function(aDate)
+{
+  return aDate.getDate() == 23 && aDate.getMonth()==11; // Celebrate on Dec 24th :)
+}
+exports.isChristmas=isChristmas;
+
+log=function(aDate,msg)
+{
+  console.log(new Date(aDate).toLocaleDateString("en-UK")+": "+msg);
+}
+
+log=function(msg)
+{
+  console.log(msg);
+}
+
+exports.getLocalIP=function() 
+{
+ const interfaces = os.networkInterfaces();
+ const addresses = [];
+
+    Object.keys(interfaces).forEach((netInterface) => {
+    interfaces[netInterface].forEach((interfaceObject) => {
+    if (interfaceObject.family === 'IPv4' && !interfaceObject.internal) {
+    addresses.push(interfaceObject.address);
+   }
+  });
+ });
+ return addresses;
+}

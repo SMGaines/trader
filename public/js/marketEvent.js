@@ -1,11 +1,5 @@
 global.EVENT_NONE=0;
-global.EVENT_INTEREST_RATE_UP = 1;
-global.EVENT_INTEREST_RATE_DOWN = 2;
-global.EVENT_INFLATION_RATE_UP = 3;
-global.EVENT_INFLATION_RATE_DOWN = 4;
-global.EVENT_GAME_WINNER = 5;
 global.EVENT_TAX_RETURN = 6;
-global.EVENT_LOTTERY_WIN = 7;
 // Events below are 'interesting' events from an Insider perspective
 global.EVENT_CRASH=8;
 global.EVENT_BOOM=9;
@@ -22,7 +16,6 @@ global.AVERAGE_MONTH_LENGTH=30.5;
 global.TAX_RETURN_MONTH=8; //i.e. September 
 
 var events=[];
-var gameLang; // The language that event messages will be in
 
 NewsEvent = function (type,stockName,headLine,tagLine,finalEvent)
 {
@@ -38,8 +31,7 @@ NewsEvent = function (type,stockName,headLine,tagLine,finalEvent)
 
 isGoodNews = function(type)
 {
-  return  (type == EVENT_NONE || type == EVENT_INTEREST_RATE_UP  || type==EVENT_INFLATION_RATE_DOWN ||
-           type == EVENT_GAME_WINNER || type == EVENT_LOTTERY_WIN || type == EVENT_BOOM ||
+  return  (type == EVENT_NONE || type == EVENT_BOOM ||
            type == EVENT_BOOM_ALL_STOCKS || type == EVENT_STOCK_IPO || type == EVENT_STOCK_RELEASE ||
            type == EVENT_STOCK_DIVIDEND || type==EVENT_STOCK_SPLIT);
 }
@@ -57,21 +49,16 @@ exports.getNewsEvent = getNewsEvent;
 
 getNewsMsg=function(msgType,argX,argY,argZ)
 {
-  var msg=msgType[LANG_EN];
+  var msg=msgType[gameLang];
   if (argX !== undefined) msg=msg.replace("$x",argX);
   if (argY !== undefined) msg=msg.replace("$y",argY);
   if (argZ !== undefined) msg=msg.replace("$z",argZ);
   return msg;
 }
 
-getEndOfGameEvent = function(aDate)
+exports.setupEvents=function(gameStartDate,gameDurationInMonths,stocks,aLang)
 {
-  return new NewsEvent(EVENT_GAME_WINNER,"",getNewsMsg(MSG_NEWS_HEAD_WINNER),getNewsMsg(MSG_NEWS_SUB_WINNER),true); //true==final event
-}
-exports.getEndOfGameEvent = getEndOfGameEvent;
-
-exports.setupEvents=function(gameStartDate,gameDurationInMonths,stocks)
-{
+  gameLang=aLang; 
   createMainEvents(stocks);
   addTaxEvents(gameDurationInMonths);
   shuffleEvents();
@@ -95,8 +82,8 @@ function setEventDates(gameStartDate,gameDurationInMonths)
 
 function adjustForTaxEvents(gameDurationInMonths)
 {
-  // Tax events need to be in December so swap the events
-  // that are currently in December with the tax events
+  // Tax events need to be in TAX_RETURN_MONTH so swap the events
+  // that are currently in TAX_RETURN_MONTH with the tax events
   for (var i=0;i<gameDurationInMonths/12;i++)
   {
     for (var j=0;j<events.length;j++)
@@ -131,8 +118,6 @@ function createMainEvents(stocks)
   events.push(new NewsEvent(EVENT_CRASH,"HITECH",getNewsMsg(MSG_NEWS_HEAD_TECH_CRASH),getNewsMsg(MSG_NEWS_SUB_TECH_CRASH)));
   events.push(new NewsEvent(EVENT_BOOM_ALL_STOCKS,"",getNewsMsg(MSG_NEWS_HEAD_MKT_BOOM),getNewsMsg(MSG_NEWS_SUB_MKT_BOOM)));
   events.push(new NewsEvent(EVENT_BOOM_ALL_STOCKS,"",getNewsMsg(MSG_NEWS_HEAD_MKT_BOOM),getNewsMsg(MSG_NEWS_SUB_MKT_BOOM)));
-  events.push(new NewsEvent(EVENT_LOTTERY_WIN,"",getNewsMsg(MSG_NEWS_HEAD_LOTTERY),getNewsMsg(MSG_NEWS_SUB_LOTTERY)));
-  events.push(new NewsEvent(EVENT_LOTTERY_WIN,"",getNewsMsg(MSG_NEWS_HEAD_LOTTERY),getNewsMsg(MSG_NEWS_SUB_LOTTERY)));
   events.push(new NewsEvent(EVENT_STOCK_IPO,"",getNewsMsg(MSG_NEWS_HEAD_IPO),getNewsMsg(MSG_NEWS_SUB_IPO)));
   events.push(new NewsEvent(EVENT_STOCK_IPO,"",getNewsMsg(MSG_NEWS_HEAD_IPO),getNewsMsg(MSG_NEWS_SUB_IPO)));
   var stockName= getRandomStock(stocks,"");
@@ -214,11 +199,6 @@ exports.findUpcomingEvent = function (aDate,numMonths)
     }
   }
   return null;
-}
-
-interestingEvent=function(type)
-{
-  return type > EVENT_LOTTERY_WIN;
 }
 
 function monthDifference(now, future) 

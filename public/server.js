@@ -24,6 +24,10 @@ const CMD_GAME_LANGUAGE="gamelanguage";
 const CMD_GET_GAME_LANGUAGE="getgamelanguage";
 const CMD_GAME_ID="gameID";
 const CMD_GET_GAME_ID="getgameID";
+const CMD_NEW_RATES="newrates";
+const CMD_GAME_DATE="gamedate";
+const CMD_DEPOSIT="deposit";
+const CMD_WITHDRAW="withdraw";
 
 const BOT_TIMER = 10000;
 
@@ -31,16 +35,19 @@ global.EINSTEIN="EINSTEIN";
 global.BOT_NAME_PREFIX="BOT";
 
 var game = require('./js/game.js');
+var utils = require("./js/utils.js");
+var players=require("./js/Players.js");
+var mkt=require("./js/stockmarket.js");
+
 var express = require('express');
 var app = express();
 var server = require('http').Server(app);
 var io = require('socket.io').listen(server);
-var os = require( 'os' );
+
 
 var state;
 var dayTimer,botTimer;
 var dayDuration;
-var gameLang;
 var gameID;
 
 app.use('/css',express.static(__dirname + '/css'));
@@ -87,34 +94,41 @@ server.listen(process.env.PORT || 8081,function()
 
 function initialiseGame(gameDuration,dayLength,numBots,aGameLang,aEinstein)
 {
-    gameLang=aGameLang;
     gameID=MIN_GAME_ID+9*Math.floor(MIN_GAME_ID*Math.random());
-    console.log("Server: Initialising: "+gameLang+"/"+gameID);
+    console.log("Server: Initialising: "+gameID);
     state=STATE_INITIALISING;
     dayDuration=dayLength*1000;
-    game.init(gameDuration,gameLang);
+    game.initialise(gameDuration,aGameLang);
+    mkt.initialise(game.getDate(),gameDuration);
     
     console.log("Server: Starting registration");
     state=STATE_REGISTRATION;
-    if (aEinstein == "Yes")
+    registerBots(aEinstein=="yes",numBots);
+
+    sendToClient(CMD_PLAYER_LIST,players.getPlayers());
+}
+
+function registerBots(einstein,numBots)
+{
+    if (einstein)
     {
-        game.registerPlayer(EINSTEIN,"EN");
-        io.sockets.emit(CMD_REGISTERED,{msg:game.getPlayer(EINSTEIN)});
+        players.registerPlayer(EINSTEIN,PLAYER_EINSTEIN);
+        sendToClient(CMD_REGISTERED,players.getPlayer(EINSTEIN));
     }
     for (var i=0;i<numBots;i++)
     {
-        game.registerPlayer(BOT_NAME_PREFIX+(i+1),"EN");
-        io.sockets.emit(CMD_REGISTERED,{msg:game.getPlayer(BOT_NAME_PREFIX+(i+1))});
+        players.registerPlayer(BOT_NAME_PREFIX+(i+1),PLAYER_BOT);
+        sendToClient(CMD_REGISTERED,players.getPlayer(BOT_NAME_PREFIX+(i+1)));
     }
-    sendPlayerList();
 }
 
 function startGame()
 {
     console.log("Server: Starting game");
     game.start();
+    mkt.open();
     state=STATE_STARTED;
-    informPlayersGameStarted();
+    sendToClient(CMD_GAME_STARTED,game.getDate());
     startTimerEvents();
 }
 
@@ -127,12 +141,7 @@ function stopTimerEvents()
 function startTimerEvents()
 {
     dayTimer=setInterval(newDay,dayDuration);
-    botTimer = setInterval(processBots, BOT_TIMER);
-}
-
-function processBots()
-{
-	game.processBots();
+    botTimer = setInterval(players.processBots(), BOT_TIMER);
 }
 
 function processGameOver()
@@ -142,11 +151,18 @@ function processGameOver()
 
 function newDay() 
 {
-    game.nextDay();
+    game.processDay();
+    var gameDate=game.getDate();
+    players.processDay(gameDate);
+    var marketEvent=mkt.processDay(gameDate);
+    if (marketEvent!=null)
+        sendToClient(CMD_NEWS_EVENT,marketEvent);
+    broker.processDay(gameDate);
+
     if (game.gameOver())
     {
-    	processGameOver();
-        io.sockets.emit(CMD_END_OF_GAME,{msg:game.getEndOfGameEvent()}); 
+        processGameOver();
+        sendToClient(CMD_END_OF_GAME,game.getEndOfGameEvent()); 
         return;
     }
     var newsEvent=game.processNews();
@@ -155,26 +171,15 @@ function newDay()
         io.sockets.emit(CMD_NEWS_EVENT,{msg:newsEvent});
     }
 
-    game.updatePrices();
-    game.applyInterestAndInflation();
-    sendPlayerList();
-    sendNewPrices();
+    sendToClient(CMD_PLAYER_LIST,players.getPlayers());
+    sendToClient(CMD_NEW_PRICES,mkt.getStocks());
+    sendToClient(CMD_NEW_RATES,game.getRates());
+    sendToClient(CMD_GAME_DATE,game.getDate());
 }
 
-function sendNewPrices()
+function sendToClient(cmd,info)
 {
-    io.sockets.emit(CMD_NEW_PRICES,{msg:game.getNewPrices()});
-}
-
-function informPlayersGameStarted() 
-{
-    console.log("Server: informing players game started");
-    io.sockets.emit(CMD_GAME_STARTED,{msg:game.getDate()});
-}
-
-function sendPlayerList()
-{
-    io.sockets.emit(CMD_PLAYER_LIST,{msg:game.getPlayers()});
+    io.sockets.emit(cmd,{msg:info});
 }
 
 io.on('connection',function(socket)
@@ -187,21 +192,19 @@ io.on('connection',function(socket)
             if (regStatus == 0)
             {
                 console.log("Server: New player registered: "+playerName+"("+lang+")");
-                game.registerPlayer(playerName,lang);
-                io.sockets.emit(CMD_REGISTERED,{msg:gameID});
-                sendPlayerList();
+                players.registerPlayer(playerName,PLAYER_HUMAN);
+                sendToClient(CMD_REGISTERED,gameID);
+                sendToClient(CMD_PLAYER_LIST,players.getPlayers());
             }
             else
-                io.sockets.emit(CMD_REGISTRATION_ERROR,{msg:regStatus});
+                sendToClient(CMD_REGISTRATION_ERROR,regStatus);
         }
         else if (state == STATE_STARTED)
         {
-            if (game.getPlayer(playerName) != null && aGameID==gameID)
-            {
+            if (players.getPlayer(playerName) != null && aGameID==gameID)
                 console.log("Server: Ignoring player already registered: "+playerName);
-            }
             else
-                io.sockets.emit(CMD_ERROR,{msg:"Player not registered for game: "+gameID});
+                sendToClient(CMD_ERROR,"Player not registered for game: "+gameID);
         }
         else
             console.log("Ignoring registration attempt");
@@ -209,83 +212,67 @@ io.on('connection',function(socket)
 
     socket.on(CMD_GET_GAME_LANGUAGE,function()
     {
-        io.sockets.emit(CMD_GAME_LANGUAGE,{msg:gameLang});
+        sendToClient(CMD_GAME_LANGUAGE,gameLang);
     });
 
     socket.on(CMD_GET_GAME_ID,function()
     {
-        io.sockets.emit(CMD_GAME_ID,{msg:gameID});
+        sendToClient(CMD_GAME_ID,gameID);
     });
  
     socket.on(CMD_BUY_STOCK,function(aGameID,playerName,stockName,amount)
     {
         console.log("Server: buystock: "+aGameID+"/"+playerName+"/"+stockName+"/"+amount);
-        if (game.getPlayer(playerName) != null && aGameID==gameID)
-        {
-            game.buyStock(playerName,stockName,amount);
-            sendPlayerList();
-        }
+        if (aGameID==gameID)
+            players.buyStock(playerName,stockName,amount);
     });
 
     socket.on(CMD_GET_GAME_ADDRESS,function()
     {
-        var myIP = getLocalIP();
+        var myIP = utils.getLocalIP();
         console.log("Server: My IP is: "+myIP[0]);
-        io.sockets.emit(CMD_GAME_ADDRESS,{msg:myIP[0]});
+        sendToClient(CMD_GAME_ADDRESS,myIP[0]);
    });
 
     socket.on(CMD_SELL_STOCK,function(aGameID,playerName,stockName,amount)
     {
         console.log("Server: sellstock: "+aGameID+"/"+playerName+"/"+stockName+"/"+amount);
-        if (game.getPlayer(playerName) != null && aGameID==gameID)
-        {
-            game.sellStock(playerName,stockName,amount);
-            sendPlayerList();
-        }
-   });    
+        if (aGameID==gameID)
+            players.sellStock(playerName,stockName,amount);
+    });    
 
     socket.on(CMD_HACK,function(aGameID,hackingPlayerName,hackedPlayerName)
     {
         console.log("Server: hack of "+hackedPlayerName+" by "+hackingPlayerName);
-        if (game.getPlayer(hackingPlayerName) != null && aGameID==gameID)
-        {
-            game.setupHack(hackingPlayerName,hackedPlayerName);
-            sendPlayerList();
-        }
-   });
+        if (aGameID==gameID)
+            players.setupHack(hackingPlayerName,hackedPlayerName);
+    });
 
     socket.on(CMD_SUSPECT,function(aGameID,suspectingPlayerName,suspectedPlayerName)
     {
         console.log("Server: suspect: "+suspectingPlayerName+"/"+suspectedPlayerName);
-        if (game.getPlayer(suspectingPlayerName) != null && aGameID==gameID)
-        {
-            game.suspectHacker(suspectingPlayerName,suspectedPlayerName);
-            sendPlayerList();
-        }
+        if (aGameID==gameID)
+             players.suspectHacker(suspectingPlayerName,suspectedPlayerName);
     });    
 
     socket.on(CMD_INSIDER,function(aGameID,insiderPlayerName)
     {
         console.log("Server: insider: "+insiderPlayerName);
-        if (game.getPlayer(insiderPlayerName) != null && aGameID==gameID)
-        {
-            game.setupInsider(insiderPlayerName);
-            sendPlayerList();
-        }
+        if (aGameID==gameID)
+            players.setupInsider(insiderPlayerName);
+    });    
+    
+    socket.on(CMD_DEPOSIT,function(aGameID,playerName,amount)
+    {
+        console.log("Server: deposit: "+playerName);
+        if (aGameID==gameID)
+            players.deposit(playerName,amount);
+    });    
+    
+    socket.on(CMD_WITHDRAW,function(aGameID,playerName,amount)
+    {
+        console.log("Server: withdraw: "+playerName);
+        if (aGameID==gameID)
+            players.withdraw(playerName,amount);
     });
 });
-
-function getLocalIP() 
-{
- const interfaces = os.networkInterfaces();
- const addresses = [];
-
-    Object.keys(interfaces).forEach((netInterface) => {
-    interfaces[netInterface].forEach((interfaceObject) => {
-    if (interfaceObject.family === 'IPv4' && !interfaceObject.internal) {
-    addresses.push(interfaceObject.address);
-   }
-  });
- });
- return addresses;
-}

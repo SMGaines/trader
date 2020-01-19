@@ -52,15 +52,11 @@ exports.Stock = function(name,riskiness,colour)
             this.trend-=amount*TREND_MODIFIER;
     }
 
-    this.getSummary = function()
-    {
-        return new StockSummary(this.name,this.available,this.price,this.trend,this.suspensionDays,this.colour);
-    }
-
     this.liftSuspension = function()
     {
         this.price=POST_SUSPENSION_PRICE;
         this.trend=1;
+        this.suspensionDays=0;
     }
     
     this.calculateSalePrice = function()
@@ -93,14 +89,4 @@ function getRandomTrend()
 function getRandomStartingPrice()
 {
   return STOCK_MAX_VALUE*.1 + STOCK_MAX_VALUE*.2*Math.random();
-}
-
-function StockSummary(name,available,price,trend,sus,colour)
-{
-    this.name=name;
-    this.available=available;
-    this.price=price;
-    this.trend=trend;
-    this.suspensionDays=sus;
-    this.colour=colour;
 }

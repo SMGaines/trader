@@ -53,6 +53,11 @@ exports.processDay = function()
   adjustRates();
 }
 
+exports.getInterestRate=function()
+{
+  return interestRate;
+}
+
 exports.getRates=function()
 {
   return new RatesInfo(interestRate,inflationRate)

@@ -141,10 +141,9 @@ function newDay()
     game.processDay();
     var gameDate=game.getDate();
     var newsEvent = events.getNewsEvent(gameDate);
-
     newsEvent=mkt.processDay(gameDate,newsEvent); // Some post-processing done on the event
-    newsEvent=players.processDay(gameDate,newsEvent); // Some post-processing done on the event
-    if (newsEvent !=null)
+    newsEvent=players.processDay(gameDate,newsEvent,game.getInterestRate()); // Some post-processing done on the event
+    if (newsEvent != null)
         sendToClient(CMD_NEWS_EVENT,newsEvent);
     
     broker.processDay(gameDate);

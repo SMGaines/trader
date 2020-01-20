@@ -20,6 +20,7 @@ exports.Player = function(name,type)
   {
     broker.createAccount(this.name);
     broker.depositCash(this.name,this.balance);
+    this.balance=0;
   }
 
   this.getSummary=function()
@@ -29,9 +30,8 @@ exports.Player = function(name,type)
 
   this.bankCash = function(amount)
   {
-    var amountWithdrawn=broker.withDrawCash(this.name,amount);
-    log(this.name+" banking "+formatMoney(amountWithdrawn));
-    this.status="You have banked "+formatMonet(amountWithdrawn);
+    var amountWithdrawn=broker.withdrawCash(this.name,amount);
+    setStatus(MSG_BANKED,formatMoney(amountWithdrawn));
     this.balance+=amountWithdrawn;
   }
 
@@ -44,26 +44,24 @@ exports.Player = function(name,type)
 
   this.getBankBalance=function()
   {
-    return this.bank;
+    return this.balance;
   }
 
   this.sellStock = function(stockName,amount)
   {
     if (broker.accountIsSuspended(this.name))
     {
-        this.status=getPlayerStatusMsg(MSG_IN_PRISON);
-        return;
+      setStatus(MSG_IN_PRISON);
+      return;
     }
     var result=broker.sellStock(this.name,stockName,amount);
     switch(result)
     {
       case ACCOUNT_INSUFFICIENT_STOCK:
-        log("player:sellStock: No stock to sell");
-        this.status="You have no stock to sell";
+        setStatus(MSG_NO_STOCK);
         break;
       default:
-        log("player:"+this.name+": "+result+" shares sold");
-        this.status=result+ " shares of "+stockName+" sold";
+        setStatus(MSG_SHARE_SALE,result,stockName);
         break;
     }
   }
@@ -86,7 +84,7 @@ exports.Player = function(name,type)
         setStatus(MSG_INSUFFICIENT_STOCK);
         break;
       default: 
-        setStatus(MSG_SHARE_SALE,result,stockName);
+        setStatus(MSG_SHARE_BUY,result,stockName);
         break;
     }
   }
@@ -190,6 +188,7 @@ exports.Player = function(name,type)
     this.status=msg;
     log(msg);
   }
+  exports.setStatus=setStatus;
 
   function setInsiderStatus(event)
   {
@@ -224,12 +223,11 @@ exports.Player = function(name,type)
   {
     var rndAmount = MIN_STOCK_PURCHASE*(1+Math.floor(Math.random()*20));
     var rndStock=mkt.getRandomStock();
-    
     if (broker.getStockHolding(this.name,rndStock.name) > 0 && rndStock.price > 50 && rndStock.trend < 0)
       this.sellStock(rndStock.name,rndAmount);
     else if (rndStock.trend > 0 || rndStock.price < 50)
       this.buyStock(rndStock.name,rndAmount);
-    else if (Math.random() > .9 && broker.getCash(this.name) > 0)
+    else if (Math.random() > .95 && broker.getCash(this.name) > 0)
       this.bankCash(.1*broker.getCash(this.name));
     else if (Math.random() > .95 && !broker.hackInProgress(this.name))
       this.setupHack(broker.chooseRandomAccountName(this.name));

@@ -24,6 +24,7 @@ global.ACCOUNT_INSUFFICIENT_STOCK=-5;
 const TAX_PERCENTAGE=20; // Percentage tax rate on shares for a tax return
 
 var account=require("./Account.js");
+var mkt=require("./stockmarket.js");
 
 accounts=[];
 
@@ -80,7 +81,7 @@ exports.getRemainingSuspensionDays=function(accountName)
 
 exports.getCash=function(accountName)
 {
-    findAccount(accountName).getCash();
+    return findAccount(accountName).getCash();
 }
 
 exports.buyStock=function(accountName,stockName,amount)

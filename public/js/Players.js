@@ -40,7 +40,7 @@ exports.getPlayerSummaries=function()
     return playerSummary;
 }
 
-exports.processDay=function(gameDate,mktEvent)
+exports.processDay=function(gameDate,mktEvent,interestRate)
 {
     if (mktEvent!= null)
     {
@@ -56,14 +56,14 @@ exports.processDay=function(gameDate,mktEvent)
                 broker.taxReturn();   
                 break; 
             case EVENT_LOTTERY_WIN:
-                processLottery(mktEvent);
+                mktEvent=processLottery(mktEvent);
                 break; 
         }
     }
         
     processBots();
     checkInsiderTrading();
-    applyInterestRates();
+    applyInterestRates(interestRate);
     return mktEvent;
 }
 
@@ -141,33 +141,6 @@ exports.bankCash=function(playerName,amount)
         player.withDrawCash(amount);
 }
 
-exports.findLotteryWinner=function()
-{
-    var best=0;
-    var bestIndex=-1;
-    for (var i=0;i<players.length;i++)
-    {
-        var bankBalance=players[i].getBankBalance();
-        var playerChance = players[i].bankrupt()?0:Math.random()*(1+bankBalance); // More cash in bank means more chance of winning
-        if (playerChance > best)
-        {
-            best=playerChance;
-            bestIndex=i;
-        }
-    }
-    return players[bestIndex];
-}
-
-allPlayersBankrupt=function()
-{
-    for (var i=0;i<players.length;i++)
-    {
-        if (!players[i].isBankrupt())
-            return false;
-    }
-    return true;
-}
-
 processBots=function()
 {
   for (var i=0;i<players.length;i++)
@@ -201,10 +174,9 @@ function checkInsiderTrading()
       var fine = INSIDER_BASE_FINE * player.numInsiderDeals;
       this.balance-=fine;
       broker.suspendAccount(player,name,PRISON_DAYS_INCREMENT*(1+player.numInsiderDeals))
-      log("checkInsiderTrading: "+player.name+" goes to prison for "+broker.getRemainingSuspensionDays(player.name)+" days");
       player.numInsiderDeals = 0;
       player.lastInsiderTradeDate=0;
-      player.status=getPlayerStatusMsg(MSG_INSIDER_CONVICTED,broker.getRemainingSuspensionDays(player.name));
+      player.setStatus(MSG_INSIDER_CONVICTED,broker.getRemainingSuspensionDays(player.name));
     }
     else if (player.numInsiderDeals > 0)
     {
@@ -214,8 +186,7 @@ function checkInsiderTrading()
       {
         player.numInsiderDeals=0;
         player.lastInsiderTradeDate=0;
-        log("checkInsiderTrading: Police have dropped their investigation into "+player.name);
-        player.status=getPlayerStatusMsg(MSG_INSIDER_DROPPED,player.lang);
+        player.setStatus(MSG_INSIDER_DROPPED);
       }
     }
   });
@@ -223,16 +194,29 @@ function checkInsiderTrading()
 
 processLottery=function(newsEvent)
 {
-  // Need to generate a random winner and update the text
-  if (allPlayersBankrupt())
-  {
-    newsEvent.headLine = newsEvent.headLine=getPlayerStatusMsg(MSG_NEWS_HEAD_NO_LOTTERY_WINNER);
-    newsEvent.headLine = newsEvent.tagLine=getPlayerStatusMsg(MSG_NEWS_SUB_NO_LOTTERY_WINNER);
-  }
-  var lotteryWinner=players.getLotteryWinner();
+  var lotteryWinner=findLotteryWinner();
   var win = BASE_LOTTERY_WIN+10000*Math.floor(Math.random()*5);
-  broker.depositCash(this.name,win);
+  broker.depositCash(lotteryWinner.name,win);
+  newsEvent.headLine = newsEvent.headLine.replace("$name",lotteryWinner.name);
+  newsEvent.headLine = newsEvent.headLine.replace("$win",win);
+  lotteryWinner.setStatus(MSG_EVENT_LOTTERY_WIN,formatMoney(win));
   return newsEvent;
+}
+
+findLotteryWinner=function()
+{
+    var best=0;
+    var bestIndex=-1;
+    for (var i=0;i<players.length;i++)
+    {
+        var playerChance = Math.random()*(1+players[i].getBankBalance()); // More cash in bank means more chance of winning
+        if (playerChance > best)
+        {
+            best=playerChance;
+            bestIndex=i;
+        }
+    }
+    return players[bestIndex];
 }
 
 exports.getEndOfGameEvent=function()
@@ -243,11 +227,11 @@ exports.getEndOfGameEvent=function()
   return endEvent;
 }
 
-applyInterestRates = function()
+applyInterestRates = function(interestRate)
 {
   players.forEach(function(player)
   {
     if (player.balance > 0)
-        player.balance*=(100+interestRate/5)/100;
+        player.balance*=(100+interestRate/20)/100;
   });
 }

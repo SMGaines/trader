@@ -60,10 +60,10 @@ exports.sellStock=function(stockName,amount)
 
 exports.getStockSalePrice
 
-exports.processDay=function(gameDate)
+exports.processDay=function(gameDate,newsEvent)
 {
   checkSuspendedStocks();
-  return processNewsEvent(gameDate);
+  return processNewsEvent(gameDate,newsEvent);
 }
 
 exports.stockSuspended=function(stockName)
@@ -191,7 +191,7 @@ boomStock=function(stockName)
 
 crashStock=function(stockName)
 {
-  getStock(stockName).trend=STOCK_MAX_TREND;
+  getStock(stockName).trend=-STOCK_MAX_TREND;
 }
 
 checkSuspendedStocks=function()

@@ -1,4 +1,4 @@
-const GAME_TITLE = "TRADER v1.0";
+const GAME_TITLE = "TRADER v2.0";
 const FONT_SIZE = 40;
 const FONT_NAME = "courier";
 

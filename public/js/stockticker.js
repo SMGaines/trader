@@ -1,4 +1,3 @@
-
 StockTicker = function()
 {
     const TICKER_DIV_PREFIX="TICKER_";

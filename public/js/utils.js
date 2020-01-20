@@ -71,38 +71,10 @@ getMonthYear = function(aDate)
     return aDate.toLocaleString('default', { month: 'long' }) + " "+aDate.getFullYear();
 }
 
-getPlayerStatusMsg=function(msgType,lang,argX,argY,argZ)
-{
-  var msg =msgType[lang];
-  if (argX !== undefined) msg=msg.replace("$x",argX);
-  if (argY !== undefined) msg=msg.replace("$y",argY);
-  if (argZ !== undefined) msg=msg.replace("$z",argZ);
-  return msg;
-}
-
 getFormattedDate = function(aDate)
 {
   return aDate.toLocaleDateString("en-US", {year: 'numeric', month: 'long', day: 'numeric' }); 
 }
-
-getInsiderEventPlayerStatus = function(event,lang)
-{
-  var interestingEventDate = getFormattedDate(event.date);
-  switch(event.type)
-  {
-    case EVENT_CRASH: return getPlayerStatusMsg(MSG_EVENT_STOCK_CRASH,lang,event.stockName,interestingEventDate);
-    case EVENT_BOOM: return getPlayerStatusMsg(MSG_EVENT_STOCK_BOOM,lang,event.stockName,interestingEventDate);
-    case EVENT_CRASH_ALL_STOCKS: return getPlayerStatusMsg(MSG_EVENT_STOCK_MARKET_CRASH,lang,interestingEventDate);
-    case EVENT_BOOM_ALL_STOCKS: return getPlayerStatusMsg(MSG_EVENT_STOCK_MARKET_BOOM,lang,interestingEventDate);
-    case EVENT_STOCK_IPO:return getPlayerStatusMsg(MSG_EVENT_STOCK_IPO,lang,interestingEventDate);
-    case EVENT_STOCK_RELEASE: return getPlayerStatusMsg(MSG_EVENT_EXTRA_STOCK,lang,event.stockName,interestingEventDate);
-    case EVENT_STOCK_DIVIDEND: return getPlayerStatusMsg(MSG_EVENT_STOCK_DIVIDEND,lang,event.stockName,interestingEventDate);
-    case EVENT_STOCK_SUSPENDED: return getPlayerStatusMsg(MSG_EVENT_STOCK_SUSPENDED,lang,event.stockName,interestingEventDate);
-    case EVENT_STOCK_SPLIT: return getPlayerStatusMsg(MSG_EVENT_STOCK_SPLIT,lang,event.stockName,interestingEventDate);
-    default: log("setupInsider: Unknown event type: "+event.type);return "";
-  }
-}
-exports.getInsiderEventPlayerStatus=getInsiderEventPlayerStatus;
 
 isChristmas=function(aDate)
 {

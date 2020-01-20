@@ -14,9 +14,13 @@
 - taxReturn
 */
 
-const ERROR_NONE = 0;
-const ERROR_STOCK_SUSPENDED = 1;
-const ERROR_INSUFFICIENT_CASH = 2;
+global.BROKER_OK = 0;
+global.BROKER_STOCK_SUSPENDED = -1;
+global.BROKER_INSUFFICIENT_CASH = -2;
+global.BROKER_INSUFFICIENT_STOCK = -3;
+global.ACCOUNT_INSUFFICIENT_FUNDS=-4;
+global.ACCOUNT_INSUFFICIENT_STOCK=-5;
+
 const TAX_PERCENTAGE=20; // Percentage tax rate on shares for a tax return
 
 var account=require("./Account.js");
@@ -28,7 +32,12 @@ exports.createAccount=function(accountName)
     accounts.push(new account.Account(accountName));
 }
 
-exports.processDay=function()
+exports.getAccountSummary=function(accountName)
+{
+  return findAccount(accountName);
+}
+
+exports.processDay=function(gameDate)
 {
   checkSuspendedAccounts();
   checkHacks();
@@ -47,7 +56,7 @@ checkHacks=function()
     accounts.forEach(function(account)
     {
         account.progressHack();
-        if (account.beingHacked() && account.hackComplete())
+        if (account.isHackingAnAccount() && account.hackIsSuccessful())
         {
             //TODO: What do you get when you hack?
         }
@@ -71,7 +80,7 @@ exports.getRemainingSuspensionDays=function(accountName)
 
 exports.getCash=function(accountName)
 {
-    findAccount(accountName).getCashAmount();
+    findAccount(accountName).getCash();
 }
 
 exports.buyStock=function(accountName,stockName,amount)
@@ -96,7 +105,7 @@ exports.depositCash=function(accountName,amount)
 
 exports.withdrawCash=function(accountName,amount)
 {
-    findAccount(accountName).withdraw(amount);
+    return findAccount(accountName).withdraw(amount);
 }
 
 exports.payDividend=function(stockName)
@@ -118,7 +127,7 @@ exports.splitStock=function(stockName)
 {
   accounts.forEach(function(account)
   {
-    account.payDividend(stockName,playerStock*2);
+    account.splitStock(stockName);
   });
 }
 
@@ -161,12 +170,18 @@ exports.beingHacked=function(accountName)
 
 exports.hackInProgress=function(accountName)
 {
-    return findAccount(accountName).hackInProgress();
+    return findAccount(accountName).isHackingAnAccount();
 }
 
 exports.getHackerName=function(accountName)
 {
     return findAccount(accountName).getHackerName();
+}
+
+exports.clearHack=function(hackerName,hackedName)
+{
+  findAccount(hackerName).stopHackingAnAccount();
+  findAccount(hackedName).stopBeingHacked();
 }
 
 exports.chooseAccountNameToHack=function(accountName)
@@ -205,4 +220,3 @@ findAccount = function(accountName)
     }
     return null;
 }
-

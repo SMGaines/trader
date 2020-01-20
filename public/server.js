@@ -29,24 +29,20 @@ const CMD_GAME_DATE="gamedate";
 const CMD_DEPOSIT="deposit";
 const CMD_WITHDRAW="withdraw";
 
-const BOT_TIMER = 10000;
-
-global.EINSTEIN="EINSTEIN";
-global.BOT_NAME_PREFIX="BOT";
-
 var game = require('./js/game.js');
 var utils = require("./js/utils.js");
 var players=require("./js/Players.js");
 var mkt=require("./js/stockmarket.js");
+var broker=require("./js/broker.js");
+var events = require('./js/events.js');
 
 var express = require('express');
 var app = express();
 var server = require('http').Server(app);
 var io = require('socket.io').listen(server);
 
-
 var state;
-var dayTimer,botTimer;
+var dayTimer;
 var dayDuration;
 var gameID;
 
@@ -94,18 +90,20 @@ server.listen(process.env.PORT || 8081,function()
 
 function initialiseGame(gameDuration,dayLength,numBots,aGameLang,aEinstein)
 {
-    gameID=MIN_GAME_ID+9*Math.floor(MIN_GAME_ID*Math.random());
     console.log("Server: Initialising: "+gameID);
-    state=STATE_INITIALISING;
+    gameID=MIN_GAME_ID+9*Math.floor(MIN_GAME_ID*Math.random());
     dayDuration=dayLength*1000;
+    state=STATE_INITIALISING;
+
     game.initialise(gameDuration,aGameLang);
     mkt.initialise(game.getDate(),gameDuration);
-    
+    events.initialise(game.getDate(),gameDuration,stocks); 
+
     console.log("Server: Starting registration");
     state=STATE_REGISTRATION;
-    registerBots(aEinstein=="yes",numBots);
+    registerBots(aEinstein=="Yes",numBots);
 
-    sendToClient(CMD_PLAYER_LIST,players.getPlayers());
+    sendToClient(CMD_PLAYER_LIST,players.getPlayerSummaries());
 }
 
 function registerBots(einstein,numBots)
@@ -129,49 +127,36 @@ function startGame()
     mkt.open();
     state=STATE_STARTED;
     sendToClient(CMD_GAME_STARTED,game.getDate());
-    startTimerEvents();
-}
-
-function stopTimerEvents()
-{
-    clearInterval(dayTimer);
-    clearInterval(botTimer);
-}
-
-function startTimerEvents()
-{
     dayTimer=setInterval(newDay,dayDuration);
-    botTimer = setInterval(players.processBots(), BOT_TIMER);
 }
 
 function processGameOver()
 {
-	stopTimerEvents();
+    clearInterval(dayTimer);
+    console.log(players.getWinnerName()+" wins");
 }
 
 function newDay() 
 {
     game.processDay();
     var gameDate=game.getDate();
-    players.processDay(gameDate);
-    var marketEvent=mkt.processDay(gameDate);
-    if (marketEvent!=null)
-        sendToClient(CMD_NEWS_EVENT,marketEvent);
+    var newsEvent = events.getNewsEvent(gameDate);
+
+    newsEvent=mkt.processDay(gameDate,newsEvent); // Some post-processing done on the event
+    newsEvent=players.processDay(gameDate,newsEvent); // Some post-processing done on the event
+    if (newsEvent !=null)
+        sendToClient(CMD_NEWS_EVENT,newsEvent);
+    
     broker.processDay(gameDate);
 
-    if (game.gameOver())
+    if (game.gameCompleted() || players.weHaveAMillionnaire())
     {
         processGameOver();
-        sendToClient(CMD_END_OF_GAME,game.getEndOfGameEvent()); 
+        sendToClient(CMD_END_OF_GAME,players.getEndOfGameEvent()); 
         return;
     }
-    var newsEvent=game.processNews();
-    if (newsEvent != null)
-    {
-        io.sockets.emit(CMD_NEWS_EVENT,{msg:newsEvent});
-    }
 
-    sendToClient(CMD_PLAYER_LIST,players.getPlayers());
+    sendToClient(CMD_PLAYER_LIST,players.getPlayerSummaries());
     sendToClient(CMD_NEW_PRICES,mkt.getStocks());
     sendToClient(CMD_NEW_RATES,game.getRates());
     sendToClient(CMD_GAME_DATE,game.getDate());
@@ -212,7 +197,7 @@ io.on('connection',function(socket)
 
     socket.on(CMD_GET_GAME_LANGUAGE,function()
     {
-        sendToClient(CMD_GAME_LANGUAGE,gameLang);
+        sendToClient(CMD_GAME_LANGUAGE,LANG_EN);
     });
 
     socket.on(CMD_GET_GAME_ID,function()
@@ -259,7 +244,7 @@ io.on('connection',function(socket)
     {
         console.log("Server: insider: "+insiderPlayerName);
         if (aGameID==gameID)
-            players.setupInsider(insiderPlayerName);
+            players.setupInsider(insiderPlayerName.game.getDate());
     });    
     
     socket.on(CMD_DEPOSIT,function(aGameID,playerName,amount)
@@ -273,6 +258,6 @@ io.on('connection',function(socket)
     {
         console.log("Server: withdraw: "+playerName);
         if (aGameID==gameID)
-            players.withdraw(playerName,amount);
+            players.bankCash(playerName,amount);
     });
 });

@@ -22,26 +22,18 @@ global.AVERAGE_MONTH_LENGTH=30.5;
 global.TAX_RETURN_MONTH=8; //i.e. September 
 
 var events=[];
-var gameLang; // The language that event messages will be in
 
-NewsEvent = function (type,stockName,headLine,tagLine,finalEvent)
+exports.initialise=function(gameStartDate,gameDurationInMonths,stocks)
 {
-  this.date=new Date();
-  this.type=type;
-  this.goodNews=isGoodNews(type);
-  this.isTaxReturn=type==EVENT_TAX_RETURN;
-  this.stockName=stockName;
-  this.headLine=headLine;
-  this.tagLine=tagLine;
-  this.isFinalEvent=finalEvent;
-}
-
-isGoodNews = function(type)
-{
-  return  (type == EVENT_NONE || type == EVENT_INTEREST_RATE_UP  || type==EVENT_INFLATION_RATE_DOWN ||
-           type == EVENT_GAME_WINNER || type == EVENT_LOTTERY_WIN || type == EVENT_BOOM ||
-           type == EVENT_BOOM_ALL_STOCKS || type == EVENT_STOCK_IPO || type == EVENT_STOCK_RELEASE ||
-           type == EVENT_STOCK_DIVIDEND || type==EVENT_STOCK_SPLIT);
+  createMainEvents(stocks);
+  addTaxEvents(gameDurationInMonths);
+  shuffleEvents();
+  setEventDates(gameStartDate,gameDurationInMonths);
+  adjustForTaxEvents(gameDurationInMonths);
+  for (var i=0;i<gameDurationInMonths;i++)
+  {
+    console.log(events[i].date.toLocaleDateString('en-US')+": "+events[i].type+","+events[i].date+","+events[i].headLine);
+  }
 }
 
 getNewsEvent = function(aDate)
@@ -69,19 +61,6 @@ getEndOfGameEvent = function(aDate)
   return new NewsEvent(EVENT_GAME_WINNER,"",getNewsMsg(MSG_NEWS_HEAD_WINNER),getNewsMsg(MSG_NEWS_SUB_WINNER),true); //true==final event
 }
 exports.getEndOfGameEvent = getEndOfGameEvent;
-
-exports.setupEvents=function(gameStartDate,gameDurationInMonths,stocks)
-{
-  createMainEvents(stocks);
-  addTaxEvents(gameDurationInMonths);
-  shuffleEvents();
-  setEventDates(gameStartDate,gameDurationInMonths);
-  adjustForTaxEvents(gameDurationInMonths);
-  for (var i=0;i<gameDurationInMonths;i++)
-  {
-    console.log(events[i].date.toLocaleDateString('en-US')+": "+events[i].type+","+events[i].date+","+events[i].headLine);
-  }
-}
 
 function setEventDates(gameStartDate,gameDurationInMonths)
 {
@@ -203,12 +182,12 @@ function shuffleEvents()
   }
 }
 
-exports.findUpcomingEvent = function (aDate,numMonths)
+exports.findUpcomingEvent = function (aDate,numDays)
 {
   for (var i=0;i<events.length;i++)
   {
-    var monthDiff = monthDifference(aDate,events[i].date);
-    if (monthDiff>0 && monthDiff <= numMonths && interestingEvent(events[i].type))
+    var dayDiff = dayDifference(aDate,events[i].date);
+    if (dayDiff>0 && dayDiff <= INSIDER_LOOKAHEAD_DAYS && interestingEvent(events[i].type))
     {
         return events[i];
     }
@@ -221,11 +200,28 @@ interestingEvent=function(type)
   return type > EVENT_LOTTERY_WIN;
 }
 
-function monthDifference(now, future) 
+function dayDifference(now, future) 
 {
-    var months;
-    months = (future.getFullYear() - now.getFullYear()) * 12;
-    months -= now.getMonth() + 1;
-    months += future.getMonth();
-    return months <= 0 ? 0 : months;
+  var msPerDay=1000*60*60*24;
+  return (future-now)/msPerDay;
+}
+
+NewsEvent = function (type,stockName,headLine,tagLine,finalEvent)
+{
+  this.date=new Date();
+  this.type=type;
+  this.goodNews=isGoodNews(type);
+  this.isTaxReturn=type==EVENT_TAX_RETURN;
+  this.stockName=stockName;
+  this.headLine=headLine;
+  this.tagLine=tagLine;
+  this.isFinalEvent=finalEvent;
+}
+
+isGoodNews = function(type)
+{
+  return  (type == EVENT_NONE || type == EVENT_INTEREST_RATE_UP  || type==EVENT_INFLATION_RATE_DOWN ||
+           type == EVENT_GAME_WINNER || type == EVENT_LOTTERY_WIN || type == EVENT_BOOM ||
+           type == EVENT_BOOM_ALL_STOCKS || type == EVENT_STOCK_IPO || type == EVENT_STOCK_RELEASE ||
+           type == EVENT_STOCK_DIVIDEND || type==EVENT_STOCK_SPLIT);
 }

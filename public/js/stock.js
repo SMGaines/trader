@@ -38,6 +38,11 @@ exports.Stock = function(name,riskiness,colour)
         return this.price;
     }
 
+    this.getAvailable = function()
+    {
+        return this.available;
+    }
+    
     this.buy = function(amount)
     {
         this.available-=amount;
@@ -50,6 +55,7 @@ exports.Stock = function(name,riskiness,colour)
         this.available+=amount;
         if (riskiness!=RISK_NONE)
             this.trend-=amount*TREND_MODIFIER;
+        return this.calculateSalePrice()*amount;
     }
 
     this.liftSuspension = function()

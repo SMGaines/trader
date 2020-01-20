@@ -5,32 +5,41 @@ global.PLAYER_EINSTEIN=2;
 
 var mkt=require("./stockmarket.js");
 var broker=require("./broker.js");
+var events = require('./events.js');
 
 exports.Player = function(name,type)
 {
   this.name = name;
   this.type = type;
+  this.balance = STARTING_CASH;
+  this.status="";
+  this.numInsiderDeals=0;
+  this.lastInsiderTradeDate=0;
 
   this.initialise=function()
   {
-    this.balance = STARTING_CASH;
-    this.status="";
-    this.numInsiderDeals=0;
-    this.lastInsiderTradeDate=0;
     broker.createAccount(this.name);
+    broker.depositCash(this.name,this.balance);
   }
 
-  this.withDrawCash = function(amount)
+  this.getSummary=function()
   {
-    var amount=broker.withDrawCash(this.name,amount);
-    this.balance+=amount;
+    return new PlayerSummary(this.name,this.balance,this.status,broker.getAccountSummary(this.name));
+  }
+
+  this.bankCash = function(amount)
+  {
+    var amountWithdrawn=broker.withDrawCash(this.name,amount);
+    log(this.name+" banking "+formatMoney(amountWithdrawn));
+    this.status="You have banked "+formatMonet(amountWithdrawn);
+    this.balance+=amountWithdrawn;
   }
 
   this.depositCash=function(amount)
   {
     if (this.balance >=amount)
       broker.depositCash(this.name,amount);
-      this.balance-=amount;
+    this.balance-=amount;
   }
 
   this.getBankBalance=function()
@@ -40,15 +49,22 @@ exports.Player = function(name,type)
 
   this.sellStock = function(stockName,amount)
   {
-    if (this.prisonDaysRemaining > 0)
+    if (broker.accountIsSuspended(this.name))
     {
         this.status=getPlayerStatusMsg(MSG_IN_PRISON);
         return;
     }
-    var error=broker.sellStock(this.name,stockName,amount);
-    switch(error)
+    var result=broker.sellStock(this.name,stockName,amount);
+    switch(result)
     {
-      default: log(error);
+      case ACCOUNT_INSUFFICIENT_STOCK:
+        log("player:sellStock: No stock to sell");
+        this.status="You have no stock to sell";
+        break;
+      default:
+        log("player:"+this.name+": "+result+" shares sold");
+        this.status=result+ " shares of "+stockName+" sold";
+        break;
     }
   }
 
@@ -56,14 +72,22 @@ exports.Player = function(name,type)
   {
     if (broker.accountIsSuspended(this.name))
     {
-      this.status=getPlayerStatusMsg(MSG_IN_PRISON);
+      setStatus(MSG_IN_PRISON);
       return;
     }
     
-    var error = broker.buyStock(this.name,stockName,amount);
-    switch(error)
+    var result = broker.buyStock(this.name,stockName,amount);
+    switch(result)
     {
-      default: log(error);
+      case ACCOUNT_INSUFFICIENT_FUNDS:
+        setStatus(MSG_INSUFFICIENT_FUNDS);
+        break;
+      case BROKER_INSUFFICIENT_STOCK:
+        setStatus(MSG_INSUFFICIENT_STOCK);
+        break;
+      default: 
+        setStatus(MSG_SHARE_SALE,result,stockName);
+        break;
     }
   }
 
@@ -71,45 +95,42 @@ exports.Player = function(name,type)
   {
     if (broker.accountIsSuspended(this.name))
     {
-      this.status=getPlayerStatusMsg(MSG_IN_PRISON);
+      setStatus(MSG_IN_PRISON);
       return;
     }
     if (this.bank < HACKING_FEE)
     {
-      this.status = getPlayerStatusMsg(MSG_CANNOT_AFFORD_HACK,formatMoney(HACKING_FEE));
+      setStatus(MSG_CANNOT_AFFORD_HACK,formatMoney(HACKING_FEE));
       return;
     }
-    if (this.hacking != NO_PLAYER)
+    if (broker.hackInProgress(this.name))
     {
-      this.status=getPlayerStatusMsg(MSG_ALREADY_HACKING,hackedPlayerName);
+      setStatus(MSG_ALREADY_HACKING,hackedPlayerName);
       return;
     }
     this.bank-=HACKING_FEE;
     var error=broker.setupHack(this.name,hackedPlayerName);
     switch(error)
     {
-      case ERROR_NONE:
-          this.status=getPlayerStatusMsg(MSG_HACK_INITIATED,hackedPlayerName,formatMoney(HACKING_FEE));
+      case BROKER_OK:
+        setStatus(MSG_HACK_INITIATED,hackedPlayerName,formatMoney(HACKING_FEE));
         return;
       default: 
-        log(error);
+        log(this.name+": setupHack: error: "+error);
         return;
     } 
   }
 
   this.suspectHacker=function(suspectedPlayerName)
   {
-    log("suspectHacker: "+suspectingPlayerName+" is suspecting "+suspectedPlayerName);
-
     if (broker.accountIsSuspended(this.name))
     {
-      this.status=getPlayerStatusMsg(MSG_IN_PRISON);
+      setStatus(MSG_IN_PRISON);
       return;
     }
     if (!broker.beingHacked(this.name))
     {
-      this.status=getPlayerStatusMsg(MSG_SUSPICION_IGNORED);
-      log("Game: suspectHacker: Suspicion ignored - player not being hacked");
+      setStatus(MSG_SUSPICION_IGNORED);
       return;
     }
     
@@ -119,45 +140,74 @@ exports.Player = function(name,type)
     {
       this.bank+=HACKING_FINE;
       broker.withdrawCash(hackerName,HACKING_FINE);
-      broker.suspendAccount(HACKING_PRISON_SENTENCE);
-      log("suspectHacker: "+suspectedPlayer.name+" goes to prison for "+HACKING_PRISON_SENTENCE+" days");
+      broker.suspendAccount(hackerName,HACKING_SUSPENSION_DAYS);
+      setStatus(MSG_HACK_DETECTED,suspectedPlayerName,HACKING_FINE,HACKING_SUSPENSION_DAYS);
       broker.clearHack(hackerName,suspectedPlayerName);
     }
     else
     {
       var amount = HACKING_INCORRECT_SUSPICION_FINE/players.length;
       this.bank-=amount;
-      broker.withdrawCash(suspectedPlayerName,amount);
-      log("suspectHacker: "+suspectingPlayer.name+" incorrectly suspected "+suspectedPlayer.name+" and is fined "+formatMoney(HACKING_INCORRECT_SUSPICION_FINE));
+      broker.withdrawCash(this.name,amount);
+      setStatus(MSG_WRONG_SUSPICION,suspectedPlayerName,formatMoney(HACKING_INCORRECT_SUSPICION_FINE));
     }
   }
 
-  this.setupInsider = function()
+  this.setupInsider = function(gameDate)
   {
     log("setupInsider: "+this.name+" asking for Insider information");
     if (broker.accountIsSuspended(this.name))
     {
-      this.status=getPlayerStatusMsg(MSG_IN_PRISON);
+      setStatus(MSG_IN_PRISON);
       return;
     }
     if (this.bank < INSIDER_FEE)
     {
-      this.status = getPlayerStatusMsg(MSG_CANNOT_AFFORD_INSIDER,formatMoney(INSIDER_FEE));
+      setStatus(MSG_CANNOT_AFFORD_INSIDER,formatMoney(INSIDER_FEE));
       return;
     }
 
     var upcomingEvent = events.findUpcomingEvent(gameDate,INSIDER_LOOKAHEAD_DAYS);
     if (upcomingEvent == null)
     {
-      this.status=getPlayerStatusMsg(MSG_NO_INTERESTING_EVENTS);
+      setStatus(MSG_NO_INTERESTING_EVENTS);
       return;
     }
-    this.status=getInsiderEventPlayerStatus(upcomingEvent,this.lang);
+
+    setInsiderStatus(upcomingEvent);
     
-    log("setupInsider: "+this.status);
     this.bank-=INSIDER_FEE;
     this.numInsiderDeals++;
     this.lastInsiderTradeDate=new Date(gameDate); 
+  }
+
+  setStatus=function(msgType,argX,argY,argZ)
+  {
+    var msg =msgType[LANG_EN];
+    if (argX !== undefined) msg=msg.replace("$x",argX);
+    if (argY !== undefined) msg=msg.replace("$y",argY);
+    if (argZ !== undefined) msg=msg.replace("$z",argZ);
+    this.status=msg;
+    log(msg);
+  }
+
+  function setInsiderStatus(event)
+  {
+    var interestingEventDate = getFormattedDate(event.date);
+
+    switch(event.type)
+    {
+      case EVENT_CRASH:setStatus(MSG_EVENT_STOCK_CRASH,lang,event.stockName,interestingEventDate);break;
+      case EVENT_BOOM: setStatus(MSG_EVENT_STOCK_BOOM,lang,event.stockName,interestingEventDate);break;
+      case EVENT_CRASH_ALL_STOCKS: setStatus(MSG_EVENT_STOCK_MARKET_CRASH,lang,interestingEventDate);break;
+      case EVENT_BOOM_ALL_STOCKS: setStatus(MSG_EVENT_STOCK_MARKET_BOOM,lang,interestingEventDate);break;
+      case EVENT_STOCK_IPO: setStatus(MSG_EVENT_STOCK_IPO,lang,interestingEventDate);break;
+      case EVENT_STOCK_RELEASE: setStatus(MSG_EVENT_EXTRA_STOCK,lang,event.stockName,interestingEventDate);break;
+      case EVENT_STOCK_DIVIDEND: setStatus(MSG_EVENT_STOCK_DIVIDEND,lang,event.stockName,interestingEventDate);break;
+      case EVENT_STOCK_SUSPENDED: setStatus(MSG_EVENT_STOCK_SUSPENDED,lang,event.stockName,interestingEventDate);break;
+      case EVENT_STOCK_SPLIT: setStatus(MSG_EVENT_STOCK_SPLIT,lang,event.stockName,interestingEventDate);break;
+      default: log("setupInsider: Unknown event type: "+event.type);
+    }
   }
 
   function isConvicted()
@@ -179,15 +229,14 @@ exports.Player = function(name,type)
       this.sellStock(rndStock.name,rndAmount);
     else if (rndStock.trend > 0 || rndStock.price < 50)
       this.buyStock(rndStock.name,rndAmount);
+    else if (Math.random() > .9 && broker.getCash(this.name) > 0)
+      this.bankCash(.1*broker.getCash(this.name));
     else if (Math.random() > .95 && !broker.hackInProgress(this.name))
       this.setupHack(broker.chooseRandomAccountName(this.name));
     else if (Math.random() > .95)
       this.setupInsider();
     else if (broker.beingHacked(this.name))
       this.suspectHacker(broker.chooseRandomAccountName(this.name));
-
-    if (this.status != "")
-      log(this.name+": "+this.status);
   }
 
   this.processEinstein=function()
@@ -196,7 +245,7 @@ exports.Player = function(name,type)
       this.suspectHacker(broker.chooseRandomAccountName(this.name));
     else if (this.numInsiderDeals == 0)
     {
-      var insiderEvent = setupInsider(this.name);
+      var insiderEvent = this.setupInsider(this.name);
       if (insiderEvent == null)
         return;
       this.processInsiderEvent(insiderEvent);
@@ -204,23 +253,16 @@ exports.Player = function(name,type)
     var bestPerformingStock=mkt.getFastestRisingStock();
     var worstPerformingStock=mkt.getFastestFallingStock();
     if (Math.abs(bestPerformingStock.trend) > Math.abs(worstPerformingStock.trend) && (bestPerformingStock.trend > 1 || bestPerformingStock.price < 50))
-    {
       this.buyStock(bestPerformingStock.name,bestPerformingStock.available);
-      log(this.name+": "+this.status);
-      return;
-    }
     else if (worstPerformingStock.trend < -1)
-    {
       this.sellStock(worstPerformingStock.name,broker.getStockHolding(this.name,bestPerformingStock.name));
-      log(this.name+": "+this.status);
-      return;
-    }
     else if (this.balance < 20000 && !broker.hackInProgress(this.name))
     {
       var playerToHackName=broker.chooseAccountNameToHack(this.name);
       this.setupHack(this.name,playerToHackName);
     }
   }
+
 
   processInsiderEvent=function(event)
   {
@@ -251,4 +293,12 @@ exports.Player = function(name,type)
         break;
     }
   }
+}
+
+PlayerSummary=function(name,balance,status,account)
+{
+  this.name=name;
+  this.balance = balance;
+  this.status=status;
+  this.account=account;
 }

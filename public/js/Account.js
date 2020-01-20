@@ -1,5 +1,6 @@
-global.ACCOUNT_INSUFFICIENT_FUNDS=-1;
 global.NONE = "NONE";
+
+var mkt=require("./stockmarket.js");
 
 exports.Account=function(name)
 {
@@ -35,8 +36,8 @@ exports.Account=function(name)
 
     this.progressSuspension=function()
     {
-        if(accountSuspensionDays > 0)
-            accountSuspensionDays--;
+        if(this.accountSuspensionDays > 0)
+            this.accountSuspensionDays--;
     }
 
     this.isSuspended=function()
@@ -54,25 +55,35 @@ exports.Account=function(name)
         return this.suspensionDays;
     }
 
+    this.progressHack=function()
+    {
+        if (this.hackDaysLeft > 0)
+            this.hackDaysLeft--;
+    }
+
+    this.hackIsSuccessful=function()
+    {
+        return this.hackDaysLeft == 0;
+    }
+
+    this.isHackingAnAccount=function()
+    {
+        return this.isHacking != NONE;
+    }    
+    
     this.beingHacked=function()
     {
         return this.beingHackedBy!=NONE;
     }
 
-    this.progressHack=function()
+    this.stopHackingAnAccount=function()
     {
-        if (this.hackDaysLeft > 0)
-        this.hackDaysLeft--;
+        this.isHacking = NONE;
     }
-
-    this.hackComplete=function()
+    
+    this.stopBeingHacked=function()
     {
-        return this.hackDaysLeft == 0;
-    }
-
-    this.hackInProgress=function()
-    {
-        return this.isHacking != NONE;
+        this.beingHackedBy = NONE;
     }
 
     this.setupHacker=function(hackedName)
@@ -86,19 +97,9 @@ exports.Account=function(name)
         this.beingHackedBy=hackerName;
     }
 
-    this.clearHack=function(hackerName)
-    {
-        this.beingHackedBy=NONE;
-    }
-
     this.getHackerName=function()
     {
         return this.beingHackedBy;
-    }
-
-    this.endHackInProgress=function()
-    {
-        this.beingHacked=false;
     }
     
     this.getCash=function()
@@ -106,33 +107,45 @@ exports.Account=function(name)
         return this.cash;
     }
 
-    this.payDividend=function(stockName,amount)
+    this.splitStock=function(stockName)
     {
-        var stockIndex=this.getStockIndex(stockName);
-        if (stockIndex != NO_SUCH_STOCK)
-           this.stocks[stockIndex].amount+=amount;
+        this.addToStockHolding(stockName,2*this.getStockHolding(stockName));
     }
 
+    this.payDividend=function(stockName,amount)
+    {
+        this.addToStockHolding(stockName,amount);
+    }
+    
     this.buyStock=function(stockName,amount)
     {
         var stockPrice=mkt.getStockPrice(stockName);
         var totalValue = amount*stockPrice;
         if (totalValue > this.cash)
             return ACCOUNT_INSUFFICIENT_FUNDS;
-        mkt.buyStock(stockName,amount);
-        this.addToStockHolding(stockName,amount);
+        var sharesPurchased=mkt.buyStock(stockName,amount);
+        if (sharesPurchased > 0)
+        {
+            this.addToStockHolding(stockName,sharesPurchased);
+            return sharesPurchased;
+        }
+        else
+            return BROKER_INSUFFICIENT_STOCK;
+        
     }
 
     this.sellStock = function(stockName,amount)
     {
         var sellableAmount = Math.min(this.getStockHolding(stockName),amount);
-        var salePrice = stock.calculateSalePrice();
         if (sellableAmount > 0)
         {
-            var response = mkt.sellStock(stockName,sellableAmount); // TODO: Check for suspensions etc
-            this.reduceStockHolding(stockName,sellableAMount);
-            this.deposit(salePrice*sellableAmount);
+            var valueOfSale = mkt.sellStock(stockName,sellableAmount); // TODO: Check for suspensions etc
+            this.reduceStockHolding(stockName,sellableAmount);
+            this.deposit(valueOfSale);
+            return sellableAmount;
         }
+        else
+            return ACCOUNT_INSUFFICIENT_STOCK;
     }
 
     this.sellAllStock=function()
@@ -148,7 +161,7 @@ exports.Account=function(name)
 
     // ****** Internal functions ********
 
-    this.getStockHolding= function (stockName)
+    this.getStockHolding=function(stockName)
     {
         for (var i=0;i<this.stocks.length;i++)
         {
@@ -158,7 +171,7 @@ exports.Account=function(name)
         return 0;
     }
 
-    this.addToStockHolding= function (stockName,amount)
+    this.addToStockHolding=function(stockName,amount)
     {
         for (var i=0;i<this.stocks.length;i++)
         {

@@ -1,3 +1,18 @@
+global.EINSTEIN="EINSTEIN";
+global.BOT_NAME_PREFIX="BOT";
+global.HACKING_DURATION_DAYS = 30;
+global.HACKING_SUSPENSION_DAYS=30;
+global.HACKING_FEE = 5000;
+global.HACKING_FINE = 25000;
+global.HACKING_FRACTION = .3;
+global.MIN_HACKING_AMOUNT = 10000;
+global.HACKING_INCORRECT_SUSPICION_FINE = 40000;
+global.ERROR_HACK_ALREADY_IN_PROGRESS=-1;
+global.INSIDER_FEE=5000;
+global.INSIDER_BASE_FINE = 10000;
+global.INSIDER_LOOKAHEAD_DAYS = 60;
+global.BASE_LOTTERY_WIN = 50000;
+
 var player = require('./player.js');
 var broker=require("./broker.js");
 
@@ -15,14 +30,66 @@ exports.getPlayer=function(playerName)
     return findPlayer(playerName);
 }
 
-exports.getPlayers=function()
+exports.getPlayerSummaries=function()
 {
-    return players;
+    var playerSummary=[];
+    players.forEach(function(player)
+    {
+        playerSummary.push(player.getSummary());
+    });
+    return playerSummary;
 }
 
-exports.processDay=function(gameDate)
+exports.processDay=function(gameDate,mktEvent)
 {
+    if (mktEvent!= null)
+    {
+        switch(mktEvent.type)
+        {
+            case EVENT_STOCK_SPLIT:
+                broker.splitStock(mktEvent.stockName);
+                break;
+            case EVENT_STOCK_DIVIDEND:
+                broker.payDividend(mktEvent.stockName);
+                break;
+            case EVENT_TAX_RETURN:     
+                broker.taxReturn();   
+                break; 
+            case EVENT_LOTTERY_WIN:
+                processLottery(mktEvent);
+                break; 
+        }
+    }
+        
+    processBots();
     checkInsiderTrading();
+    applyInterestRates();
+    return mktEvent;
+}
+
+exports.weHaveAMillionnaire=function()
+{
+    for (var i=0;i<players.length;i++)
+    {
+        if (players[i].balance >= 1000000)
+            return true;
+    }
+    return false;
+}
+
+exports.getWinnerName=function()
+{
+    var bestIndex=-1;
+    var bestScore=-1;
+    for (var i=0;i<players.length;i++)
+    {
+        if (players[i].balance > bestScore)
+        {
+            bestScore=players[i].balance;
+            bestIndex=i;
+        }
+    }
+    return players[bestIndex].name;
 }
 
 exports.buyStock=function(playerName,stockName,amount)
@@ -53,11 +120,11 @@ exports.suspectHacker=function(playerName,hackerName)
         player.suspectHacker(hackerName);
 }
 
-exports.setupInsider=function(playerName)
+exports.setupInsider=function(playerName,gameDate)
 {
     var player=findPlayer(playerName);
     if (player!=null)
-        player.setupInsider();
+        player.setupInsider(gameDate);
 }
 
 exports.depositCash=function(playerName,amount)
@@ -67,7 +134,7 @@ exports.depositCash=function(playerName,amount)
         player.depositCash(amount);
 }
 
-exports.withDrawCash=function(playerName,amount)
+exports.bankCash=function(playerName,amount)
 {
     var player=findPlayer(playerName);
     if (player!=null)
@@ -91,7 +158,7 @@ exports.findLotteryWinner=function()
     return players[bestIndex];
 }
 
-exports.allPlayersBankrupt=function()
+allPlayersBankrupt=function()
 {
     for (var i=0;i<players.length;i++)
     {
@@ -101,7 +168,7 @@ exports.allPlayersBankrupt=function()
     return true;
 }
 
-exports.processBots=function()
+processBots=function()
 {
   for (var i=0;i<players.length;i++)
   {
@@ -151,5 +218,36 @@ function checkInsiderTrading()
         player.status=getPlayerStatusMsg(MSG_INSIDER_DROPPED,player.lang);
       }
     }
+  });
+}
+
+processLottery=function(newsEvent)
+{
+  // Need to generate a random winner and update the text
+  if (allPlayersBankrupt())
+  {
+    newsEvent.headLine = newsEvent.headLine=getPlayerStatusMsg(MSG_NEWS_HEAD_NO_LOTTERY_WINNER);
+    newsEvent.headLine = newsEvent.tagLine=getPlayerStatusMsg(MSG_NEWS_SUB_NO_LOTTERY_WINNER);
+  }
+  var lotteryWinner=players.getLotteryWinner();
+  var win = BASE_LOTTERY_WIN+10000*Math.floor(Math.random()*5);
+  broker.depositCash(this.name,win);
+  return newsEvent;
+}
+
+exports.getEndOfGameEvent=function()
+{
+  var endEvent = events.getEndOfGameEvent();
+  endEvent.headLine = endEvent.headLine.replace("$name",getWinnerName());
+  log("getEndOfGameEvent: "+endEvent.headLine);
+  return endEvent;
+}
+
+applyInterestRates = function()
+{
+  players.forEach(function(player)
+  {
+    if (player.balance > 0)
+        player.balance*=(100+interestRate/5)/100;
   });
 }

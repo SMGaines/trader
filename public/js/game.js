@@ -9,14 +9,12 @@
 - processEndOfDay
 - 
 */
-const INITIAL_INTEREST_RATE=5;
+const INITIAL_INTEREST_RATE=3.5;
 const INITIAL_INFLATION_RATE=5;
-
-const BASE_LOTTERY_WIN = 50000;
 
 const RATE_ADJUST_INCREMENT = .1; // How quickly Interest and Inflation rates fluctuate
 const MAX_RATE = 7; // MAx Interest or Inflation rate
-const MIN_RATE=3;
+const MIN_RATE=1;
 
 var msgs = require("./messages.js");
 
@@ -39,6 +37,11 @@ exports.start =function()
   inflationRate=INITIAL_INFLATION_RATE;
 }
 
+exports.gameCompleted = function()
+{
+  return gameDate >= gameEndDate;
+}
+
 exports.getDate = function()
 {
   return gameDate;
@@ -50,7 +53,7 @@ exports.processDay = function()
   adjustRates();
 }
 
-exports.getGameInfo=function()
+exports.getRates=function()
 {
   return new RatesInfo(interestRate,inflationRate)
 }
@@ -74,33 +77,4 @@ adjustRates=function()
     inflationRate=MIN_RATE;
   if (inflationRate > MAX_RATE)
     inflationRate=MAX_RATE;
-}
-
-gameOver = function()
-{
-  return gameDate >= gameEndDate || instantWinner;
-}
-exports.gameOver = gameOver;
-
-exports.getEndOfGameEvent=function()
-{
-  var endEvent =events.getEndOfGameEvent();
-  var winner=players.findWinner();
-  endEvent.headLine = endEvent.headLine.replace("$name",winner.name);
-  winner.status = getPlayerStatusMsg(MSG_WINNER,winner.lang);
-  log("getEndOfGameEvent: "+endEvent.headLine);
-  return endEvent;
-}
-
-processLottery=function()
-{
-  // Need to generate a random winner and update the text
-  if (players.allPlayersBankrupt())
-  {
-    newsEvent.headLine = newsEvent.headLine=getPlayerStatusMsg(MSG_NEWS_HEAD_NO_LOTTERY_WINNER);
-    newsEvent.headLine = newsEvent.tagLine=getPlayerStatusMsg(MSG_NEWS_SUB_NO_LOTTERY_WINNER);
-  }
-  var lotteryWinner=players.getLotteryWinner();
-  var win = BASE_LOTTERY_WIN+10000*Math.floor(Math.random()*5);
-  lotteryWinner.credit(win);
 }

@@ -16,6 +16,7 @@ global.MSG_NO_STOCK_AVAILABLE = ["No stock available","Brak dostępnych towarów
 global.MSG_INSUFFICIENT_STOCK = ["Insufficient stock available","Za mało dostępnych towarów: zamiast tego kupujesz $x"];
 global.MSG_SHARE_BUY = ["$x shares of $y purchased","$x akcji $y zakupionych po $z"];  
 global.MSG_INSUFFICIENT_FUNDS=["Insufficient funds to purchase","Niewystarczające środki na zakup"];
+global.MSG_ACCOUNT_OVERDRAWN=["Your account is overdrawn",""];
 global.MSG_DIVIDEND=["You have received a dividend of $x shares of $y","Otrzymałeś dywidendę w wysokości $x akcji $y"];
 global.MSG_SPLIT=["$x has split",""];
 global.MSG_TAX = ["You have been taxed on your shares: $x","Opodatkowano twoje akcji: $x"];

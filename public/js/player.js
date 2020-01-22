@@ -89,6 +89,9 @@ exports.Player = function(name,type)
       case BROKER_INSUFFICIENT_STOCK:
         this.setStatus(MSG_INSUFFICIENT_STOCK);
         break;
+      case BROKER_ACCOUNT_OVERDRAWN:
+        this.setStatus(MSG_ACCOUNT_OVERDRAWN);
+        break;
       default: 
         this.setStatus(MSG_SHARE_BUY,result,stockName);
         break;
@@ -142,7 +145,7 @@ exports.Player = function(name,type)
     }
     else
     {
-      broker.suspendAccount(hackerName,HACKING_SUSPENSION_DAYS/3);
+      broker.suspendAccount(hackerName,HACKING_SUSPENSION_DAYS/6);
       this.setStatus(MSG_WRONG_SUSPICION,suspectedPlayerName);
     }
   }

@@ -41,30 +41,25 @@ exports.getAccountSummary=function(accountName)
 
 exports.processDay=function(gameDate,newsEvent)
 {
-  console.log("processDay");
   checkSuspendedAccounts();
   checkHacks();
   if (newsEvent !=null)
-  {
-    console.log("processDay2 "+newsEvent.type);
-    newsEvent= processNewsEvent(newsEvent);
-  }
+    newsEvent=processBrokerEvent(newsEvent);
   return newsEvent;
 }
 
-processNewsEvent=function(newsEvent)
+processBrokerEvent=function(newsEvent)
 {
-  console.log("processNewsEvent: "+newsEvent.type);
   switch(newsEvent.type)
   {
     case EVENT_STOCK_SPLIT:
-      splitStock(newsEvent.stockName);
+      splitStocks(newsEvent.stockName);
       break;
     case EVENT_STOCK_DIVIDEND:
-      payDividend(newsEvent.stockName);
+      payDividends(newsEvent.stockName);
       break;
     case EVENT_TAX_RETURN:     
-      //taxReturn();   
+      taxReturn();   
       break; 
   }
   return newsEvent;
@@ -123,7 +118,7 @@ exports.withdrawCash=function(accountName,amount)
     return findAccount(accountName).withdraw(amount);
 }
 
-exports.payDividend=function(stockName)
+payDividends=function(stockName)
 {
   accounts.forEach(function(account)
   {
@@ -138,7 +133,7 @@ exports.payDividend=function(stockName)
   });
 }
 
-exports.splitStock=function(stockName)
+splitStocks=function(stockName)
 {
   accounts.forEach(function(account)
   {
@@ -149,7 +144,6 @@ exports.splitStock=function(stockName)
 taxReturn=function()
 {
   console.log("taxReturn: Processing");
-  
   accounts.forEach(function(account)
   {
     var totalTax=0;
@@ -158,7 +152,8 @@ taxReturn=function()
       if (stockHolding.amount > 0)
       {
         var taxShares = stockHolding.amount*TAX_PERCENTAGE/100;
-        totalTax+= taxShares*mkt.getStockPrice(stockHolding.name);
+        console.log(stockHolding.name);
+        totalTax+=taxShares*mkt.getStockPrice(stockHolding.name);
       }
     });
     log("Tax bill for "+account.name+" = "+formatMoney(totalTax));

@@ -61,7 +61,7 @@ exports.sellStock=function(stockName,amount)
 exports.processDay=function(gameDate,newsEvent)
 {
   checkSuspendedStocks();
-  return processNewsEvent(newsEvent);
+  return processMarketEvent(newsEvent);
 }
 
 exports.stockSuspended=function(stockName)
@@ -116,7 +116,7 @@ exports.getFastestFallingStock=function()
 
 // ****************  Internal functions *******************
 
-processNewsEvent=function(newsEvent)
+processMarketEvent=function(newsEvent)
 {
   if (newsEvent != null)
   {
@@ -210,13 +210,13 @@ checkSuspendedStocks=function()
 
 function getStock(stockName)
 {
-    var selectedStock=null;
-    stocks.forEach(function(stock)
-    {
-        if (stock.name == stockName)
-            selectedStock = stock;
-    });
-    return selectedStock;
+  for (var i=0;i<stocks.length;i++)
+  {
+    if (stocks[i].name == stockName)
+      return stocks[i];
+  }
+  console.log("Unknown stock: "+stockName);
+  return null;
 }
 
 updatePrices = function()

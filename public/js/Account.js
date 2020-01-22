@@ -137,6 +137,7 @@ exports.Account=function(name)
         if (sharesPurchased > 0)
         {
             this.addToStockHolding(stockName,sharesPurchased);
+            this.debit(sharesPurchased*stockPrice);
             return sharesPurchased;
         }
         else
@@ -169,7 +170,21 @@ exports.Account=function(name)
 
     this.getMostValuableStockName=function()
     {
-        return "";
+        var best=-1;
+        var bestName=NONE;
+        for (var i=0;i<this.stocks.length;i++)
+        {
+            if (this.stocks[i].amount>0)
+            {
+                var stockValue=this.stocks[i].amount*mkt.getStockPrice(this.stocks[i].name);
+                if (stockValue > best)
+                {
+                    best=stockValue;
+                    bestName=this.stocks[i].name;
+                }
+            }
+        }
+        return bestName;
     }
 
     // ****** Internal functions ********
@@ -195,7 +210,7 @@ exports.Account=function(name)
             }
         }
         // Failed to find the stock, therefore create a new one
-        this.stocks.push(new this.StockHolding(stockName,amount));
+        this.stocks.push(new StockHolding(stockName,amount));
     }
 
     this.reduceStockHolding= function (stockName,amount)
@@ -209,7 +224,7 @@ exports.Account=function(name)
         }
     }
 
-    this.StockHolding = function (name,amount)
+    StockHolding = function (name,amount)
     {
         this.name=name;
         this.amount=amount;

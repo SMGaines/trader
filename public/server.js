@@ -93,7 +93,7 @@ function initialiseGame(gameDuration,dayLength,numBots,aGameLang,aEinstein)
 {
     gameID=generateGameID();
     console.log("Server: Initialising: "+gameID);
-    dayDuration=dayLength*1000;
+    dayDuration=10; //dayLength*1000;
     state=STATE_INITIALISING;
 
     game.initialise(gameDuration,aGameLang);
@@ -141,13 +141,13 @@ function processDay()
     newsEvent=market.processDay(gameDate,newsEvent); 
     newsEvent=players.processDay(gameDate,newsEvent,game.getInterestRate()); 
     newsEvent=broker.processDay(gameDate,newsEvent); 
-    if (newsEvent != null)
+    /*if (newsEvent != null)
         sendToClient(CMD_NEWS_EVENT,newsEvent);
     
     sendToClient(CMD_PLAYER_LIST,players.getPlayerSummaries());
     sendToClient(CMD_NEW_PRICES,market.getStocks());
     sendToClient(CMD_NEW_RATES,game.getInterestRate());
-    sendToClient(CMD_GAME_DATE,game.getDate());
+    sendToClient(CMD_GAME_DATE,game.getDate());*/
 }
 
 function sendToClient(cmd,info)

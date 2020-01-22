@@ -19,7 +19,7 @@ global.EVENT_STOCK_SPLIT=16;
 
 global.AVERAGE_MONTH_LENGTH=30.5;
 
-global.TAX_RETURN_MONTH=1; //i.e. September 
+global.TAX_RETURN_MONTH=8; //i.e. September 
 
 var events=[];
 

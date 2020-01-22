@@ -42,10 +42,10 @@ exports.processDay=function(gameDate,newsEvent,interestRate)
     processBots(gameDate);
     checkInsiderTrading(gameDate);
     applyInterestRates(interestRate);
-    return processNewsEvent(newsEvent);
+    return processPlayersEvent(newsEvent);
 }
 
-processNewsEvent=function(newsEvent)
+processPlayersEvent=function(newsEvent)
 {
     if (newsEvent!= null)
     {
@@ -142,6 +142,15 @@ processBots=function(gameDate)
       players[i].processEinstein(gameDate);
     else if (players[i].name.startsWith(BOT_NAME_PREFIX))
       players[i].processBot(gameDate);
+    var pSummary=players[i].getSummary();
+    var stockStr="[";
+    for (var j=0;j<pSummary.account.stocks.length;j++)
+    {
+        if (pSummary.account.stocks[j].amount > 0)
+            stockStr+=pSummary.account.stocks[j].name+":"+pSummary.account.stocks[j].amount+",";
+    }
+    stockStr+="]";
+    console.log(players[i].name+"/Bank:"+formatMoney(pSummary.balance)+"/Cash:"+formatMoney(pSummary.account.cash)+"/"+stockStr);
   }
 }
 

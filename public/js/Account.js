@@ -12,6 +12,11 @@ exports.Account=function(name)
     this.accountSuspensionDays=0;
     this.hackDaysLeft=0;
 
+    this.getCash=function()
+    {
+        return this.cash;
+    }
+
     this.deposit=function(amount)
     {
         this.cash+=amount;
@@ -19,6 +24,8 @@ exports.Account=function(name)
     
     this.withdraw=function(amount)
     {
+        if (this.getCash() < 0)
+            return BROKER_ACCOUNT_OVERDRAWN;
         var withdrawalAmount = Math.min(amount,this.cash);
         this.cash-=withdrawalAmount;
         return withdrawalAmount;
@@ -58,19 +65,24 @@ exports.Account=function(name)
     this.progressHack=function()
     {
         if (this.hackDaysLeft > 0)
-            this.hackDaysLeft--;
+           this.hackDaysLeft--;
     }
 
     this.hackIsSuccessful=function()
     {
-        return this.hackDaysLeft == 0;
+        return this.isHackingAnAccount() && this.hackDaysLeft == 0;
     }
 
     this.isHackingAnAccount=function()
     {
         return this.isHacking != NONE;
     }    
-    
+
+    this.getHackedAccountName=function()
+    {
+        return this.isHacking;
+    }
+
     this.beingHacked=function()
     {
         return this.beingHackedBy!=NONE;
@@ -101,11 +113,6 @@ exports.Account=function(name)
     {
         return this.beingHackedBy;
     }
-    
-    this.getCash=function()
-    {
-        return this.cash;
-    }
 
     this.splitStock=function(stockName)
     {
@@ -119,6 +126,9 @@ exports.Account=function(name)
     
     this.buyStock=function(stockName,amount)
     {
+        if (this.getCash() < 0)
+            return BROKER_ACCOUNT_OVERDRAWN;
+
         var stockPrice=mkt.getStockPrice(stockName);
         var totalValue = amount*stockPrice;
         if (totalValue > this.cash)
@@ -131,7 +141,6 @@ exports.Account=function(name)
         }
         else
             return BROKER_INSUFFICIENT_STOCK;
-        
     }
 
     this.sellStock = function(stockName,amount)
@@ -148,15 +157,19 @@ exports.Account=function(name)
             return ACCOUNT_INSUFFICIENT_STOCK;
     }
 
-    this.sellAllStock=function()
+    this.hasSomeStock=function()
     {
-        this.stocks.forEach(function(stockHolding)
+        for (var i=0;i<this.stocks.length;i++)
         {
-            if (stockHolding.amount > 0)
-            {
-                this.sellStock(stockHolding.name,stockHolding.amount);
-            }
-        });
+            if (this.stocks[i].amount>0)
+                return true;
+       }
+       return false;
+    }
+
+    this.getMostValuableStockName=function()
+    {
+        return "";
     }
 
     // ****** Internal functions ********

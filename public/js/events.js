@@ -19,7 +19,7 @@ global.EVENT_STOCK_SPLIT=16;
 
 global.AVERAGE_MONTH_LENGTH=30.5;
 
-global.TAX_RETURN_MONTH=8; //i.e. September 
+global.TAX_RETURN_MONTH=1; //i.e. September 
 
 var events=[];
 
@@ -30,7 +30,8 @@ exports.initialise=function(gameStartDate,gameDurationInMonths,stocks)
   shuffleEvents();
   setEventDates(gameStartDate,gameDurationInMonths);
   adjustForTaxEvents(gameDurationInMonths);
-  for (var i=0;i<gameDurationInMonths;i++)
+  
+  for (var i=0;i<events.length;i++)
   {
     console.log(events[i].date.toLocaleDateString('en-US')+": "+events[i].type+","+events[i].date+","+events[i].headLine);
   }
@@ -55,12 +56,6 @@ getNewsMsg=function(msgType,argX,argY,argZ)
   if (argZ !== undefined) msg=msg.replace("$z",argZ);
   return msg;
 }
-
-getEndOfGameEvent = function(aDate)
-{
-  return new NewsEvent(EVENT_GAME_WINNER,"",getNewsMsg(MSG_NEWS_HEAD_WINNER),getNewsMsg(MSG_NEWS_SUB_WINNER),true); //true==final event
-}
-exports.getEndOfGameEvent = getEndOfGameEvent;
 
 function setEventDates(gameStartDate,gameDurationInMonths)
 {
@@ -184,10 +179,11 @@ function shuffleEvents()
 
 exports.findUpcomingEvent = function (aDate,numDays)
 {
+  console.log("findUpcomingEvent: "+aDate+"/"+numDays);
   for (var i=0;i<events.length;i++)
   {
     var dayDiff = dayDifference(aDate,events[i].date);
-    if (dayDiff>0 && dayDiff <= INSIDER_LOOKAHEAD_DAYS && interestingEvent(events[i].type))
+    if (dayDiff>0 && dayDiff <= numDays && interestingEvent(events[i].type))
     {
         return events[i];
     }
@@ -197,7 +193,7 @@ exports.findUpcomingEvent = function (aDate,numDays)
 
 interestingEvent=function(type)
 {
-  return type > EVENT_LOTTERY_WIN;
+  return type > EVENT_LOTTERY_WIN; // See constans at top of file
 }
 
 function dayDifference(now, future) 

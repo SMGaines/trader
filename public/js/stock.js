@@ -65,6 +65,11 @@ exports.Stock = function(name,riskiness,colour)
         this.suspensionDays=0;
     }
     
+    this.isSuspended=function()
+    {
+        return this.suspensionDays > 0;
+    }
+    
     this.calculateSalePrice = function()
     {
         // Based on how hot or cold the stock is, calculate the stock sale price

@@ -78,8 +78,7 @@ socket.on(CMD_NEW_PRICES,function(data)
 
 socket.on(CMD_NEW_RATES,function(data)
 {
-    var ratesInfo=data.msg;
-    showRates(ratesInfo.interestRate,ratesInfo.inflationRate);
+    showRates(data.msg);
 });
 
 socket.on(CMD_GAME_DATE,function(data)
@@ -114,8 +113,8 @@ socket.on(CMD_NEWS_EVENT,function(data)
 socket.on(CMD_END_OF_GAME,function(data)
 {  
     console.log("GAME OVER");
-    var endEvent=data.msg;
-    newspaperChart.initNewsStory(endEvent);
+    //var endEvent=data.msg;
+    //newspaperChart.initNewsStory(endEvent);
 });
 
 socket.on(CMD_GAME_STARTED,function(data)
@@ -174,10 +173,9 @@ function showGameInfo()
     document.getElementById('gameID').innerHTML="Game:"+gameID;
 }
 
-function showRates(interestRate,inflationRate)
+function showRates(interestRate)
 {
     document.getElementById('interestRate').innerHTML=createSpan(interestRate.toFixed(1)+"%","white");
-    //document.getElementById('inflationRate').innerHTML=createSpan(inflationRate.toFixed(1)+"%","white");
 }
 
 function showDate()

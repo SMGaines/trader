@@ -1,16 +1,13 @@
 global.EINSTEIN="EINSTEIN";
 global.BOT_NAME_PREFIX="BOT";
+
 global.HACKING_DURATION_DAYS = 30;
 global.HACKING_SUSPENSION_DAYS=30;
-global.HACKING_FEE = 5000;
-global.HACKING_FINE = 25000;
-global.HACKING_FRACTION = .3;
-global.MIN_HACKING_AMOUNT = 10000;
-global.HACKING_INCORRECT_SUSPICION_FINE = 40000;
 global.ERROR_HACK_ALREADY_IN_PROGRESS=-1;
-global.INSIDER_FEE=5000;
-global.INSIDER_BASE_FINE = 10000;
+
 global.INSIDER_LOOKAHEAD_DAYS = 60;
+global.INSIDER_EXPIRY_DAYS=45;
+
 global.BASE_LOTTERY_WIN = 50000;
 
 var player = require('./player.js');
@@ -40,38 +37,32 @@ exports.getPlayerSummaries=function()
     return playerSummary;
 }
 
-exports.processDay=function(gameDate,mktEvent,interestRate)
+exports.processDay=function(gameDate,newsEvent,interestRate)
 {
-    if (mktEvent!= null)
-    {
-        switch(mktEvent.type)
-        {
-            case EVENT_STOCK_SPLIT:
-                broker.splitStock(mktEvent.stockName);
-                break;
-            case EVENT_STOCK_DIVIDEND:
-                broker.payDividend(mktEvent.stockName);
-                break;
-            case EVENT_TAX_RETURN:     
-                broker.taxReturn();   
-                break; 
-            case EVENT_LOTTERY_WIN:
-                mktEvent=processLottery(mktEvent);
-                break; 
-        }
-    }
-        
-    processBots();
-    checkInsiderTrading();
+    processBots(gameDate);
+    checkInsiderTrading(gameDate);
     applyInterestRates(interestRate);
-    return mktEvent;
+    return processNewsEvent(newsEvent);
+}
+
+processNewsEvent=function(newsEvent)
+{
+    if (newsEvent!= null)
+    {
+        switch(newsEvent.type)
+        {
+            case EVENT_LOTTERY_WIN:
+                newsEvent=processLottery(newsEvent);
+       }
+    }
+    return newsEvent;
 }
 
 exports.weHaveAMillionnaire=function()
 {
     for (var i=0;i<players.length;i++)
     {
-        if (players[i].balance >= 1000000)
+        if (players[i].isMillionnaire())
             return true;
     }
     return false;
@@ -79,6 +70,8 @@ exports.weHaveAMillionnaire=function()
 
 exports.getWinnerName=function()
 {
+    //return players.reduce(function(prev, current) {return (prev.y > current.y) ? prev : current});
+    
     var bestIndex=-1;
     var bestScore=-1;
     for (var i=0;i<players.length;i++)
@@ -141,14 +134,14 @@ exports.bankCash=function(playerName,amount)
         player.withDrawCash(amount);
 }
 
-processBots=function()
+processBots=function(gameDate)
 {
   for (var i=0;i<players.length;i++)
   {
     if (players[i].name == EINSTEIN)
-      players[i].processEinstein();
+      players[i].processEinstein(gameDate);
     else if (players[i].name.startsWith(BOT_NAME_PREFIX))
-      players[i].processBot();
+      players[i].processBot(gameDate);
   }
 }
 
@@ -164,15 +157,12 @@ findPlayer = function(playerName)
     return null;
 }
 
-function checkInsiderTrading()
+function checkInsiderTrading(gameDate)
 {
   players.forEach(function(player)
   {
-    if (player.prisonDaysRemaining==0 && playerConvicted(player))
+    if (!broker.accountIsSuspended(player.name) && player.isConvicted())
     {
-       // Player convicted of Insider Trading.
-      var fine = INSIDER_BASE_FINE * player.numInsiderDeals;
-      this.balance-=fine;
       broker.suspendAccount(player,name,PRISON_DAYS_INCREMENT*(1+player.numInsiderDeals))
       player.numInsiderDeals = 0;
       player.lastInsiderTradeDate=0;
@@ -181,8 +171,7 @@ function checkInsiderTrading()
     else if (player.numInsiderDeals > 0)
     {
       var daysDiff = daysElapsed(gameDate,player.lastInsiderTradeDate); 
-      //log("checkInsiderTrading: daysElapsed="+daysDiff);
-      if (daysDiff > CRIME_EXPIRY_DAYS)
+      if (daysDiff > INSIDER_EXPIRY_DAYS)
       {
         player.numInsiderDeals=0;
         player.lastInsiderTradeDate=0;
@@ -205,7 +194,7 @@ processLottery=function(newsEvent)
 
 findLotteryWinner=function()
 {
-    var best=0;
+    var best=-1;
     var bestIndex=-1;
     for (var i=0;i<players.length;i++)
     {
@@ -217,14 +206,6 @@ findLotteryWinner=function()
         }
     }
     return players[bestIndex];
-}
-
-exports.getEndOfGameEvent=function()
-{
-  var endEvent = events.getEndOfGameEvent();
-  endEvent.headLine = endEvent.headLine.replace("$name",getWinnerName());
-  log("getEndOfGameEvent: "+endEvent.headLine);
-  return endEvent;
 }
 
 applyInterestRates = function(interestRate)

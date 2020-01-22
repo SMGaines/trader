@@ -20,6 +20,7 @@ global.BROKER_INSUFFICIENT_CASH = -2;
 global.BROKER_INSUFFICIENT_STOCK = -3;
 global.ACCOUNT_INSUFFICIENT_FUNDS=-4;
 global.ACCOUNT_INSUFFICIENT_STOCK=-5;
+global.BROKER_ACCOUNT_OVERDRAWN=-6;
 
 const TAX_PERCENTAGE=20; // Percentage tax rate on shares for a tax return
 
@@ -38,10 +39,35 @@ exports.getAccountSummary=function(accountName)
   return findAccount(accountName);
 }
 
-exports.processDay=function(gameDate)
+exports.processDay=function(gameDate,newsEvent)
 {
+  console.log("processDay");
   checkSuspendedAccounts();
   checkHacks();
+  if (newsEvent !=null)
+  {
+    console.log("processDay2 "+newsEvent.type);
+    newsEvent= processNewsEvent(newsEvent);
+  }
+  return newsEvent;
+}
+
+processNewsEvent=function(newsEvent)
+{
+  console.log("processNewsEvent: "+newsEvent.type);
+  switch(newsEvent.type)
+  {
+    case EVENT_STOCK_SPLIT:
+      splitStock(newsEvent.stockName);
+      break;
+    case EVENT_STOCK_DIVIDEND:
+      payDividend(newsEvent.stockName);
+      break;
+    case EVENT_TAX_RETURN:     
+      //taxReturn();   
+      break; 
+  }
+  return newsEvent;
 }
 
 checkSuspendedAccounts=function()
@@ -49,18 +75,6 @@ checkSuspendedAccounts=function()
     accounts.forEach(function(account)
     {
         account.progressSuspension();
-    });
-}
-
-checkHacks=function()
-{
-    accounts.forEach(function(account)
-    {
-        account.progressHack();
-        if (account.isHackingAnAccount() && account.hackIsSuccessful())
-        {
-            //TODO: What do you get when you hack?
-        }
     });
 }
 
@@ -132,8 +146,10 @@ exports.splitStock=function(stockName)
   });
 }
 
-exports.taxReturn=function()
+taxReturn=function()
 {
+  console.log("taxReturn: Processing");
+  
   accounts.forEach(function(account)
   {
     var totalTax=0;
@@ -147,8 +163,6 @@ exports.taxReturn=function()
     });
     log("Tax bill for "+account.name+" = "+formatMoney(totalTax));
     account.debit(totalTax);
-    if (account.isOverDrawn())
-        account.sellAllStocks();
   });
 }
 
@@ -162,6 +176,35 @@ exports.setupHack = function(hackingAccountName,hackedAccountName)
     }
     hackerAccount.setupHacker(hackedAccountName);
     hackedAccount.setHackOnAccount(hackingAccountName);
+}
+
+checkHacks=function()
+{
+    accounts.forEach(function(account)
+    {
+      if (account.isHackingAnAccount())
+      {
+        account.progressHack();
+        if (account.hackIsSuccessful())
+        {
+          var hackedAccount=findAccount(account.getHackedAccountName());
+          executeHack(account,hackedAccount);
+          clearHack(account.name,hackedAccount.name);
+        }
+      }
+    });
+}
+
+executeHack=function(hackerAccount,hackedAccount)
+{
+  if (hackedAccount.hasSomeStock())
+  {
+    var mostValuableStockName=hackedAccount.getMostValuableStockName();
+    var holding=hackedAccount.getStockHolding(mostValuableStockName);
+    var stolenAmount=Math.max(STOCK_INCREMENT,roundStock(holding/2));
+    hackedAccount.reduceStockHolding(mostValuableStockName,stolenAmount);
+    hackerAccount.addToStockHolding(mostValuableStockName,stolenAmount);
+  }
 }
 
 exports.beingHacked=function(accountName)
@@ -179,11 +222,12 @@ exports.getHackerName=function(accountName)
     return findAccount(accountName).getHackerName();
 }
 
-exports.clearHack=function(hackerName,hackedName)
+clearHack=function(hackerAccountName,hackedAccountName)
 {
-  findAccount(hackerName).stopHackingAnAccount();
-  findAccount(hackedName).stopBeingHacked();
+  findAccount(hackerAccountName).stopHackingAnAccount();
+  findAccount(hackedAccountName).stopBeingHacked();
 }
+exports.clearHack=clearHack;
 
 exports.chooseAccountNameToHack=function(accountName)
 {

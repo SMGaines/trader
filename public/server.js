@@ -32,9 +32,10 @@ const CMD_WITHDRAW="withdraw";
 var game = require('./js/game.js');
 var utils = require("./js/utils.js");
 var players=require("./js/Players.js");
-var mkt=require("./js/stockmarket.js");
+var market=require("./js/stockmarket.js");
 var broker=require("./js/broker.js");
 var events = require('./js/events.js');
+var msg=require("./js/messages.js");
 
 var express = require('express');
 var app = express();
@@ -90,13 +91,13 @@ server.listen(process.env.PORT || 8081,function()
 
 function initialiseGame(gameDuration,dayLength,numBots,aGameLang,aEinstein)
 {
+    gameID=generateGameID();
     console.log("Server: Initialising: "+gameID);
-    gameID=MIN_GAME_ID+9*Math.floor(MIN_GAME_ID*Math.random());
     dayDuration=dayLength*1000;
     state=STATE_INITIALISING;
 
     game.initialise(gameDuration,aGameLang);
-    mkt.initialise(game.getDate(),gameDuration);
+    market.initialise(game.getDate(),gameDuration);
     events.initialise(game.getDate(),gameDuration,stocks); 
 
     console.log("Server: Starting registration");
@@ -106,28 +107,15 @@ function initialiseGame(gameDuration,dayLength,numBots,aGameLang,aEinstein)
     sendToClient(CMD_PLAYER_LIST,players.getPlayerSummaries());
 }
 
-function registerBots(einstein,numBots)
-{
-    if (einstein)
-    {
-        players.registerPlayer(EINSTEIN,PLAYER_EINSTEIN);
-        sendToClient(CMD_REGISTERED,players.getPlayer(EINSTEIN));
-    }
-    for (var i=0;i<numBots;i++)
-    {
-        players.registerPlayer(BOT_NAME_PREFIX+(i+1),PLAYER_BOT);
-        sendToClient(CMD_REGISTERED,players.getPlayer(BOT_NAME_PREFIX+(i+1)));
-    }
-}
 
 function startGame()
 {
     console.log("Server: Starting game");
     game.start();
-    mkt.open();
+    market.open();
     state=STATE_STARTED;
     sendToClient(CMD_GAME_STARTED,game.getDate());
-    dayTimer=setInterval(newDay,dayDuration);
+    dayTimer=setInterval(processDay,dayDuration);
 }
 
 function processGameOver()
@@ -136,28 +124,29 @@ function processGameOver()
     console.log(players.getWinnerName()+" wins");
 }
 
-function newDay() 
+function processDay() 
 {
     game.processDay();
     var gameDate=game.getDate();
-    var newsEvent = events.getNewsEvent(gameDate);
-    newsEvent=mkt.processDay(gameDate,newsEvent); // Some post-processing done on the event
-    newsEvent=players.processDay(gameDate,newsEvent,game.getInterestRate()); // Some post-processing done on the event
-    if (newsEvent != null)
-        sendToClient(CMD_NEWS_EVENT,newsEvent);
-    
-    broker.processDay(gameDate);
 
     if (game.gameCompleted() || players.weHaveAMillionnaire())
     {
         processGameOver();
-        sendToClient(CMD_END_OF_GAME,players.getEndOfGameEvent()); 
+        sendToClient(CMD_END_OF_GAME); 
         return;
     }
 
+    // Sometimes some post-processing is done on the event, hence it's passed back
+    var newsEvent = events.getNewsEvent(gameDate);
+    newsEvent=market.processDay(gameDate,newsEvent); 
+    newsEvent=players.processDay(gameDate,newsEvent,game.getInterestRate()); 
+    newsEvent=broker.processDay(gameDate,newsEvent); 
+    if (newsEvent != null)
+        sendToClient(CMD_NEWS_EVENT,newsEvent);
+    
     sendToClient(CMD_PLAYER_LIST,players.getPlayerSummaries());
-    sendToClient(CMD_NEW_PRICES,mkt.getStocks());
-    sendToClient(CMD_NEW_RATES,game.getRates());
+    sendToClient(CMD_NEW_PRICES,market.getStocks());
+    sendToClient(CMD_NEW_RATES,game.getInterestRate());
     sendToClient(CMD_GAME_DATE,game.getDate());
 }
 
@@ -243,7 +232,7 @@ io.on('connection',function(socket)
     {
         console.log("Server: insider: "+insiderPlayerName);
         if (aGameID==gameID)
-            players.setupInsider(insiderPlayerName.game.getDate());
+            players.setupInsider(insiderPlayerName,game.getDate());
     });    
     
     socket.on(CMD_DEPOSIT,function(aGameID,playerName,amount)
@@ -260,3 +249,22 @@ io.on('connection',function(socket)
             players.bankCash(playerName,amount);
     });
 });
+
+function generateGameID()
+{
+    return MIN_GAME_ID+9*Math.floor(MIN_GAME_ID*Math.random());
+}
+
+function registerBots(einstein,numBots)
+{
+    if (einstein)
+    {
+        players.registerPlayer(EINSTEIN,PLAYER_EINSTEIN);
+        sendToClient(CMD_REGISTERED,players.getPlayer(EINSTEIN));
+    }
+    for (var i=0;i<numBots;i++)
+    {
+        players.registerPlayer(BOT_NAME_PREFIX+(i+1),PLAYER_BOT);
+        sendToClient(CMD_REGISTERED,players.getPlayer(BOT_NAME_PREFIX+(i+1)));
+    }
+}

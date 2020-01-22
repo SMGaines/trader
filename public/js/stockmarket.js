@@ -58,12 +58,10 @@ exports.sellStock=function(stockName,amount)
   return getStock(stockName).sell(amount);
 }
 
-exports.getStockSalePrice
-
 exports.processDay=function(gameDate,newsEvent)
 {
   checkSuspendedStocks();
-  return processNewsEvent(gameDate,newsEvent);
+  return processNewsEvent(newsEvent);
 }
 
 exports.stockSuspended=function(stockName)
@@ -92,7 +90,7 @@ exports.getFastestRisingStock=function()
   var bestIndex=-1;
   for (var i=0;i<stocks.length;i++)
   {
-    if (stocks[i].trend > best && stocks[i].available > 0) // i.e. there's some to buy
+    if (stocks[i].trend > best) 
     {
       best=stocks[i].trend;
       bestIndex=i;
@@ -118,7 +116,7 @@ exports.getFastestFallingStock=function()
 
 // ****************  Internal functions *******************
 
-processNewsEvent=function(gameDate,newsEvent)
+processNewsEvent=function(newsEvent)
 {
   if (newsEvent != null)
   {
@@ -198,7 +196,7 @@ checkSuspendedStocks=function()
 {
   for (var i=0;i<stocks.length;i++)
   {
-    if (stocks[i].suspensionDays > 0)
+    if (stocks[i].isSuspended())
     {
       stocks[i].suspensionDays--;
       if (stocks[i].suspensionDays == 0)

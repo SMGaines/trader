@@ -21,7 +21,7 @@ global.MIN_STOCK_PURCHASE = 50;
 global.NUM_INITIAL_STOCKS=4;
 global.STOCK_DIVIDEND_RATIO = .25;
 global.POST_SUSPENSION_PRICE = 10;
-global.TREND_MODIFIER = .001;
+global.TREND_MODIFIER = .0005;
 
 exports.Stock = function(name,amount,riskiness,colour)
 {
@@ -54,6 +54,7 @@ exports.Stock = function(name,amount,riskiness,colour)
             this.available-=sharesPurchased;
         if (riskiness!=RISK_NONE)
             this.trend+=amount*TREND_MODIFIER;
+        this.trend=Math.min(STOCK_MAX_TREND,this.trend);
         return sharesPurchased;
    }
 
@@ -62,6 +63,8 @@ exports.Stock = function(name,amount,riskiness,colour)
         this.available+=amount;
         if (riskiness!=RISK_NONE)
             this.trend-=amount*TREND_MODIFIER;
+        if (this.trend < -STOCK_MAX_TREND)
+            this.trend=-STOCK_MAX_TREND;
         return this.calculateSalePrice()*amount;
     }
 

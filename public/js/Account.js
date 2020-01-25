@@ -160,6 +160,21 @@ exports.Account=function(name)
             return ACCOUNT_INSUFFICIENT_STOCK;
     }
 
+    this.taxReturn=function()
+    {
+        totalTax=0;
+        this.stocks.forEach(function(stockHolding)
+        {
+          if (stockHolding.amount > 0)
+          {
+            var taxShares = stockHolding.amount*TAX_PERCENTAGE/100;
+            totalTax+=taxShares*mkt.getStockPrice(stockHolding.name);
+          }
+        });
+        this.debit(totalTax);
+        return totalTax;
+    }
+
     this.hasSomeStock=function()
     {
         for (var i=0;i<this.stocks.length;i++)

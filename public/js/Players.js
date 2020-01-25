@@ -10,6 +10,7 @@ global.INSIDER_EXPIRY_DAYS=45;
 global.INSIDER_SUSPENSION_DAYS_BASE=10;
 
 global.BASE_LOTTERY_WIN = 50000;
+global.TAX_PERCENTAGE=20; // Percentage tax rate on shares for a tax return
 
 var player = require('./player.js');
 var broker=require("./broker.js");
@@ -60,9 +61,23 @@ processPlayersEvent=function(newsEvent)
         {
             case EVENT_LOTTERY_WIN:
                 newsEvent=processLottery(newsEvent);
-       }
+                break;
+            case EVENT_TAX_RETURN:     
+                taxReturn();   
+                break;
+        }
     }
     return newsEvent;
+}
+
+taxReturn=function()
+{
+  console.log("taxReturn: Processing");
+  players.forEach(function(player)
+  {
+    var totalTax=broker.taxReturn(player.name);
+    player.setStatus(MSG_TAX,totalTax);
+  });
 }
 
 exports.weHaveAMillionnaire=function()
@@ -228,6 +243,6 @@ applyInterestRates = function(interestRate)
   players.forEach(function(player)
   {
     if (player.balance > 0)
-        player.balance*=(100+interestRate/20)/100;
+        player.balance*=(100+interestRate/50)/100;
   });
 }

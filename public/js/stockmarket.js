@@ -27,7 +27,6 @@ const IPO_INITIAL_TREND = 2; // IPO's always start well :)
 var stk = require("./stock.js");
 
 stocks=[];
-var priceUpdateTimer;
 var numActiveStocks;
 var numPlayers;
 
@@ -44,7 +43,6 @@ exports.open=function()
 
 exports.close=function()
 {
-  clearInterval(priceUpdateTimer);
 }
 
 exports.buyStock=function(stockName,amount)
@@ -262,7 +260,7 @@ exports.setStartingStockAmounts=function(numAccounts)
 
 getRandomFactor = function ()
 {
-  return 2*(Math.random()-Math.random());
+  return 3*(Math.random()-Math.random());
 }
 
 getRiskMultiplier = function (riskiness)
@@ -271,8 +269,8 @@ getRiskMultiplier = function (riskiness)
     {
         case RISK_NONE: return 1;
         case RISK_LOW: return 1.1;
-        case RISK_MEDIUM: return 1.3;
-        case RISK_HIGH: return 1.5;
-        case RISK_CRAZY: return 2;
+        case RISK_MEDIUM: return 1.25;
+        case RISK_HIGH: return 1.35;
+        case RISK_CRAZY: return 1.5;
     }
 }

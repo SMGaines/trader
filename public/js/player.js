@@ -165,7 +165,7 @@ exports.Player = function(name,type)
     else
     {
       var suspension = Math.floor(HACKING_SUSPENSION_DAYS/numPlayers);
-      broker.suspendAccount(hackerName,suspension);
+      broker.suspendAccount(this.name,suspension);
       this.setStatus(MSG_WRONG_SUSPICION,suspectedPlayerName);
     }
   }

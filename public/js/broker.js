@@ -22,8 +22,6 @@ global.ACCOUNT_INSUFFICIENT_FUNDS=-4;
 global.ACCOUNT_INSUFFICIENT_STOCK=-5;
 global.BROKER_ACCOUNT_OVERDRAWN=-6;
 
-const TAX_PERCENTAGE=20; // Percentage tax rate on shares for a tax return
-
 var account=require("./Account.js");
 var mkt=require("./stockmarket.js");
 
@@ -58,9 +56,6 @@ processBrokerEvent=function(newsEvent)
     case EVENT_STOCK_DIVIDEND:
       payDividends(newsEvent.stockName);
       break;
-    case EVENT_TAX_RETURN:     
-      taxReturn();   
-      break; 
   }
   return newsEvent;
 }
@@ -140,24 +135,10 @@ splitStocks=function(stockName)
   });
 }
 
-taxReturn=function()
+exports.taxReturn=function(accountName)
 {
-  console.log("taxReturn: Processing");
-  accounts.forEach(function(account)
-  {
-    var totalTax=0;
-    account.stocks.forEach(function(stockHolding)
-    {
-      if (stockHolding.amount > 0)
-      {
-        var taxShares = stockHolding.amount*TAX_PERCENTAGE/100;
-        console.log(stockHolding.name);
-        totalTax+=taxShares*mkt.getStockPrice(stockHolding.name);
-      }
-    });
-    log("Tax bill for "+account.name+" = "+formatMoney(totalTax));
-    account.debit(totalTax);
-  });
+  var totalTax=findAccount(accountName).taxReturn();
+  return totalTax;
 }
 
 exports.setupHack = function(hackingAccountName,hackedAccountName)

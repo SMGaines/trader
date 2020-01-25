@@ -11,7 +11,7 @@
 const INITIAL_INTEREST_RATE=3.5;
 
 const RATE_ADJUST_INCREMENT = .1; // How quickly Interest rates fluctuate
-const MAX_RATE = 7; // Max Interest rate
+const MAX_RATE = 10; // Max Interest rate
 const MIN_RATE=1;
 
 var interestRate;
@@ -57,8 +57,11 @@ exports.getInterestRate=function()
 adjustRates=function()
 {
   // On the first of each month, the rate trend can flip
-  if (gameDate.getDate() ==0) 
+  if (gameDate.getDate() == 1) 
+  {
     rateTrend=getRandomTrend();
+    console.log("New interest trend is: "+rateTrend);
+  }
 
   interestRate+=(rateTrend*Math.random()*RATE_ADJUST_INCREMENT);
   interestRate=clamp(interestRate,MIN_RATE,MAX_RATE);

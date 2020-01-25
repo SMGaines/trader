@@ -9,7 +9,7 @@ exports.Account=function(name)
     this.stocks=[];
     this.isHacking=NONE;
     this.beingHackedBy=NONE;
-    this.accountSuspensionDays=0;
+    this.suspensionDays=0;
     this.hackDaysLeft=0;
 
     this.getCash=function()
@@ -43,8 +43,8 @@ exports.Account=function(name)
 
     this.progressSuspension=function()
     {
-        if(this.accountSuspensionDays > 0)
-            this.accountSuspensionDays--;
+        if(this.suspensionDays > 0)
+            this.suspensionDays--;
     }
 
     this.isSuspended=function()
@@ -55,6 +55,7 @@ exports.Account=function(name)
     this.suspendAccount=function(numDays)
     {
         this.suspensionDays=numDays;
+        console.log("suspendAccount: "+this.name+" suspended for "+numDays+" days");
     }
 
     this.getSuspensionDays=function()
@@ -116,7 +117,8 @@ exports.Account=function(name)
 
     this.splitStock=function(stockName)
     {
-        this.addToStockHolding(stockName,2*this.getStockHolding(stockName));
+        if (this.getStockHolding(stockName) > 0)
+            this.addToStockHolding(stockName,this.getStockHolding(stockName));
     }
 
     this.payDividend=function(stockName,amount)
@@ -130,10 +132,10 @@ exports.Account=function(name)
             return BROKER_ACCOUNT_OVERDRAWN;
 
         var stockPrice=mkt.getStockPrice(stockName);
-        var totalValue = amount*stockPrice;
-        if (totalValue > this.cash)
-            return ACCOUNT_INSUFFICIENT_FUNDS;
-        var sharesPurchased=mkt.buyStock(stockName,amount);
+        var affordableAmount = roundStock(this.cash/stockPrice);
+        if (affordableAmount == 0)
+           return BROKER_INSUFFICIENT_CASH;
+        var sharesPurchased=mkt.buyStock(stockName,Math.min(amount,affordableAmount)); // Buy what you can if not enough cash
         if (sharesPurchased > 0)
         {
             this.addToStockHolding(stockName,sharesPurchased);

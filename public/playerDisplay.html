@@ -20,28 +20,14 @@
     <div style="border-radius: 25px;margin:auto;background-color:#003200;">
         <span id="gameTitle" class='mainHeaderText'></span>
     </div>
-    <div style='padding: 10px;'>
-        <TABLE id="mainTable" style='border-radius: 25px;margin:auto;border: 5px solid #003200; border-collapse: collapse;'>
-            <TBODY style='padding: 10px;'>
-                <TR>
-                    <TH id='stock0'><button class='stockButton' style='background-color:#4CAF50;' type='button'>&nbsp;</button></TH>
-                    <TH id='stock1'><button class='stockButton' style='background-color:#4CAF50;' type='button'>&nbsp;</button></TH>
-                </TR>
-                <TR>
-                    <TH id='stock2'><button class='stockButton' style='background-color:#4CAF50;' type='button'>&nbsp;</button></TH>
-                    <TH id='stock3'><button class='stockButton' style='background-color:#4CAF50;' type='button'>&nbsp;</button></TH>
-                </TR>
-                <TR>
-                    <TH id='stock4'><button class='stockButton' style='background-color:#4CAF50;' type='button'>&nbsp;</button></TH>
-                    <TH id='stock5'><button class='stockButton' style='background-color:#4CAF50;' type='button'>&nbsp;</button></TH>
-                </TR>
-            </TBODY>
-        </TABLE>
-    </div>
     <div style='margin:auto;padding: 30px;'>
-        <button style='padding: 30px;' id='buttonHack' class='veryLargeButton' onclick="openHackForm()">Hack</button>
-        <button style='padding: 30px;' id='buttonSuspect' class='veryLargeButton' onclick="openSuspectForm()">Suspect</button>
-        <button style='padding: 30px;' id='buttonInsider' class='veryLargeButton' onclick="insider()">Insider</button>
+        <TABLE style="margin:auto;">
+            <TR><TH style='padding: 20px;'><button id='bankBalance' class='veryLargeButton' onclick="openBankForm()">$0</button></TH></TR>
+            <TR><TH style='padding: 20px;'><button class='veryLargeButton' onclick="openTransactionForm()">Transact</button></TH></TR>
+            <TR><TH style='padding: 20px;'><button class='veryLargeButton' onclick="insider()">Insider</button></TH></TR>
+            <TR><TH style='padding: 20px;'><button class='veryLargeButton' onclick="openHackForm()">Hack</button></TH></TR>
+            <TR><TH style='padding: 20px;'><button class='veryLargeButton' onclick="openSuspectForm()">Suspect</button></TH></TR>
+        </TABLE>
     </div>
 	<div class='bigpopup' id='hackForm'>
         <TABLE style="margin:auto;">
@@ -73,9 +59,21 @@
     </div>
     <div id='transactionForm' class='popup'>
         <TABLE style="margin:auto;">
-            <TR><TH style='padding: 20px;' id='selectedStock' class='veryLargeText'></TH></TR>
+            <TR>
+                <TH><button id='stock0' class='stockButton' type='button' onclick='selectStock(0)'></button>>&nbsp;</button></TH>
+                <TH><button id='stock1' class='stockButton' type='button' onclick='selectStock(1)'>&nbsp;</button></TH>
+             </TR>
+             <TR>
+                <TH><button id='stock2' class='stockButton' type='button' onclick='selectStock(2)'>&nbsp;</button></TH>
+                <TH><button id='stock3' class='stockButton' type='button' onclick='selectStock(3)'>&nbsp;</button></TH>
+            </TR>
+            <TR>
+                <TH><button id='stock4' class='stockButton' type='button' onclick='selectStock(4)'>&nbsp;</button></TH>
+                <TH><button id='stock5' class='stockButton' type='button' onclick='selectStock(5)'>&nbsp;</button></TH>
+            </TR>
+
             <TR><TH style='padding: 20px;' id='stockAmount' class='veryLargeText'></TH></TR>
-            <TR><TH style='padding: 20px;' id='amountSelector' class='rangeSlider'></TH></TR>
+            <TR><TH style='padding: 20px;'><input id='stockSlider' type='range' class='myslider'/></TH></TR>
             <TR>
                 <TH style='padding: 20px;'>
                     <button class='veryLargeText' type='button' onclick='buy()'>Buy</button>
@@ -93,6 +91,14 @@
             </TR>
         </TABLE>
     </div>
+    <div id='bankForm' class='popup'>
+        <TABLE style="margin:auto;">
+            <TR><TH style='padding: 20px;' id='bankAmount' class='veryLargeText'></TH></TR>
+            <TR><TH style='padding: 20px;'><input id='bankSlider' type='range' class='myslider'/></TH></TR>
+            <TR><TH><button class='veryLargeText' type='button' onclick='bank()'>Bank</button></TH></TR>
+            <TR><TH><button class='veryLargeText' type='button' onclick="closeBankForm()">Cancel</button></TH></TR>
+        </TABLE>
+    </div>
 	<div class='popup' id='statusForm'>
         <TABLE style="margin:auto;">
             <TR><TH style='padding: 20px;' class='headerText'>Status</TH></TR>
@@ -100,11 +106,10 @@
             <TR><TH style='padding: 20px;'><button id='buttonStatus' class='veryLargeText' type='button' onclick="closeStatusForm()">OK</button></TH></TR>
         </TABLE>
     </div>
-	<div class='prison' id='prisonForm'>
+	<div class='prison' id='suspensionForm'>
         <TABLE style="margin:auto;">
             <TR><TH style="margin:auto;"> <img src='images/prison.jpg'/></TH></TR>
-            <TR><TH style="margin:auto;" class='veryLargeText' id='prisonReason'></TH></TR>
-            <TR><TH style="margin:auto;" class='veryLargeText' id='prisonStatus'></TH></TR>
+            <TR><TH style="margin:auto;" class='veryLargeText' id='suspensionStatus'></TH></TR>
         </TABLE>
     </div>
 	<div class='prison' id='gameWaitForm'>
@@ -112,12 +117,6 @@
             <TR><TH style='padding: 20px;' class='headerText'>Waiting for Start</TH></TR>
             <TR><TH style="margin:auto;"><span id="gameWaitStatus" class='veryLargeText'></span></TH></TR>
         </TABLE>
-    </div>
-	<div class='prison' id='bankruptForm'>
-        <TABLE style="margin:auto;">";
-            <TR><TH style="margin:auto;"><img src='images/bankrupt.png'/></TH></TR>
-            <TR><TH style="margin:auto;" class='veryLargeText' id='bankruptStatus'></TH></TR>
-            </TABLE>
     </div>
     <div class='bigpopup' id='registrationForm'>
         <TABLE style="margin:auto;">

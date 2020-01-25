@@ -47,7 +47,7 @@ global.MSG_EVENT_LOTTERY_WIN = ["You have won $x in the lottery",""];
 global.MSG_HAPPY_XMAS = ["Merry Christmas: you receive $x","Wesołych świąt: otrzymasz $x"];
 global.MSG_BANKED = ["You have banked $x","Wesołych świąt: otrzymasz $x"];
 
-global.MSG_NEWS_HEAD_WINNER = ["$name wins!!","$name wygrywa !!"];
+global.MSG_NEWS_HEAD_WINNER = ["$x wins!!","$name wygrywa !!"];
 global.MSG_NEWS_SUB_WINNER = ["Crushes opposition with impressive win","Miażdży przeciwników imponującą wygraną"];
 global.MSG_NEWS_HEAD_OIL_CRASH = ["Oil prices tumble","Ceny ropy spadają"];
 global.MSG_NEWS_SUB_OIL_CRASH = ["Huge new reserves discovered in Middle East","Ogromne nowe rezerwy odkryte na Bliskim Wschodzie"];

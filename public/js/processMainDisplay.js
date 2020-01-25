@@ -4,7 +4,9 @@ const FONT_NAME = "courier";
 
 const STOCK_MIN_VALUE = 5;
 const STOCK_MAX_VALUE = 500;
- 
+const STOCK_COLOURS = ["#0000FF","#CFB53B", "#808080","#FF1493","#9370DB","#dc143c"]; // Must sync with stock.js
+const STOCK_NAMES=["GOVT","GOLD","OIL","HITECH","PHARMA","MINING"];// Must sync with stock.js
+
 const HISTORY_SIZE = 50;
 const NONE = -1;
 
@@ -32,7 +34,7 @@ const CMD_GET_GAME_ID="getgameID";
 const CMD_NEW_RATES="newrates";
 const CMD_GAME_DATE="gamedate";
 const CMD_DEPOSIT="deposit";
-const CMD_WITHDRAW="withdraw";
+const CMD_BANK="bank";
 // ******* End of shared list of constants between server.js, processMainDisplay.js and processPlayer.js *******
 
 const TAX_BEGIN_TIMER = 10000;
@@ -51,6 +53,7 @@ init = function()
 {
     console.log("ProcessMainDisplay: Initialising");
     stockTicker=new StockTicker();
+    stockChart=new StockChart(document.getElementById("stockDisplay"));
     numStocks=0;
     socket.emit(CMD_GET_GAME_LANGUAGE);
     socket.emit(CMD_GET_GAME_ID);
@@ -65,15 +68,15 @@ socket.on(CMD_NEW_PRICES,function(data)
     
     if (numStocks !=stocks.length)
     {
-        stockChart=new StockChart(document.getElementById("stockDisplay"),stocks);
+        stockChart.updateStocks(stocks);
         stockTicker.initTickers("stockTicker",stocks);
         numStocks=stocks.length;
     }
-    else
-        stockChart.draw(stocks);
+    stockChart.draw(stocks);
     stockTicker.loadTickers(stocks);
     financialsDisplay(stocks);
-    playerDisplay(players,stocks);
+    players.sort((p1, p2) => (p1.balance > p2.balance) ? -1 : 1);
+    playerDisplay(players);
 });
 
 socket.on(CMD_NEW_RATES,function(data)
@@ -113,8 +116,10 @@ socket.on(CMD_NEWS_EVENT,function(data)
 socket.on(CMD_END_OF_GAME,function(data)
 {  
     console.log("GAME OVER");
-    //var endEvent=data.msg;
-    //newspaperChart.initNewsStory(endEvent);
+    document.getElementById("openingBell").play();
+
+    var endEvent=data.msg;
+    newspaperChart.initNewsStory(endEvent);
 });
 
 socket.on(CMD_GAME_STARTED,function(data)
@@ -130,52 +135,86 @@ socket.on(CMD_PLAYER_LIST,function(data)
 
 var financialsDisplay = function(stocks)
 {
-    var tableBody = document.getElementById('stockAvailDisplay').getElementsByTagName('tbody')[0];
-    var newRow,newCell;
-    tableBody.innerHTML="";
+    var tableRow = document.getElementById('stockAvail');
+    var newCell;
+    tableRow.innerHTML="";
+    newCell = tableRow.insertCell();    
+    newCell.style.padding="10px";
+    newCell.innerHTML=createSpan("Avail","mainDisplayText","white");
+
     for (var i=0;i<stocks.length;i++)
     {
-        newRow=tableBody.insertRow();
-        newCell = newRow.insertCell();    
-        newCell.innerHTML = createSpan(stocks[i].available,stocks[i].suspensionDays > 0?"black":stocks[i].colour);
+        newCell = tableRow.insertCell();    
+        newCell.style.padding="10px";
+        newCell.innerHTML = createSpan(stocks[i].available,"mainDisplayText",stocks[i].suspensionDays > 0?"black":stocks[i].colour);
     };
 }
 
-var playerDisplay = function(players,stocks)
+var playerDisplay = function(players)
 {
     var tableBody = document.getElementById('leaderBoardTable').getElementsByTagName('tbody')[0];
     var newRow,newCell;
     tableBody.innerHTML="";
  
-    var sortedPlayerList=sortOnNetWorth(players,stocks);
-    for (var i=0;i<sortedPlayerList.length;i++)
+    for (var i=0;i<players.length;i++)
     {
-        var player = sortedPlayerList[i];
+        var player = players[i];
         newRow=tableBody.insertRow();
         newCell = newRow.insertCell();  
-        newCell.style.width="60%";   
-        var col="white";
-        if (player.account.accountSuspensionDays > 0)
-            col ="black";
-        else if (player.account.beingHackedBy!="NONE")
-            col="red";
-        newCell.innerHTML = createSpan(player.name,col);
+        newCell.style.width="27%";   
+        newCell.style.textAlign="left";
 
+        newCell.innerHTML = createSpan(player.name,"mainDisplayText",getPlayerColour(player));
         newCell = newRow.insertCell();     
-        newCell.style.width="40%";   
+        newCell.style.width="60%";   
+        newCell.style.textAlign="left";
+        newCell.innerHTML = createStockDisplay(player.account.stocks);
+        newCell = newRow.insertCell();     
+        newCell.style.width="13%";   
+        newCell.style.textAlign="left";
         newCell.innerHTML = formatMoney(player.balance);
     };
+}
+
+function getPlayerColour(player)
+{
+   if (player.account.suspensionDays > 0)
+        return "black";
+    else if (player.account.beingHackedBy!="NONE")
+        return "red";
+    return "white";
+}
+
+function createStockDisplay(playerStocks)
+{
+    var html="";
+    for (var i=0;i<playerStocks.length;i++)
+    {
+        if (playerStocks[i].amount > 0)
+            html+=(createSpan(playerStocks[i].amount,"stockDisplayText",getStockColour(playerStocks[i])))+"&nbsp;";
+    }
+    return html;
+}
+
+function getStockColour(stock)
+{
+    for (var i=0;i<STOCK_NAMES.length;i++)
+    {
+        if (stock.name == STOCK_NAMES[i])
+            return STOCK_COLOURS[i];
+    }
+    return "white";   
 }
 
 function showGameInfo()
 {
     document.getElementById('gametitle').innerHTML=GAME_TITLE;
-    document.getElementById('gameID').innerHTML="Game:"+gameID;
+    document.getElementById('gameID').innerHTML=gameID;
 }
 
 function showRates(interestRate)
 {
-    document.getElementById('interestRate').innerHTML=createSpan(interestRate.toFixed(1)+"%","white");
+    document.getElementById('interestRate').innerHTML=createSpan(interestRate.toFixed(1)+"%","mainDisplayText","white");
 }
 
 function showDate()
@@ -185,44 +224,15 @@ function showDate()
 
 // Utilities
 
-function sortOnNetWorth(players)
+function createSpan(text,cssClass,colour)
 {
-    var pNetWorth=[];
-    players.forEach(function(player)
-    {
-        pNetWorth.push(player.balance);
-    });
-
-    var sortedPlayerList=[];
-    while(true)
-    {
-        var best=-5000000; // KLUDGY!
-        var bestIndex=-1;
-        for (var j=0;j<pNetWorth.length;j++)
-        {
-            if (pNetWorth[j]>best)
-            {
-                best=pNetWorth[j];
-                bestIndex=j;
-            }
-        }
-        if (bestIndex == -1)
-            break;
-        sortedPlayerList.push(players[bestIndex]);
-        pNetWorth[bestIndex]= -6000000; // KLUDGY!
-    }
-    return sortedPlayerList;
-}
-
-function createSpan(text,colour)
-{
-    return "<span class='mainDisplayText' style='text-align: center;color:"+colour+"'>"+text+"</span>";
+    return "<span class='"+cssClass+"' style='color:"+colour+"'>"+text+"</span>";
 }
 
 function formatMoney(amount)
 {
     const formatter = new Intl.NumberFormat('en-US', {style: 'currency',currency: 'USD',maximumFractionDigits: 0, minimumFractionDigits: 0});
-    return createSpan(formatter.format(amount/1000)+"K","white");
+    return createSpan(formatter.format(amount/1000)+"K","mainDisplayText","white");
 }
 
 function getLongDate(aDate)

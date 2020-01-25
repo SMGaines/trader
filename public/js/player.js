@@ -29,11 +29,24 @@ exports.Player = function(name,type)
     return new PlayerSummary(this.name,this.balance,this.status,broker.getAccountSummary(this.name));
   }
 
+  this.clearStatus=function()
+  {
+    this.status="";
+  }
+
   this.bankCash = function(amount)
   {
-    var amountWithdrawn=broker.withdrawCash(this.name,amount);
-    this.setStatus(MSG_BANKED,formatMoney(amountWithdrawn));
-    this.balance+=amountWithdrawn;
+    var result=broker.withdrawCash(this.name,amount);
+    switch(result)
+    {
+      case BROKER_ACCOUNT_OVERDRAWN:
+        this.setStatus(MSG_ACCOUNT_OVERDRAWN);
+        break;
+      default:
+        this.setStatus(MSG_BANKED,formatMoney(result));
+        this.balance+=result;
+        break;
+    }
   }
 
   this.depositCash=function(amount)
@@ -51,6 +64,12 @@ exports.Player = function(name,type)
   this.isMillionnaire=function()
   {
     return this.balance >=1000000;
+  }
+
+  this.clearInsiderTrading=function()
+  {
+    this.numInsiderDeals = 0;
+    this.lastInsiderTradeDate=0;
   }
 
   this.sellStock = function(stockName,amount)
@@ -122,7 +141,7 @@ exports.Player = function(name,type)
     } 
   }
 
-  this.suspectHacker=function(suspectedPlayerName)
+  this.suspectHacker=function(suspectedPlayerName,numPlayers)
   {
     if (broker.accountIsSuspended(this.name))
     {
@@ -145,7 +164,8 @@ exports.Player = function(name,type)
     }
     else
     {
-      broker.suspendAccount(hackerName,HACKING_SUSPENSION_DAYS/6);
+      var suspension = Math.floor(HACKING_SUSPENSION_DAYS/numPlayers);
+      broker.suspendAccount(hackerName,suspension);
       this.setStatus(MSG_WRONG_SUSPICION,suspectedPlayerName);
     }
   }
@@ -172,14 +192,14 @@ exports.Player = function(name,type)
     this.lastInsiderTradeDate=new Date(gameDate); 
   }
 
-  this.processBot=function(gameDate)
+  this.processBot=function(gameDate,numPlayers)
   {
-    ai.processBot(this,gameDate);
+    ai.processBot(this,gameDate,numPlayers);
   }
   
-  this.processEinstein=function(gameDate)
+  this.processEinstein=function(gameDate,numPlayers)
   {
-    ai.processEinstein(this,gameDate);
+    ai.processEinstein(this,gameDate,numPlayers);
   }
 
   this.setStatus=function(msgType,argX,argY,argZ)
@@ -203,15 +223,15 @@ exports.Player = function(name,type)
     var lang = LANG_EN;
     switch(event.type)
     {
-      case EVENT_CRASH:this.setStatus(MSG_EVENT_STOCK_CRASH,lang,event.stockName,interestingEventDate);break;
-      case EVENT_BOOM: this.setStatus(MSG_EVENT_STOCK_BOOM,lang,event.stockName,interestingEventDate);break;
-      case EVENT_CRASH_ALL_STOCKS: this.setStatus(MSG_EVENT_STOCK_MARKET_CRASH,lang,interestingEventDate);break;
-      case EVENT_BOOM_ALL_STOCKS: this.setStatus(MSG_EVENT_STOCK_MARKET_BOOM,lang,interestingEventDate);break;
-      case EVENT_STOCK_IPO: this.setStatus(MSG_EVENT_STOCK_IPO,lang,interestingEventDate);break;
-      case EVENT_STOCK_RELEASE: this.setStatus(MSG_EVENT_EXTRA_STOCK,lang,event.stockName,interestingEventDate);break;
-      case EVENT_STOCK_DIVIDEND: this.setStatus(MSG_EVENT_STOCK_DIVIDEND,lang,event.stockName,interestingEventDate);break;
-      case EVENT_STOCK_SUSPENDED: this.setStatus(MSG_EVENT_STOCK_SUSPENDED,lang,event.stockName,interestingEventDate);break;
-      case EVENT_STOCK_SPLIT: this.setStatus(MSG_EVENT_STOCK_SPLIT,lang,event.stockName,interestingEventDate);break;
+      case EVENT_CRASH:this.setStatus(MSG_EVENT_STOCK_CRASH,event.stockName,interestingEventDate);break;
+      case EVENT_BOOM: this.setStatus(MSG_EVENT_STOCK_BOOM,event.stockName,interestingEventDate);break;
+      case EVENT_CRASH_ALL_STOCKS: this.setStatus(MSG_EVENT_STOCK_MARKET_CRASH,interestingEventDate);break;
+      case EVENT_BOOM_ALL_STOCKS: this.setStatus(MSG_EVENT_STOCK_MARKET_BOOM,interestingEventDate);break;
+      case EVENT_STOCK_IPO: this.setStatus(MSG_EVENT_STOCK_IPO,interestingEventDate);break;
+      case EVENT_STOCK_RELEASE: this.setStatus(MSG_EVENT_EXTRA_STOCK,event.stockName,interestingEventDate);break;
+      case EVENT_STOCK_DIVIDEND: this.setStatus(MSG_EVENT_STOCK_DIVIDEND,event.stockName,interestingEventDate);break;
+      case EVENT_STOCK_SUSPENDED: this.setStatus(MSG_EVENT_STOCK_SUSPENDED,event.stockName,interestingEventDate);break;
+      case EVENT_STOCK_SPLIT: this.setStatus(MSG_EVENT_STOCK_SPLIT,event.stockName,interestingEventDate);break;
       default: log("setupInsider: Unknown event type: "+event.type);
     }
   }

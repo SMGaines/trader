@@ -1,4 +1,4 @@
-global.NUM_STARTING_STOCK = 750;
+global.NUM_STARTING_STOCK = 500;
 
 global.RISK_NONE=0;
 global.RISK_LOW=1;
@@ -12,21 +12,21 @@ global.STOCK_NAMES=["GOVT","GOLD","OIL","HITECH","PHARMA","MINING"];
 
 global.STOCK_MIN_VALUE = 5;
 global.STOCK_MAX_VALUE = 450;
-global.STOCK_ADJUSTMENT_FACTOR = .5;
-global.STOCK_DAMPING_FACTOR = .98; // How quickly does stock growth/decline slow down. Nearer to 1 means more slowly
+global.STOCK_ADJUSTMENT_FACTOR = .25;
+global.STOCK_DAMPING_FACTOR = .95; // How quickly does stock growth/decline slow down. Nearer to 1 means more slowly
 global.STOCK_INCREMENT = 50;
-global.MIN_STOCK_RELEASE_AMOUNT = 200;
-global.STOCK_MAX_TREND = 5;
+global.MIN_STOCK_RELEASE_AMOUNT = 500;
+global.STOCK_MAX_TREND = 4;
 global.MIN_STOCK_PURCHASE = 50;
 global.NUM_INITIAL_STOCKS=4;
 global.STOCK_DIVIDEND_RATIO = .25;
 global.POST_SUSPENSION_PRICE = 10;
 global.TREND_MODIFIER = .001;
 
-exports.Stock = function(name,riskiness,colour)
+exports.Stock = function(name,amount,riskiness,colour)
 {
     this.name = name;
-    this.available=NUM_STARTING_STOCK;
+    this.available=amount;
     this.price = getRandomStartingPrice();
     this.riskiness=riskiness;
     this.trend=riskiness==RISK_NONE?1:getRandomTrend();
@@ -38,6 +38,11 @@ exports.Stock = function(name,riskiness,colour)
         return this.price;
     }
 
+    this.setTrend=function(trend)
+    {
+        this.trend=trend;
+    }
+
     this.getAvailable = function()
     {
         return this.available;
@@ -45,9 +50,11 @@ exports.Stock = function(name,riskiness,colour)
     
     this.buy = function(amount)
     {
-        this.available-=amount;
+        var sharesPurchased = Math.min(amount,this.available);
+            this.available-=sharesPurchased;
         if (riskiness!=RISK_NONE)
             this.trend+=amount*TREND_MODIFIER;
+        return sharesPurchased;
    }
 
     this.sell = function(amount)

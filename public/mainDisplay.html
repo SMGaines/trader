@@ -22,23 +22,23 @@
         <TABLE>
             <TR>
                 <TD style='padding: 20px;'><span id="gametitle" class='mainHeaderText'></span></TD>
+                <TD style='padding: 20px;'><span class='mainHeaderText'>GameID:</span></TD>
                 <TD style='padding: 20px;'><span id="gameID" class='mainDisplayText'></span></TD>
+                <TD style='padding: 20px;'><span class='mainHeaderText'>Date:</span></TD>
                 <TD style='padding: 20px;'><span id="gamedate" class='mainDisplayText'></span></TD>
+                <TD style='padding: 20px;'><span class='mainHeaderText'>Interest Rate</span></TD>
+                <TD style='padding: 20px;'><span id="interestRate" class='mainDisplayText'></span></TD>
            </TR>
         </TABLE>
     </div>
-    <div id='ratesDisplay' style="border-radius: 25px;background-color:#003200;position:absolute;width:250px; height: 200px; top:100px; left:530px; z-index:1">  
-        <TABLE style="margin:auto;">
-            <TR><TD style='padding: 20px;'><span class='mainHeaderText'>Interest</span></TD></TR>
-            <TR><TD style='padding: 20px;'><span id="interestRate" class='mainDisplayText'>0%</span><TD></TR> 
-        </TABLE>
-    </div>
-    <div id='leaderBoardDisplay' style="border-radius: 25px;background-color:#003200;position:absolute;width:500px; height: 720px;top:100px; left:10px; z-index:1">
+
+    <div id='leaderBoardDisplay' style="border-radius: 25px;background-color:#003200;position:absolute;width:950px; height: 720px;top:100px; left:10px; z-index:1">
         <TABLE id="leaderBoardTable" style="margin:auto;">
             <THEAD>
                 <TR>
-                    <TH width='60%' style='padding: 10px;'><span class='mainHeaderText'>Player</span></TH>
-                    <TH width='40%' style='padding: 10px;'><span class='mainHeaderText'>Bank</span></TH>
+                    <TH style='width:27%;text-align: left;'><span class='mainHeaderText'>Player</span></TH>
+                    <TH style='width:60%;text-align: left;'><span class='mainHeaderText'>Stocks</span></TH>
+                    <TH style='width:13%;text-align: left;'><span class='mainHeaderText'>Bank</span></TH>
                 </TR>
             </THEAD>
             <TBODY>
@@ -49,17 +49,11 @@
          </TABLE>   
     </div>
 
-    <canvas id="stockDisplay" style="border-radius: 25px;background-color:#003200;position:absolute; height:650px;width:840px; top:100px; left:820px; z-index:1"></canvas>
-    <div id="stockAvailDisplay" style="border-radius: 25px;background-color:#003200;position:absolute;width:140px; height: 500px;top:100px; left:1680px; z-index:1">
+    <canvas id="stockDisplay" style="border-radius: 25px;background-color:#003200;position:absolute; height:650px;width:840px; top:100px; left:1020px; z-index:1"></canvas>
+    <div id="stockAvailDisplay" style="border-radius: 25px;background-color:#003200;position:absolute;width:840px; height: 75px;top:770px; left:1020px; z-index:1">
          <TABLE style="margin:auto;">
-            <THEAD>
-                <TR>
-                    <TH><span style="text-align: center;" class='mainHeaderText'>Avail</span></TH>
-                </TR>
-            </THEAD>
-            <TBODY>
-                    <!--This is where the stock availability will be listed--> 
-            </TBODY>
+            <TR id='stockAvail'>
+            </TR>
         </TABLE>
     </div>
     

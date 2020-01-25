@@ -1,9 +1,12 @@
+const SIMULATION=false;
+
 const STATE_INITIALISING = 0;
 const STATE_REGISTRATION = 1;
 const STATE_STARTED = 2;
 
 const MIN_GAME_ID=10000;
 
+// ******* Shared list of constants between server.js, processMainDisplay.js and processPlayer.js *******
 const CMD_NEW_PRICES="newprices";
 const CMD_NEWS_EVENT="newsevent";
 const CMD_SELL_STOCK="sellstock";
@@ -27,7 +30,8 @@ const CMD_GET_GAME_ID="getgameID";
 const CMD_NEW_RATES="newrates";
 const CMD_GAME_DATE="gamedate";
 const CMD_DEPOSIT="deposit";
-const CMD_WITHDRAW="withdraw";
+const CMD_BANK="bank";
+// ******* End of shared list of constants between server.js, processMainDisplay.js and processPlayer.js *******
 
 var game = require('./js/game.js');
 var utils = require("./js/utils.js");
@@ -46,6 +50,7 @@ var state;
 var dayTimer;
 var dayDuration;
 var gameID;
+var gameDurationInMonths;
 
 app.use('/css',express.static(__dirname + '/css'));
 app.use('/js',express.static(__dirname + '/js'));
@@ -93,12 +98,11 @@ function initialiseGame(gameDuration,dayLength,numBots,aGameLang,aEinstein)
 {
     gameID=generateGameID();
     console.log("Server: Initialising: "+gameID);
-    dayDuration=10; //dayLength*1000;
+    dayDuration=SIMULATION?10:dayLength*1000;
+    gameDurationInMonths=gameDuration;
     state=STATE_INITIALISING;
 
-    game.initialise(gameDuration,aGameLang);
-    market.initialise(game.getDate(),gameDuration);
-    events.initialise(game.getDate(),gameDuration,stocks); 
+    game.initialise(gameDurationInMonths,aGameLang);
 
     console.log("Server: Starting registration");
     state=STATE_REGISTRATION;
@@ -111,6 +115,8 @@ function initialiseGame(gameDuration,dayLength,numBots,aGameLang,aEinstein)
 function startGame()
 {
     console.log("Server: Starting game");
+    market.initialise(players.getNumPlayers());
+    events.initialise(game.getDate(),gameDurationInMonths,stocks); 
     game.start();
     market.open();
     state=STATE_STARTED;
@@ -121,6 +127,8 @@ function startGame()
 function processGameOver()
 {
     clearInterval(dayTimer);
+    var newsEvent=events.getEndOfGameEvent(players.getWinnerName());
+    sendToClient(CMD_NEWS_EVENT,newsEvent);
     console.log(players.getWinnerName()+" wins");
 }
 
@@ -141,13 +149,17 @@ function processDay()
     newsEvent=market.processDay(gameDate,newsEvent); 
     newsEvent=players.processDay(gameDate,newsEvent,game.getInterestRate()); 
     newsEvent=broker.processDay(gameDate,newsEvent); 
-    /*if (newsEvent != null)
-        sendToClient(CMD_NEWS_EVENT,newsEvent);
+
+    if (!SIMULATION)
+    {
+        if (newsEvent != null)
+            sendToClient(CMD_NEWS_EVENT,newsEvent);
     
-    sendToClient(CMD_PLAYER_LIST,players.getPlayerSummaries());
-    sendToClient(CMD_NEW_PRICES,market.getStocks());
-    sendToClient(CMD_NEW_RATES,game.getInterestRate());
-    sendToClient(CMD_GAME_DATE,game.getDate());*/
+        sendToClient(CMD_PLAYER_LIST,players.getPlayerSummaries());
+        sendToClient(CMD_NEW_PRICES,market.getStocks());
+        sendToClient(CMD_NEW_RATES,game.getInterestRate());
+        sendToClient(CMD_GAME_DATE,game.getDate());
+    }
 }
 
 function sendToClient(cmd,info)
@@ -161,13 +173,12 @@ io.on('connection',function(socket)
     {
         if (state == STATE_REGISTRATION)
         {
-            var regStatus = game.validateNewPlayer(playerName);
+            var regStatus = 0; // TODO: game.validateNewPlayer(playerName);
             if (regStatus == 0)
             {
                 console.log("Server: New player registered: "+playerName+"("+lang+")");
                 players.registerPlayer(playerName,PLAYER_HUMAN);
                 sendToClient(CMD_REGISTERED,gameID);
-                sendToClient(CMD_PLAYER_LIST,players.getPlayers());
             }
             else
                 sendToClient(CMD_REGISTRATION_ERROR,regStatus);
@@ -242,7 +253,7 @@ io.on('connection',function(socket)
             players.deposit(playerName,amount);
     });    
     
-    socket.on(CMD_WITHDRAW,function(aGameID,playerName,amount)
+    socket.on(CMD_BANK,function(aGameID,playerName,amount)
     {
         console.log("Server: withdraw: "+playerName);
         if (aGameID==gameID)
@@ -258,13 +269,9 @@ function generateGameID()
 function registerBots(einstein,numBots)
 {
     if (einstein)
-    {
         players.registerPlayer(EINSTEIN,PLAYER_EINSTEIN);
-        sendToClient(CMD_REGISTERED,players.getPlayer(EINSTEIN));
-    }
     for (var i=0;i<numBots;i++)
     {
         players.registerPlayer(BOT_NAME_PREFIX+(i+1),PLAYER_BOT);
-        sendToClient(CMD_REGISTERED,players.getPlayer(BOT_NAME_PREFIX+(i+1)));
     }
 }

@@ -15,6 +15,7 @@ const MAX_RATE = 7; // Max Interest rate
 const MIN_RATE=1;
 
 var interestRate;
+var rateTrend;
 var gameDate;
 var gameEndDate;
 
@@ -29,6 +30,7 @@ exports.initialise = function(gameDurationInMonths,gameLang)
 exports.start =function()
 {
   interestRate=INITIAL_INTEREST_RATE;
+  rateTrend=getRandomTrend();
 }
 
 exports.gameCompleted = function()
@@ -54,9 +56,23 @@ exports.getInterestRate=function()
 
 adjustRates=function()
 {
-  interestRate+=(-RATE_ADJUST_INCREMENT+Math.random()*2*RATE_ADJUST_INCREMENT);
-  if (interestRate < MIN_RATE)
-    interestRate=MIN_RATE;
-  if (interestRate > MAX_RATE)
-    interestRate=MAX_RATE;
+  // On the first of each month, the rate trend can flip
+  if (gameDate.getDate() ==0) 
+    rateTrend=getRandomTrend();
+
+  interestRate+=(rateTrend*Math.random()*RATE_ADJUST_INCREMENT);
+  interestRate=clamp(interestRate,MIN_RATE,MAX_RATE);
+}
+
+function getRandomTrend()
+{
+  if (Math.random() >= .5)
+    return 1;
+  else
+    return -1;
+}
+
+clamp =function(val, min, max) 
+{
+  return val > max ? max : val < min ? min : val;
 }

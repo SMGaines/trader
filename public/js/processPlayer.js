@@ -11,6 +11,7 @@ const REG_PLAYER_EXISTS=1;
 const LANG_EN=0;
 const LANG_PL=1;
 
+// ******* Shared list of constants between server.js, processMainDisplay.js and processPlayer.js *******
 const CMD_NEW_PRICES="newprices";
 const CMD_NEWS_EVENT="newsevent";
 const CMD_SELL_STOCK="sellstock";
@@ -31,6 +32,11 @@ const CMD_GAME_LANGUAGE="gamelanguage";
 const CMD_GET_GAME_LANGUAGE="getgamelanguage";
 const CMD_GAME_ID="gameID";
 const CMD_GET_GAME_ID="getgameID";
+const CMD_NEW_RATES="newrates";
+const CMD_GAME_DATE="gamedate";
+const CMD_DEPOSIT="deposit";
+const CMD_BANK="bank";
+// ******* End of shared list of constants between server.js, processMainDisplay.js and processPlayer.js *******
 
 const NONE = "NONE";
 
@@ -43,9 +49,8 @@ var myPlayerName;
 var gameStarted;
 var gameDate;
 var policeAudioPlayed;
-var bankruptAudioPlayed;
-var selectedStock,selectedAmount;
-var amountMonitor;
+var bankAmountMonitor;
+var stockAmountMonitor,stockSelectedIndex;
 var gameID;
 var liftMusic;
 
@@ -61,15 +66,18 @@ socket.on(CMD_GAME_STARTED,function(data)
 socket.on(CMD_NEW_PRICES,function(data)
 {
   gameStarted=true;
-  var pricesInfo=data.msg;
-  gameDate=new Date(pricesInfo.date);
-  stocks=pricesInfo.stockSummary; 
+  stocks=data.msg;
   
   if (numStocks != stocks.length) 
   {
     numStocks=stocks.length;
     updateStockButtons();
   }
+});
+
+socket.on(CMD_GAME_DATE,function(data)
+{
+  gameDate=new Date(data.msg);
 });
 
 socket.on(CMD_REGISTERED,function(data)
@@ -97,32 +105,29 @@ socket.on(CMD_ERROR,function(data)
 socket.on(CMD_PLAYER_LIST,function(data)
 {
   gameStarted=true;
-  var tradeOccurred=false;;
+  var tradeOccurred=false;
   if (myPlayer != null)
     tradeOccurred=checkForTrades(data.msg);
 
   players=data.msg;
   myPlayer=findMyPlayer(players);
+  console.log("CMD_PLAYER_LIST: "+myPlayer);
   if (myPlayer == null)
   {
     console.log("Player not found: "+myPlayerName);
     return;
   }
-
+  document.getElementById("bankBalance").innerHTML=formatMoney(myPlayer.account.cash);
   if (tradeOccurred)
   {
     console.log("Trade occurred");
     document.getElementById("trade").play();
     updateStockButtons();
   }
-  
-  if (myPlayer.netWorth < 0)
+
+  if (myPlayer.account.suspensionDays > 0)
   {
-    openBankruptForm(myPlayer);
-  }
-  else if (myPlayer.prisonDaysRemaining > 0)
-  {
-    openPrisonForm(myPlayer);
+    openSuspensionForm(myPlayer);
   }
   else if (myPlayer.status != "")
   {
@@ -131,10 +136,6 @@ socket.on(CMD_PLAYER_LIST,function(data)
       document.getElementById("xmas").play();
     }
     openStatusForm(myPlayer.status);
-  }
-  if (myPlayer.allStockSold)
-  {
-    document.getElementById("allstocksold").play();
   }
 });
 
@@ -145,7 +146,6 @@ init = function()
     numPlayers=0;
     gameStarted=false;
     policeAudioPlayed=false;
-    bankruptAudioPlayed=false;
     gameID=getCookie(COOKIE_GAME_ID_PARAMETER);
     openRegistrationForm();
 };
@@ -170,70 +170,118 @@ function closeStatusForm()
 buy = function()
 {
   closeTransactionForm();
-  console.log("Buying "+selectedAmount+" shares of "+selectedStock);
-  socket.emit(CMD_BUY_STOCK,gameID,myPlayer.name,selectedStock,selectedAmount);
+  var stockAmount = parseInt(document.getElementById("stockSlider").value);
+  var stockName=stocks[selectedStockIndex].name;
+  console.log("Buying "+stockAmount+" shares of "+stockName);
+  socket.emit(CMD_BUY_STOCK,gameID,myPlayer.name,stockName,stockAmount);
 }
 
 sell = function()
 {
     closeTransactionForm();
-    if (selectedStock == "NONE")
-        return;
-    console.log("Selling "+selectedAmount+" shares of "+selectedStock);
-    socket.emit(CMD_SELL_STOCK,gameID,myPlayer.name,selectedStock,selectedAmount);
+    var stockAmount = parseInt(document.getElementById("stockSlider").value);
+    var stockName=stocks[selectedStockIndex].name;
+    console.log("Selling "+stockAmount+" shares of "+stockName);
+    socket.emit(CMD_SELL_STOCK,gameID,myPlayer.name,stockName,stockAmount);
 }
 
-function openTransactionForm(stockName)
+function openTransactionForm()
 {
     if (!gameStarted)
         openStatusForm(myPlayer.lang==LANG_EN?"Game not started":"Gra się nie rozpoczęła");
     else
-        if (myPlayer.prisonDaysRemaining > 0)
+        if (myPlayer.account.suspensionDays > 0)
             return;
     else
     {
-        selectedStock=stockName;
-        amountMonitor=setInterval(lookForAmountChange,100);
-        document.getElementById("selectedStock").innerHTML=selectedStock;
-        document.getElementById("selectedStock").style.backgroundColor=getStockByName(selectedStock).colour;
-        document.getElementById("amountSelector").innerHTML="<input id='rangeAmount' type='range' step='50' min='50' max='"+MAX_STOCK+"' value='"+MAX_STOCK/2+"' class='myslider'/>";
-        document.getElementById("stockAmount").innerHTML=MAX_STOCK/2;
-        document.getElementById("transactionForm").style.display= "block";
+      selectedStockIndex=0;
+      stockAmountMonitor=setInterval(lookForStockAmountChange,100);
+      var stockSlider= document.getElementById("stockSlider");
+      stockSlider.min=STOCK_INCREMENT;
+      stockSlider.max=MAX_STOCK;
+      stockSlider.step=STOCK_INCREMENT;
+      document.getElementById("stockAmount").innerHTML=STOCK_INCREMENT;
+      document.getElementById("transactionForm").style.display= "block";
     }
+}
+
+function selectStock(stockIndex)
+{
+  console.log("selectStock: "+stocks[stockIndex].name+" selected");
+  selectedStockIndex=stockIndex;
+  for (var i=0;i<stocks.length;i++)
+  {
+      document.getElementById("stock"+i).style.color=(i==stockIndex?"#003200":"white");
+  }
 }
 
 function updateStockButtons()
 {
-    selectedStock=NONE;
-    if (typeof stocks == 'undefined' || typeof myPlayer == 'undefined')
-      return;
-    for (var i=0;i<stocks.length;i++)
-    {
-        stockCell=document.getElementById("stock"+i);
-        stockCell.innerHTML =addStockButton(stocks[i]);
-    }
+  stockSelectedIndex=0;
+  if (typeof stocks == 'undefined' || typeof myPlayer == 'undefined')
+    return;
+  for (var i=0;i<stocks.length;i++)
+  {
+    stockCell=document.getElementById("stock"+i);
+    stockCell.style.backgroundColor=stocks[i].colour;
+    stockCell.innerHTML=stocks[i].name;
+  }
 }
 
-function addStockButton(stock)
+function lookForStockAmountChange()
 {
-  console.log("Stock "+stock.name+"="+getPlayerStockHolding(myPlayer,stock.name));
-  return "<button id='stockButton"+stock.name+"' class='stockButton' style='background-color:"+ stock.colour+"; type='button' onclick='openTransactionForm(&quot;"+stock.name+"&quot;)'>"+
-  getPlayerStockHolding(myPlayer,stock.name)+"</button>";
-}
-
-function lookForAmountChange()
-{
-  selectedAmount = parseInt(document.getElementById("rangeAmount").value);
-  document.getElementById("stockAmount").innerHTML = selectedAmount;
+  var stockAmount = parseInt(document.getElementById("stockSlider").value);
+  document.getElementById("stockAmount").innerHTML = stockAmount;
 }
 
 function closeTransactionForm()
 {
-    clearInterval(amountMonitor);
+  clearInterval(stockAmountMonitor);
 	document.getElementById("transactionForm").style.display= "none";
 }
 
 // ********** END OF TRANSACTION FORM FUNCTIONS **********
+
+// ********** START OF BANK FUNCTIONS **********
+
+bank = function()
+{
+    closeBankForm();
+    var bankAmount=parseInt(document.getElementById("bankSlider").value);
+    socket.emit(CMD_BANK,gameID,myPlayer.name,bankAmount);
+}
+
+function lookForBankAmountChange()
+{
+  var bankAmount = parseInt(document.getElementById("bankSlider").value);
+  document.getElementById("bankAmount").innerHTML = formatMoney(bankAmount);
+}
+
+function openBankForm()
+{
+  if (!gameStarted)
+    openStatusForm(myPlayer.lang==LANG_EN?"Game not started":"Gra się nie rozpoczęła");
+  else
+    if (myPlayer.account.suspensionDays > 0)
+      return;
+  else
+  {
+    bankAmountMonitor=setInterval(lookForBankAmountChange,100);
+    var bankSlider= document.getElementById("bankSlider");
+    bankSlider.min=0;
+    bankSlider.max=myPlayer.account.cash;
+    bankSlider.step=myPlayer.account.cash/100; // i.e. steps of 1%
+    document.getElementById("bankAmount").innerHTML=myPlayer.account.cash/20;
+    document.getElementById("bankForm").style.display= "block";
+  }
+}
+
+function closeBankForm()
+{
+	document.getElementById("bankForm").style.display= "none";
+}
+
+// ********** END OF BANK FORM FUNCTIONS **********
 
 // ********** START OF SUSPECT FUNCTIONS **********
 
@@ -251,7 +299,7 @@ function openSuspectForm()
     if (!gameStarted)
         openStatusForm(myPlayer.lang==LANG_EN?"Game not started":"Gra się nie rozpoczęła");
     else
-	    if (myPlayer.prisonDaysRemaining > 0)
+	    if (myPlayer.account.suspensionDays > 0)
 		    return;
     else
     {
@@ -298,7 +346,7 @@ function openHackForm()
   if (!gameStarted)
     openStatusForm(myPlayer.lang==LANG_EN?"Game not started":"Gra się nie rozpoczęła");
   else
-	if (myPlayer.prisonDaysRemaining > 0)
+	if (myPlayer.account.suspensionDays > 0)
 		return;
   else
   {
@@ -388,9 +436,9 @@ function openRegistrationErrorForm(error)
 
 // ********** END OF REGISTRATION FORM FUNCTIONS **********
 
-// ********** START OF PRISON FORM FUNCTIONS **********
+// ********** START OF SUSPENSION FORM FUNCTIONS **********
 
-function openPrisonForm(player)
+function openSuspensionForm(player)
 {
   if(!policeAudioPlayed)
   {
@@ -398,23 +446,22 @@ function openPrisonForm(player)
     policeAudio.play();
     policeAudioPlayed=true;
   }
-  if (player.prisonDaysRemaining==1)
+  if (player.account.suspensionDays==1)
   {
-    document.getElementById('prisonForm').style.display= "none";
+    document.getElementById('suspensionForm').style.display= "none";
     policeAudioPlayed=false;
     return;
   }
-  document.getElementById('prisonReason').innerHTML = player.prisonReason;
-  document.getElementById('prisonStatus').innerHTML = (myPlayer.lang==LANG_EN?"Days left: ":"Pozostało Dni:")+(player.prisonDaysRemaining-1);
-  document.getElementById('prisonForm').style.display= "block";
+  document.getElementById('suspensionStatus').innerHTML = "Days left: "+(player.account.suspensionDays-1);
+  document.getElementById('suspensionForm').style.display= "block";
 }
 
-function closePrisonForm()
+function closeSuspensionForm()
 {
-	document.getElementById("prisonForm").style.display= "none";
+	document.getElementById("suspensionForm").style.display= "none";
 }
 
-// ********** END OF PRISON FORM FUNCTIONS **********
+// ********** END OF SUSPENSION FORM FUNCTIONS **********
 
 // ********** START OF GAME WAIT FORM FUNCTIONS **********
 
@@ -434,23 +481,6 @@ function closeGameWaitForm()
 
 // ********** END OF GAME WAIT FORM FUNCTIONS **********
 
-// ********** START OF BANKRUPT FORM FUNCTIONS **********
-
-function openBankruptForm(player)
-{
-  if(!bankruptAudioPlayed)
-  {
-    var bankruptAudio=document.getElementById("bankrupt");     
-    bankruptAudio.play();
-    bankruptAudioPlayed=true;
-  }
-  
-  document.getElementById('bankruptStatus').innerHTML = (myPlayer.lang==LANG_EN?"BANKRUPT":"UPADŁY");
-  document.getElementById('bankruptForm').style.display= "block";
-}
-
-// ********** END OF BANKRUPT FORM FUNCTIONS **********
-
 // ********** START OF UTILITY FUNCTIONS **********
 
 isChristmas=function()
@@ -464,9 +494,9 @@ isChristmas=function()
 checkForTrades=function(newPlayers)
 {
   var newMyPlayer=findMyPlayer(newPlayers);
-  for (var i=0;i<newMyPlayer.stocks.length;i++)
+  for (var i=0;i<newMyPlayer.account.stocks.length;i++)
   {
-    var stockName=newMyPlayer.stocks[i].name;
+    var stockName=newMyPlayer.account.stocks[i].name;
     
     if (getPlayerStockHolding(newMyPlayer,stockName) != getPlayerStockHolding(myPlayer,stockName))
     {
@@ -480,10 +510,10 @@ getPlayerStockHolding = function(player,stockName)
 {
   if (typeof player == 'undefined' || player == null)
     return 0;
-  for (var i=0;i<player.stocks.length;i++)
+  for (var i=0;i<player.account.stocks.length;i++)
   {
-    if (player.stocks[i].name == stockName)
-      return player.stocks[i].amount;
+    if (player.account.stocks[i].name == stockName)
+      return player.account.stocks[i].amount;
   }
   return 0;
 }
@@ -549,4 +579,17 @@ function getCookie(name)
     }
   }
   return "";
+}
+
+formatMoney = function(amount)
+{
+    const formatter = new Intl.NumberFormat('en-US', {style: 'currency',currency: 'USD',maximumFractionDigits: 0, minimumFractionDigits: 0});
+    var money = amount >1000000?"$1m":formatter.format(Math.abs(amount)/1000)+"k";
+    return createSpan(money,"veryLargeButton",amount >=0?"white":"red");
+}
+
+
+function createSpan(text,cssClass,colour)
+{
+    return "<span class='"+cssClass+"' style='color:"+colour+"'>"+text+"</span>";
 }

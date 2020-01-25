@@ -1,8 +1,8 @@
-StockChart = function(canvas,stocks)
+StockChart = function(canvas)
 {
     console.log("Canvas: W:"+canvas.width+" / Height: "+canvas.height);
     var stockHistory = [];
-    initStockHistory(stocks);
+    //initStocksHistory(stocks);
     this.canvas = canvas;
     this.ctx = this.canvas.getContext("2d");
     var self=this;
@@ -39,6 +39,16 @@ StockChart = function(canvas,stocks)
         };
     }
 
+    this.updateStocks=function(stocks)
+    {
+        var expectedStocksinStockHistory = stocks.length;
+        var actualStocksinStockHistory = stockHistory.length/HISTORY_SIZE;
+        for (var i=actualStocksinStockHistory;i<expectedStocksinStockHistory;i++)
+        {
+            initStockHistory(stocks[i]);
+        }
+    }
+
     function drawStockGrid(ctx,width,height)
     {
         ctx.strokeStyle = "#4CAF50";
@@ -68,17 +78,22 @@ StockChart = function(canvas,stocks)
         }
     }
 
-    function initStockHistory(stocks)
+    function initStocksHistory(stocks)
     {
         for (var i=0;i<stocks.length;i++)
         {
-            for (var j=0;j<HISTORY_SIZE;j++)
-            {
-                stockHistory.push(stocks[i].price);
-            }
-        }
+            initStockHistory(stocks[i]);   
+        }     
     }
     
+    function initStockHistory(stock)
+    {
+        for (var j=0;j<HISTORY_SIZE;j++)
+        {
+            stockHistory.push(stock.price);
+        }
+    }
+
     function updateStockHistory(stocks)
     {
         for (var i=0;i<stocks.length;i++)

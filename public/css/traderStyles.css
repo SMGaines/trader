@@ -164,7 +164,7 @@ p{
     top:50%;
     left:50%;
     background-color: #90EE90;
-    width:80%;  
+    width:95%;  
     height:auto;   
     margin: auto; 
     z-index: 10;
@@ -262,16 +262,11 @@ p{
 .stockButton {
     border-radius: 25px;
     border-style: solid;
-    border-color: #90EE90;
+    border-color: white;
     width: 400px;
-    display: block;
-    border: none;
-    color: white;
-    padding: 14px 28px;
-    font-size: 128px;
+    color:white;
+    font-size: 72px;
     font-family: "Courier";
-    cursor: pointer;
-    text-align: center;
     z-index: 9;
   }
 
@@ -290,10 +285,9 @@ p{
 .mainDisplayText {
     display: block;
     color: white;
-    font-size: 40px;
+    font-size: 36px;
     font-family: "Courier";
     z-index: 10;
-    margin: auto;
   }
 
   .regDisplayText {
@@ -335,6 +329,12 @@ p{
     font-family: "Courier";
     text-align: center;
     width:30%;
+    z-index: 10;
+  }
+
+  .stockDisplayText {
+    font-size: 32px;
+    font-family: "Courier";
     z-index: 10;
   }
 

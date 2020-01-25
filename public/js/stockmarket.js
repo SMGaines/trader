@@ -22,22 +22,24 @@
 - setStartingStockAmounts (based on number of players)
 */
 
-const MKT_UPDATE_TIME = 2000; // updatePrices called every MKT_UPDATE_TIME seconds
+const IPO_INITIAL_TREND = 2; // IPO's always start well :)
 
 var stk = require("./stock.js");
 
 stocks=[];
 var priceUpdateTimer;
 var numActiveStocks;
+var numPlayers;
 
-exports.initialise=function()
+exports.initialise=function(aNumPlayers)
 {
+  numPlayers=aNumPlayers;
   setupStock();
 }
 
 exports.open=function()
 {
-  priceUpdateTimer=setInterval(updatePrices,MKT_UPDATE_TIME);
+  
 }
 
 exports.close=function()
@@ -47,9 +49,8 @@ exports.close=function()
 
 exports.buyStock=function(stockName,amount)
 {
-  var sharesToPurchase = Math.min(amount,getStock(stockName).getAvailable());
-  getStock(stockName).buy(sharesToPurchase);
-  return sharesToPurchase;
+  var sharesToPurchased = getStock(stockName).buy(amount);
+  return sharesToPurchased;
 }
 
 // Returns value of stock sale
@@ -60,6 +61,7 @@ exports.sellStock=function(stockName,amount)
 
 exports.processDay=function(gameDate,newsEvent)
 {
+  updatePrices();
   checkSuspendedStocks();
   return processMarketEvent(newsEvent);
 }
@@ -128,7 +130,8 @@ processMarketEvent=function(newsEvent)
       case EVENT_BOOM:              boomStock(newsEvent.stockName);break;
       case EVENT_CRASH_ALL_STOCKS:  crashAllStocks();break;
       case EVENT_BOOM_ALL_STOCKS:   boomAllStocks();break;
-      case EVENT_STOCK_IPO:         var stockName=ipoStock();
+      case EVENT_STOCK_IPO:         var stockName=newStock();
+                                    getStock(stockName).setTrend(IPO_INITIAL_TREND); // IPO's alwats start well :)
                                     newsEvent.headLine = newsEvent.headLine.replace("$name",stockName);
                                     break;
       case EVENT_STOCK_RELEASE:     releaseStock(newsEvent.stockName);break;
@@ -157,17 +160,22 @@ boomAllStocks=function()
   });
 }
 
-ipoStock=function()
+newStock=function()
 {
-  stocks.push(new stk.Stock(STOCK_NAMES[numActiveStocks],STOCK_RISKINESS[numActiveStocks],STOCK_COLOURS[numActiveStocks]));
+  stocks.push(new stk.Stock(STOCK_NAMES[numActiveStocks],getInitialStockAmount(),STOCK_RISKINESS[numActiveStocks],STOCK_COLOURS[numActiveStocks]));
   var stockName=STOCK_NAMES[numActiveStocks];
   numActiveStocks++;
   return stockName;
 }
 
+getInitialStockAmount=function()
+{
+  return NUM_STARTING_STOCK+100*numPlayers;
+}
+
 releaseStock=function(stockName)
 {
-  getStock(stockName).available+=MIN_STOCK_RELEASE_AMOUNT+STOCK_INCREMENT*Math.floor(Math.random()*10);
+  getStock(stockName).available+=MIN_STOCK_RELEASE_AMOUNT+STOCK_INCREMENT*numPlayers;
 }
 
 stockSplit=function(stockName)
@@ -236,9 +244,10 @@ updatePrices = function()
 
 function setupStock()
 {
+  numActiveStocks=0;
   for (var i=0;i<NUM_INITIAL_STOCKS;i++)
   {
-    stocks.push(new stk.Stock(STOCK_NAMES[i],STOCK_RISKINESS[i],STOCK_COLOURS[i]));
+    newStock();
   }
   numActiveStocks=NUM_INITIAL_STOCKS;
 }
@@ -249,4 +258,21 @@ exports.setStartingStockAmounts=function(numAccounts)
   {
     stocks[i].available=roundStock(NUM_STARTING_STOCK+players.length*.1*NUM_STARTING_STOCK);
   }
+}
+
+getRandomFactor = function ()
+{
+  return 2*(Math.random()-Math.random());
+}
+
+getRiskMultiplier = function (riskiness)
+{
+    switch(riskiness)
+    {
+        case RISK_NONE: return 1;
+        case RISK_LOW: return 1.1;
+        case RISK_MEDIUM: return 1.3;
+        case RISK_HIGH: return 1.5;
+        case RISK_CRAZY: return 2;
+    }
 }

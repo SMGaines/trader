@@ -47,24 +47,6 @@ roundStock =function(amount)
 }
 exports.roundStock=roundStock;
 
-getRandomFactor = function ()
-{
-  return 3*(Math.random()-Math.random());
-}
-exports.getRandomFactor=getRandomFactor;
-
-getRiskMultiplier = function (riskiness)
-{
-    switch(riskiness)
-    {
-        case RISK_NONE: return 1;
-        case RISK_LOW: return 1.1;
-        case RISK_MEDIUM: return 1.3;
-        case RISK_HIGH: return 1.5;
-        case RISK_CRAZY: return 2;
-    }
-}
-exports.getRiskMultiplier=getRiskMultiplier;
 
 getMonthYear = function(aDate)
 {

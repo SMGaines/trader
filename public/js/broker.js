@@ -122,12 +122,11 @@ payDividends=function(stockName)
 {
   accounts.forEach(function(account)
   {
-    var accountStock = account.getStockHolding(stockName)
+    var accountStock = account.getStockHolding(stockName);
     if (accountStock > 0) 
     {
-        var dividendAmount = roundStock(accountStock*STOCK_DIVIDEND_RATIO);
-        if (dividendAmount < STOCK_INCREMENT)
-            dividendAmount = STOCK_INCREMENT;
+        var dividendAmount = Math.max(STOCK_INCREMENT,roundStock(accountStock*STOCK_DIVIDEND_RATIO));
+        console.log("Paying dividend of "+dividendAmount+" of stock "+stockName+" to "+this.name);
         account.payDividend(stockName,dividendAmount);
     }
   });
@@ -236,7 +235,7 @@ exports.chooseAccountNameToHack=function(accountName)
       bestIndex=i;
     }
   }
-  return accounts[bestIndex].name;
+  return bestIndex==-1?NONE:accounts[bestIndex].name;
 }
 
 exports.chooseRandomAccountName=function(accountName)

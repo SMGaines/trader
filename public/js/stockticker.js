@@ -27,8 +27,8 @@ StockTicker = function()
             document.getElementById(TICKER_DIV_PREFIX+stocks[i].name).style.top = document.getElementById(aTickerElem).style.top/2;
         }
         tickerTimer=setInterval(this.animateTickers,TICKER_TIMER);
-   }
-
+    }
+    
     this.loadTickers=function(aStocks)
     {
         stocks=aStocks;

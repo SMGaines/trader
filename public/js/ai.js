@@ -2,37 +2,73 @@ var mkt=require("./stockmarket.js");
 var broker=require("./broker.js");
 var events = require('./events.js');
 
-exports.processBot=function(player,gameDate)
+exports.processBot=function(player,gameDate,numPlayers)
+{
+  if (player.name == "BOT1")
   {
-    var rndAmount = MIN_STOCK_PURCHASE*(1+Math.floor(Math.random()*20));
-    var rndStock=mkt.getRandomStock();
-    if (nearEndOfGame(gameDate))
-      player.bankCash(.5*broker.getCash(player.name));
-    else if (broker.getStockHolding(player.name,rndStock.name) > 0 && rndStock.price > 50 && rndStock.trend < 0)
-      player.sellStock(rndStock.name,rndAmount);
-    else if (rndStock.trend > 0 || rndStock.price < 50 && rndStock.available > 0)
-      player.buyStock(rndStock.name,rndAmount);
-    else if (Math.random() > .95 && broker.getCash(player.name) > 0)
-      player.bankCash(.1*broker.getCash(player.name));
-    else if (Math.random() > .95 && !broker.hackInProgress(player.name))
-      player.setupHack(broker.chooseRandomAccountName(player.name));
-    else if (Math.random() > .95)
-      player.setupInsider();
-    else if (broker.beingHacked(player.name))
-      player.suspectHacker(broker.chooseRandomAccountName(player.name));
+    if (broker.getCash(player.name) > 0)
+      player.bankCash(broker.getCash(player.name));
+    return;
   }
+  var rndAmount = MIN_STOCK_PURCHASE*(1+Math.floor(Math.random()*20));
+  var rndStock=mkt.getRandomStock();
+  if (nearEndOfGame(gameDate))
+  {
+    var stockNameToSell=findStockNameToSell(player);
+    var amount= broker.getStockHolding(player.name,stockNameToSell);
+    console.log("Near end of game: ["+stockNameToSell+"] / "+amount);
+    if (amount>0)
+      player.sellStock(stockNameToSell,amount);
+    else if (broker.getCash(player.name) > 0)
+      player.bankCash(broker.getCash(player.name));
+  }    
+  else if (broker.getStockHolding(player.name,rndStock.name) > 0 && rndStock.price > 50 && rndStock.trend < 0)
+    player.sellStock(rndStock.name,rndAmount);
+  else if (rndStock.trend > 0 || rndStock.price < 50 && rndStock.available > 0)
+    player.buyStock(rndStock.name,rndAmount);
+  else if (Math.random() > .95 && broker.getCash(player.name) > 0)
+    player.bankCash(.1*broker.getCash(player.name));
+  else if (Math.random() > .95 && !broker.hackInProgress(player.name))
+    player.setupHack(broker.chooseRandomAccountName(player.name));
+  else if (Math.random() > .95)
+    player.setupInsider(gameDate);
+  else if (broker.beingHacked(player.name))
+    player.suspectHacker(broker.chooseRandomAccountName(player.name),numPlayers);
+}
 
   function nearEndOfGame(gameDate)
   {
-    return gameDate.getMonth()==11 && gameDate.getYear()==2021;
+    return gameDate.getMonth()==11 && gameDate.getYear()==121; // getYear returns year minus 1900 :)
   }
 
-  exports.processEinstein=function(player,gameDate)
+  exports.processEinstein=function(player,gameDate,numPlayers)
   {
     var bestPerformingStock=mkt.getFastestRisingStock();
     var worstPerformingStock=mkt.getFastestFallingStock();
-    if (broker.beingHacked(player.name) &&Math.random() > .95)
-      player.suspectHacker(broker.chooseRandomAccountName(player.name));
+    if (nearEndOfGame(gameDate))
+    {
+      var stockNameToSell=findStockNameToSell(player);
+      var amount= broker.getStockHolding(player.name,stockNameToSell);
+      console.log("Near end of game: ["+stockNameToSell+"] / "+amount);
+      if (amount>0)
+        player.sellStock(stockNameToSell,amount);
+      else if (broker.getCash(player.name) > 0)
+        player.bankCash(broker.getCash(player.name));
+    }
+    else if (Math.random() > .95 && broker.getCash(player.name) > 0)
+      player.bankCash(.1*broker.getCash(player.name));
+    else if (Math.abs(bestPerformingStock.trend) > Math.abs(worstPerformingStock.trend) && bestPerformingStock.available >0 && (bestPerformingStock.trend >= 1 || bestPerformingStock.price < 50))
+      player.buyStock(bestPerformingStock.name,bestPerformingStock.available);
+    else if (worstPerformingStock.trend < -1 && broker.getStockHolding(player.name,worstPerformingStock) > 0)
+      player.sellStock(worstPerformingStock.name,broker.getStockHolding(player.name,bestPerformingStock.name));
+    else if (!broker.hackInProgress(player.name))
+    {
+      var playerToHackName=broker.chooseAccountNameToHack(player.name);
+      if (playerToHackName!=NONE)
+        player.setupHack(player.name,playerToHackName);
+    }
+    else if (broker.beingHacked(player.name) && Math.random() > .95)
+      player.suspectHacker(broker.chooseRandomAccountName(player.name),numPlayers);
     else if (player.numInsiderDeals == 0)
     {
       var insiderEvent = player.setupInsider(gameDate);
@@ -40,19 +76,17 @@ exports.processBot=function(player,gameDate)
         return;
       player.processInsiderEvent(insiderEvent);
     }
-    else if (nearEndOfGame(gameDate))
-      player.bankCash(.5*broker.getCash(player.name));
-    else if (Math.random() > .95 && broker.getCash(player.name) > 0)
-      player.bankCash(.1*broker.getCash(player.name));
-    else if (Math.abs(bestPerformingStock.trend) > Math.abs(worstPerformingStock.trend) && bestPerformingStock.available >0 && (bestPerformingStock.trend > 1 || bestPerformingStock.price < 50))
-      player.buyStock(bestPerformingStock.name,bestPerformingStock.available);
-    else if (worstPerformingStock.trend < -1 && broker.getStockHolding(player.name,worstPerformingStock) > 0)
-      player.sellStock(worstPerformingStock.name,broker.getStockHolding(player.name,bestPerformingStock.name));
-    else if (!broker.hackInProgress(player.name))
+  }
+
+  findStockNameToSell=function(player)
+  {
+    for (var i=0;i<STOCK_NAMES.length;i++)
     {
-      var playerToHackName=broker.chooseAccountNameToHack(player.name);
-      player.setupHack(player.name,playerToHackName);
+      var holding = broker.getStockHolding(player.name,STOCK_NAMES[i]);
+      if (holding > 0)
+        return STOCK_NAMES[i];
     }
+    return "NONE";
   }
 
   processInsiderEvent=function(player,event)

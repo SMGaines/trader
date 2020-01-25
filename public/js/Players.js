@@ -7,6 +7,7 @@ global.ERROR_HACK_ALREADY_IN_PROGRESS=-1;
 
 global.INSIDER_LOOKAHEAD_DAYS = 60;
 global.INSIDER_EXPIRY_DAYS=45;
+global.INSIDER_SUSPENSION_DAYS_BASE=10;
 
 global.BASE_LOTTERY_WIN = 50000;
 
@@ -27,12 +28,18 @@ exports.getPlayer=function(playerName)
     return findPlayer(playerName);
 }
 
+exports.getNumPlayers=function()
+{
+    return players.length;
+}
+
 exports.getPlayerSummaries=function()
 {
     var playerSummary=[];
     players.forEach(function(player)
     {
         playerSummary.push(player.getSummary());
+        player.clearStatus();
     });
     return playerSummary;
 }
@@ -110,7 +117,7 @@ exports.suspectHacker=function(playerName,hackerName)
 {
     var player=findPlayer(playerName);
     if (player!=null)
-        player.suspectHacker(hackerName);
+        player.suspectHacker(hackerName,players.length);
 }
 
 exports.setupInsider=function(playerName,gameDate)
@@ -131,7 +138,7 @@ exports.bankCash=function(playerName,amount)
 {
     var player=findPlayer(playerName);
     if (player!=null)
-        player.withDrawCash(amount);
+        player.bankCash(amount);
 }
 
 processBots=function(gameDate)
@@ -139,9 +146,9 @@ processBots=function(gameDate)
   for (var i=0;i<players.length;i++)
   {
     if (players[i].name == EINSTEIN)
-      players[i].processEinstein(gameDate);
+      players[i].processEinstein(gameDate,players.length);
     else if (players[i].name.startsWith(BOT_NAME_PREFIX))
-      players[i].processBot(gameDate);
+      players[i].processBot(gameDate,players.length);
     var pSummary=players[i].getSummary();
     var stockStr="[";
     for (var j=0;j<pSummary.account.stocks.length;j++)
@@ -150,7 +157,8 @@ processBots=function(gameDate)
             stockStr+=pSummary.account.stocks[j].name+":"+pSummary.account.stocks[j].amount+",";
     }
     stockStr+="]";
-    console.log(players[i].name+"/Bank:"+formatMoney(pSummary.balance)+"/Cash:"+formatMoney(pSummary.account.cash)+"/"+stockStr);
+    console.log(players[i].name+"/Bank:"+formatMoney(pSummary.balance)+"/Cash:"+formatMoney(pSummary.account.cash)+
+                "/Suspended:"+(pSummary.account.suspensionDays>0?"Y":"N")+"/stocks:"+stockStr);
   }
 }
 
@@ -172,9 +180,8 @@ function checkInsiderTrading(gameDate)
   {
     if (!broker.accountIsSuspended(player.name) && player.isConvicted())
     {
-      broker.suspendAccount(player,name,PRISON_DAYS_INCREMENT*(1+player.numInsiderDeals))
-      player.numInsiderDeals = 0;
-      player.lastInsiderTradeDate=0;
+      broker.suspendAccount(player.name,INSIDER_SUSPENSION_DAYS_BASE*(1+player.numInsiderDeals))
+      player.clearInsiderTrading();
       player.setStatus(MSG_INSIDER_CONVICTED,broker.getRemainingSuspensionDays(player.name));
     }
     else if (player.numInsiderDeals > 0)
@@ -182,8 +189,7 @@ function checkInsiderTrading(gameDate)
       var daysDiff = daysElapsed(gameDate,player.lastInsiderTradeDate); 
       if (daysDiff > INSIDER_EXPIRY_DAYS)
       {
-        player.numInsiderDeals=0;
-        player.lastInsiderTradeDate=0;
+        player.clearInsiderTrading();
         player.setStatus(MSG_INSIDER_DROPPED);
       }
     }
@@ -196,7 +202,7 @@ processLottery=function(newsEvent)
   var win = BASE_LOTTERY_WIN+10000*Math.floor(Math.random()*5);
   broker.depositCash(lotteryWinner.name,win);
   newsEvent.headLine = newsEvent.headLine.replace("$name",lotteryWinner.name);
-  newsEvent.headLine = newsEvent.headLine.replace("$win",win);
+  newsEvent.headLine = newsEvent.headLine.replace("$win",formatMoney(win));
   lotteryWinner.setStatus(MSG_EVENT_LOTTERY_WIN,formatMoney(win));
   return newsEvent;
 }

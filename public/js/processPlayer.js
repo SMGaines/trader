@@ -80,6 +80,12 @@ socket.on(CMD_GAME_DATE,function(data)
   gameDate=new Date(data.msg);
 });
 
+socket.on(CMD_END_OF_GAME,function(data)
+{
+  var winnerName=data.msg;
+  openGameOverForm(winnerName);
+});
+
 socket.on(CMD_REGISTERED,function(data)
 {
   gameID=data.msg;
@@ -99,7 +105,7 @@ socket.on(CMD_ERROR,function(data)
 {
   var msg=data.msg;
   console.log("Error: "+msg);
-  openStatusForm("Error: "+msg);
+  //openStatusForm("Error: "+msg);
 });
 
 socket.on(CMD_PLAYER_LIST,function(data)
@@ -111,7 +117,6 @@ socket.on(CMD_PLAYER_LIST,function(data)
 
   players=data.msg;
   myPlayer=findMyPlayer(players);
-  console.log("CMD_PLAYER_LIST: "+myPlayer);
   if (myPlayer == null)
   {
     console.log("Player not found: "+myPlayerName);
@@ -120,7 +125,6 @@ socket.on(CMD_PLAYER_LIST,function(data)
   document.getElementById("bankBalance").innerHTML=formatMoney(myPlayer.account.cash);
   if (tradeOccurred)
   {
-    console.log("Trade occurred");
     document.getElementById("trade").play();
     updateStockButtons();
   }
@@ -131,10 +135,8 @@ socket.on(CMD_PLAYER_LIST,function(data)
   }
   else if (myPlayer.status != "")
   {
-    if (isChristmas())
-    {
+    if (isChristmas(gameDate))
       document.getElementById("xmas").play();
-    }
     openStatusForm(myPlayer.status);
   }
 });
@@ -188,7 +190,7 @@ sell = function()
 function openTransactionForm()
 {
     if (!gameStarted)
-        openStatusForm(myPlayer.lang==LANG_EN?"Game not started":"Gra się nie rozpoczęła");
+        openStatusForm("Game not started");
     else
         if (myPlayer.account.suspensionDays > 0)
             return;
@@ -209,6 +211,9 @@ function selectStock(stockIndex)
 {
   console.log("selectStock: "+stocks[stockIndex].name+" selected");
   selectedStockIndex=stockIndex;
+  var stockSlider= document.getElementById("stockSlider");
+  stockSlider.max=Math.max(stocks[selectedStockIndex].available,getPlayerStockHolding(myPlayer,stocks[selectedStockIndex].name));
+
   for (var i=0;i<stocks.length;i++)
   {
       document.getElementById("stock"+i).style.color=(i==stockIndex?"#003200":"white");
@@ -481,13 +486,28 @@ function closeGameWaitForm()
 
 // ********** END OF GAME WAIT FORM FUNCTIONS **********
 
+// ********** START OF GAME OVER FORM FUNCTIONS **********
+
+function openGameOverForm(winnerName)
+{
+  document.getElementById('gameWinner').innerHTML=winnerName+" wins!";
+  document.getElementById('gameOverForm').style.display= "block";
+}
+
+function closeGameOverForm()
+{
+	document.getElementById("gameOverForm").style.display= "none";
+}
+
+// ********** END OF GAME OVER FORM FUNCTIONS **********
+
 // ********** START OF UTILITY FUNCTIONS **********
 
-isChristmas=function()
+isChristmas=function(aDate)
 {
-  if (gameDate == null)
+  if (aDate == null)
     return false;
-  return gameDate.getDate() == 23 && gameDate.getMonth()==11; // Celebrate on Dec 24th :)
+  return aDate.getDate() == 23 && aDate.getMonth()==11; // Celebrate on Dec 24th :)
 }
 
 // Any changes in stock levels, play a 'trade' sound

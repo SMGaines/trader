@@ -129,6 +129,7 @@ function processGameOver()
     clearInterval(dayTimer);
     var newsEvent=events.getEndOfGameEvent(players.getWinnerName());
     sendToClient(CMD_NEWS_EVENT,newsEvent);
+    sendToClient(CMD_END_OF_GAME,players.getWinnerName()); 
     console.log(players.getWinnerName()+" wins");
 }
 
@@ -140,7 +141,6 @@ function processDay()
     if (game.gameCompleted() || players.weHaveAMillionnaire())
     {
         processGameOver();
-        sendToClient(CMD_END_OF_GAME); 
         return;
     }
 

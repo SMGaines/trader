@@ -133,8 +133,8 @@ exports.Account=function(name)
 
         var stockPrice=mkt.getStockPrice(stockName);
         var affordableAmount = roundStock(this.cash/stockPrice);
-        if (affordableAmount == 0)
-           return BROKER_INSUFFICIENT_CASH;
+        if (affordableAmount <= 0)
+           return ACCOUNT_INSUFFICIENT_FUNDS;
         var sharesPurchased=mkt.buyStock(stockName,Math.min(amount,affordableAmount)); // Buy what you can if not enough cash
         if (sharesPurchased > 0)
         {

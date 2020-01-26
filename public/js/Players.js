@@ -11,6 +11,7 @@ global.INSIDER_SUSPENSION_DAYS_BASE=10;
 
 global.BASE_LOTTERY_WIN = 50000;
 global.TAX_PERCENTAGE=20; // Percentage tax rate on shares for a tax return
+global.XMAS_PRESENT_BASE=10000;
 
 var player = require('./player.js');
 var broker=require("./broker.js");
@@ -50,6 +51,8 @@ exports.processDay=function(gameDate,newsEvent,interestRate)
     processBots(gameDate);
     checkInsiderTrading(gameDate);
     applyInterestRates(interestRate);
+    if (isChristmas(gameDate))
+        processChristmas();
     return processPlayersEvent(newsEvent);
 }
 
@@ -63,20 +66,30 @@ processPlayersEvent=function(newsEvent)
                 newsEvent=processLottery(newsEvent);
                 break;
             case EVENT_TAX_RETURN:     
-                taxReturn();   
+                processTaxReturns();   
                 break;
         }
     }
     return newsEvent;
 }
 
-taxReturn=function()
+processChristmas=function()
+{
+    players.forEach(function(player)
+    {
+      var xmasPresent=XMAS_PRESENT_BASE*(1+2*Math.random());
+      broker.depositCash(player.name,xmasPresent);
+      player.setStatus(MSG_HAPPY_XMAS,formatMoney(xmasPresent));
+    });
+}
+
+processTaxReturns=function()
 {
   console.log("taxReturn: Processing");
   players.forEach(function(player)
   {
     var totalTax=broker.taxReturn(player.name);
-    player.setStatus(MSG_TAX,totalTax);
+    player.setStatus(MSG_TAX,formatMoney(totalTax));
   });
 }
 
@@ -228,7 +241,7 @@ findLotteryWinner=function()
     var bestIndex=-1;
     for (var i=0;i<players.length;i++)
     {
-        var playerChance = Math.random()*(1+players[i].getBankBalance()); // More cash in bank means more chance of winning
+        var playerChance = Math.random()*(1+players[i].getBankBalance()/100000); // More cash in bank means more chance of winning
         if (playerChance > best)
         {
             best=playerChance;

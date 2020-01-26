@@ -16,7 +16,6 @@ exports.processBot=function(player,gameDate,numPlayers)
   {
     var stockNameToSell=findStockNameToSell(player);
     var amount= broker.getStockHolding(player.name,stockNameToSell);
-    console.log("Near end of game: ["+stockNameToSell+"] / "+amount);
     if (amount>0)
       player.sellStock(stockNameToSell,amount);
     else if (broker.getCash(player.name) > 0)
@@ -49,7 +48,6 @@ exports.processBot=function(player,gameDate,numPlayers)
     {
       var stockNameToSell=findStockNameToSell(player);
       var amount= broker.getStockHolding(player.name,stockNameToSell);
-      console.log("Near end of game: ["+stockNameToSell+"] / "+amount);
       if (amount>0)
         player.sellStock(stockNameToSell,amount);
       else if (broker.getCash(player.name) > 0)

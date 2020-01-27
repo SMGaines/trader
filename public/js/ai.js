@@ -28,7 +28,11 @@ exports.processBot=function(player,gameDate,numPlayers)
   else if (Math.random() > .95 && broker.getCash(player.name) > 0)
     player.bankCash(.1*broker.getCash(player.name));
   else if (Math.random() > .95 && !broker.hackInProgress(player.name))
-    player.setupHack(broker.chooseRandomAccountName(player.name));
+  {
+    var playerToHackName=broker.chooseAccountNameToHack(player.name);
+    if (playerToHackName!="NONE")
+      player.setupHack(playerToHackName);
+  }
   else if (Math.random() > .95)
     player.setupInsider(gameDate);
   else if (broker.beingHacked(player.name))
@@ -59,11 +63,11 @@ exports.processBot=function(player,gameDate,numPlayers)
       player.buyStock(bestPerformingStock.name,bestPerformingStock.available);
     else if (worstPerformingStock.trend < -1 && broker.getStockHolding(player.name,worstPerformingStock) > 0)
       player.sellStock(worstPerformingStock.name,broker.getStockHolding(player.name,bestPerformingStock.name));
-    else if (!broker.hackInProgress(player.name))
+    else if (Math.random() > .95 && !broker.hackInProgress(player.name))
     {
       var playerToHackName=broker.chooseAccountNameToHack(player.name);
-      if (playerToHackName!=NONE)
-        player.setupHack(player.name,playerToHackName);
+      if (playerToHackName!="NONE")
+        player.setupHack(playerToHackName);
     }
     else if (broker.beingHacked(player.name) && Math.random() > .95)
       player.suspectHacker(broker.chooseRandomAccountName(player.name),numPlayers);

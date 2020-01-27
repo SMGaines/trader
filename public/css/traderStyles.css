@@ -282,6 +282,18 @@ p{
   margin: auto;
 }
 
+.clientHeaderText {
+    border-radius: 25px;
+    display: block;
+    background-color: #003200;
+    color: white;
+    font-size: 64px;
+    font-family: "Courier";
+    text-align: center;
+    z-index: 10;
+    margin: auto;
+}
+
 .mainDisplayText {
     display: block;
     color: white;

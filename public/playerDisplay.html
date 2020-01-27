@@ -18,7 +18,7 @@
         <audio id="xmas" preload="auto"> <source src="audio/xmas.mp3" type="audio/mpeg"/></audio>
     </div>
     <div style="border-radius: 25px;margin:auto;background-color:#003200;">
-        <span id="gameTitle" class='mainHeaderText'></span>
+        <span id="gameTitle" class='clientHeaderText'></span>
     </div>
     <div style='margin:auto;padding: 30px;'>
         <TABLE style="margin:auto;">
@@ -72,20 +72,18 @@
                 <TH><button id='stock5' class='stockButton' type='button' onclick='selectStock(5)'>&nbsp;</button></TH>
             </TR>
 
-            <TR><TH style='padding: 20px;' id='stockAmount' class='veryLargeText'></TH></TR>
-            <TR><TH style='padding: 20px;'><input id='stockSlider' type='range' class='myslider'/></TH></TR>
+            <TR><TH style='padding: 20px;' id='stockAmount' class='veryLargeText'></TH>
+            <TH style='padding: 20px;'><input id='stockSlider' type='range' class='myslider'/></TH></TR>
             <TR>
                 <TH style='padding: 20px;'>
                     <button class='veryLargeText' type='button' onclick='buy()'>Buy</button>
                 </TH>
-            </TR>
-            <TR>
                 <TH style='padding: 20px;'>
                     <button class='veryLargeText' type='button' onclick='sell()'>Sell</button>
                 </TH>
             </TR>
             <TR>
-                <TH style='padding: 20px;'>
+                <TH colspan='2' style='padding: 20px;'>
                     <button class='veryLargeText' type='button' onclick="closeTransactionForm()">Cancel</button>
                 </TH>
             </TR>

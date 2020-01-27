@@ -1,5 +1,5 @@
 const GAME_NAME="TRADER";
-const GAME_VERSION="0.5";
+const GAME_VERSION="2.0";
 
 const COOKIE_EXPIRY_MS = 60*60*1000;
 const COOKIE_USER_PARAMETER = "username";
@@ -32,7 +32,6 @@ const CMD_GAME_LANGUAGE="gamelanguage";
 const CMD_GET_GAME_LANGUAGE="getgamelanguage";
 const CMD_GAME_ID="gameID";
 const CMD_GET_GAME_ID="getgameID";
-const CMD_NEW_RATES="newrates";
 const CMD_GAME_DATE="gamedate";
 const CMD_DEPOSIT="deposit";
 const CMD_BANK="bank";
@@ -283,6 +282,7 @@ function openBankForm()
 
 function closeBankForm()
 {
+  clearInterval(bankAmountMonitor);
 	document.getElementById("bankForm").style.display= "none";
 }
 
@@ -436,7 +436,7 @@ function openRegistrationErrorForm(error)
 	if (error == REG_PLAYER_EXISTS)
 		document.getElementById("regStatus").innerHTML="Player name in use";
 	else
-		document.getElementById("regStatus").innerHTML=(myPlayer.lang==LANG_EN?"Name must be between 3 and 8 chars":"Nazwa musi zawierać od 3 do 8 znaków");
+		document.getElementById("regStatus").innerHTML=("Name must be between 3 and 8 chars");
 }
 
 // ********** END OF REGISTRATION FORM FUNCTIONS **********

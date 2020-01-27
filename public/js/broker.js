@@ -150,6 +150,7 @@ exports.setupHack = function(hackingAccountName,hackedAccountName)
     }
     hackerAccount.setupHacker(hackedAccountName);
     hackedAccount.setHackOnAccount(hackingAccountName);
+    return BROKER_OK;
 }
 
 checkHacks=function()
@@ -215,7 +216,7 @@ exports.chooseAccountNameToHack=function(accountName)
       bestIndex=i;
     }
   }
-  return bestIndex==-1?NONE:accounts[bestIndex].name;
+  return bestIndex==-1?"NONE":accounts[bestIndex].name;
 }
 
 exports.chooseRandomAccountName=function(accountName)

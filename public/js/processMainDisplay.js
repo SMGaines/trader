@@ -31,7 +31,6 @@ const CMD_GAME_LANGUAGE="gamelanguage";
 const CMD_GET_GAME_LANGUAGE="getgamelanguage";
 const CMD_GAME_ID="gameID";
 const CMD_GET_GAME_ID="getgameID";
-const CMD_NEW_RATES="newrates";
 const CMD_GAME_DATE="gamedate";
 const CMD_DEPOSIT="deposit";
 const CMD_BANK="bank";
@@ -77,11 +76,6 @@ socket.on(CMD_NEW_PRICES,function(data)
     financialsDisplay(stocks);
     players.sort((p1, p2) => (p1.balance > p2.balance) ? -1 : 1);
     playerDisplay(players);
-});
-
-socket.on(CMD_NEW_RATES,function(data)
-{
-    showRates(data.msg);
 });
 
 socket.on(CMD_GAME_DATE,function(data)
@@ -212,11 +206,6 @@ function showGameInfo()
     document.getElementById('gameID').innerHTML=gameID;
 }
 
-function showRates(interestRate)
-{
-    document.getElementById('interestRate').innerHTML=createSpan(interestRate.toFixed(1)+"%","mainDisplayText","white");
-}
-
 function showDate()
 {
     document.getElementById('gamedate').innerHTML=getLongDate(gameDate);
@@ -237,6 +226,6 @@ function formatMoney(amount)
 
 function getLongDate(aDate)
 {
-    var options = {year: 'numeric', month: 'long', day: 'numeric' };
+    var options = {year: 'numeric', month: 'short', day: 'numeric' };
     return aDate.toLocaleDateString("en-US", options);
 }

@@ -133,7 +133,7 @@ exports.Player = function(name,type)
     switch(error)
     {
       case BROKER_OK:
-        this.setStatus(MSG_HACK_INITIATED,hackedPlayerName,formatMoney(HACKING_FEE));
+        this.setStatus(MSG_HACK_INITIATED,hackedPlayerName);
         return;
       default: 
         log(this.name+": setupHack: error: "+error);
@@ -235,7 +235,6 @@ exports.Player = function(name,type)
       default: log("setupInsider: Unknown event type: "+event.type);
     }
   }
-
 
   isBankrupt = function()
   {

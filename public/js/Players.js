@@ -1,6 +1,3 @@
-global.EINSTEIN="EINSTEIN";
-global.BOT_NAME_PREFIX="BOT";
-
 global.HACKING_DURATION_DAYS = 30;
 global.HACKING_SUSPENSION_DAYS=30;
 global.ERROR_HACK_ALREADY_IN_PROGRESS=-1;
@@ -46,11 +43,11 @@ exports.getPlayerSummaries=function()
     return playerSummary;
 }
 
-exports.processDay=function(gameDate,newsEvent,interestRate)
+exports.processDay=function(gameDate,newsEvent)
 {
     processBots(gameDate);
     checkInsiderTrading(gameDate);
-    applyInterestRates(interestRate);
+    applyInterestRates();
     if (isChristmas(gameDate))
         processChristmas();
     return processPlayersEvent(newsEvent);
@@ -173,24 +170,32 @@ processBots=function(gameDate)
 {
   for (var i=0;i<players.length;i++)
   {
-    if (players[i].name == EINSTEIN)
+    if (players[i].name.startsWith(EINSTEIN_PREFIX))
       players[i].processEinstein(gameDate,players.length);
     else if (players[i].name.startsWith(BOT_NAME_PREFIX))
       players[i].processBot(gameDate,players.length);
-    var pSummary=players[i].getSummary();
-    var stockStr="[";
-    for (var j=0;j<pSummary.account.stocks.length;j++)
-    {
-        if (pSummary.account.stocks[j].amount > 0)
-            stockStr+=pSummary.account.stocks[j].name+":"+pSummary.account.stocks[j].amount+",";
-    }
-    stockStr+="]";
-    console.log(players[i].name+"/Bank:"+formatMoney(pSummary.balance)+"/Cash:"+formatMoney(pSummary.account.cash)+
-                "/Suspended:"+(pSummary.account.suspensionDays>0?"Y":"N")+"/stocks:"+stockStr);
   }
+  logBotActivity();
 }
 
 // ****** Internal functions **********
+
+logBotActivity=function()
+{
+    for (var i=0;i<players.length;i++)
+    {
+        var pSummary=players[i].getSummary();
+        var stockStr="[";
+        for (var j=0;j<pSummary.account.stocks.length;j++)
+        {
+            if (pSummary.account.stocks[j].amount > 0)
+                stockStr+=pSummary.account.stocks[j].name+":"+pSummary.account.stocks[j].amount+",";
+        }
+        stockStr+="]";
+        console.log(players[i].name+"/Bank:"+formatMoney(pSummary.balance)+"/Cash:"+formatMoney(pSummary.account.cash)+
+                    "/Suspended:"+(pSummary.account.suspensionDays>0?"Y":"N")+"/stocks:"+stockStr);
+  }  
+}
 
 findPlayer = function(playerName)
 {
@@ -251,10 +256,11 @@ findLotteryWinner=function()
     return players[bestIndex];
 }
 
-applyInterestRates = function(interestRate)
+applyInterestRates = function()
 {
   players.forEach(function(player)
   {
+    var interestRate= 1+player.balance/50000;
     if (player.balance > 0)
         player.balance*=(100+interestRate/50)/100;
   });

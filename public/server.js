@@ -1,11 +1,3 @@
-const SIMULATION=false;
-
-const STATE_INITIALISING = 0;
-const STATE_REGISTRATION = 1;
-const STATE_STARTED = 2;
-
-const MIN_GAME_ID=10000;
-
 // ******* Shared list of constants between server.js, processMainDisplay.js and processPlayer.js *******
 const CMD_NEW_PRICES="newprices";
 const CMD_NEWS_EVENT="newsevent";
@@ -27,7 +19,6 @@ const CMD_GAME_LANGUAGE="gamelanguage";
 const CMD_GET_GAME_LANGUAGE="getgamelanguage";
 const CMD_GAME_ID="gameID";
 const CMD_GET_GAME_ID="getgameID";
-const CMD_NEW_RATES="newrates";
 const CMD_GAME_DATE="gamedate";
 const CMD_DEPOSIT="deposit";
 const CMD_BANK="bank";
@@ -37,20 +28,14 @@ var game = require('./js/game.js');
 var utils = require("./js/utils.js");
 var players=require("./js/Players.js");
 var market=require("./js/stockmarket.js");
-var broker=require("./js/broker.js");
-var events = require('./js/events.js');
-var msg=require("./js/messages.js");
+var msgs=require("./js/messages.js");
 
 var express = require('express');
 var app = express();
 var server = require('http').Server(app);
 var io = require('socket.io').listen(server);
 
-var state;
 var dayTimer;
-var dayDuration;
-var gameID;
-var gameDurationInMonths;
 
 app.use('/css',express.static(__dirname + '/css'));
 app.use('/js',express.static(__dirname + '/js'));
@@ -70,7 +55,7 @@ app.get('/registrationComplete',function(req,res)
 
 app.get('/adminResponse',function(req,res)
 {
-    initialiseGame(req.query.gameMonths,req.query.dayDuration,req.query.numBots,req.query.gameLang,req.query.einstein);
+    game.initialise(req.query.simulation,req.query.gameMonths,req.query.dayDuration,req.query.numBots,req.query.numEinsteins);
     res.sendFile(__dirname+'/registration.html');
 });
 
@@ -94,72 +79,51 @@ server.listen(process.env.PORT || 8081,function()
     console.log('Listening on '+server.address().port);
 });
 
-function initialiseGame(gameDuration,dayLength,numBots,aGameLang,aEinstein)
-{
-    gameID=generateGameID();
-    console.log("Server: Initialising: "+gameID);
-    dayDuration=SIMULATION?10:dayLength*1000;
-    gameDurationInMonths=gameDuration;
-    state=STATE_INITIALISING;
-
-    game.initialise(gameDurationInMonths,aGameLang);
-
-    console.log("Server: Starting registration");
-    state=STATE_REGISTRATION;
-    registerBots(aEinstein=="Yes",numBots);
-
-    sendToClient(CMD_PLAYER_LIST,players.getPlayerSummaries());
-}
-
-
 function startGame()
 {
-    console.log("Server: Starting game");
-    market.initialise(players.getNumPlayers());
-    events.initialise(game.getDate(),gameDurationInMonths,stocks); 
     game.start();
-    market.open();
-    state=STATE_STARTED;
     sendToClient(CMD_GAME_STARTED,game.getDate());
-    dayTimer=setInterval(processDay,dayDuration);
+    setDayTimer();
 }
 
-function processGameOver()
+function setDayTimer(aTimeInterval)
 {
-    clearInterval(dayTimer);
-    var newsEvent=events.getEndOfGameEvent(players.getWinnerName());
-    sendToClient(CMD_NEWS_EVENT,newsEvent);
-    sendToClient(CMD_END_OF_GAME,players.getWinnerName()); 
-    console.log(players.getWinnerName()+" wins");
+    if (dayTimer !=null)
+        clearInterval(dayTimer);
+    dayTimer=setInterval(processDay,aTimeInterval); 
 }
 
 function processDay() 
 {
-    game.processDay();
-    var gameDate=game.getDate();
+    setDayTimer(game.getDayDurationInMS());
 
-    if (game.gameCompleted() || players.weHaveAMillionnaire())
+    var newsEvent=game.processDay();
+
+    if (game.gameOver())
     {
-        processGameOver();
+        processGameOver(newsEvent);
         return;
     }
 
-    // Sometimes some post-processing is done on the event, hence it's passed back
-    var newsEvent = events.getNewsEvent(gameDate);
-    newsEvent=market.processDay(gameDate,newsEvent); 
-    newsEvent=players.processDay(gameDate,newsEvent,game.getInterestRate()); 
-    newsEvent=broker.processDay(gameDate,newsEvent); 
+    if (!game.isSimulation())
+        updateClients(newsEvent);
+}
 
-    if (!SIMULATION)
-    {
-        if (newsEvent != null)
-            sendToClient(CMD_NEWS_EVENT,newsEvent);
-    
-        sendToClient(CMD_PLAYER_LIST,players.getPlayerSummaries());
-        sendToClient(CMD_NEW_PRICES,market.getStocks());
-        sendToClient(CMD_NEW_RATES,game.getInterestRate());
-        sendToClient(CMD_GAME_DATE,game.getDate());
-    }
+processGameOver=function(gameOverEvent)
+{
+    clearInterval(dayTimer);
+    sendToClient(CMD_NEWS_EVENT,gameOverEvent);
+    sendToClient(CMD_END_OF_GAME,players.getWinnerName()); 
+}
+
+function updateClients(newsEvent)
+{
+    if (newsEvent != null)
+        sendToClient(CMD_NEWS_EVENT,newsEvent);
+
+    sendToClient(CMD_PLAYER_LIST,players.getPlayerSummaries());
+    sendToClient(CMD_NEW_PRICES,market.getStocks());
+    sendToClient(CMD_GAME_DATE,game.getDate());
 }
 
 function sendToClient(cmd,info)
@@ -171,7 +135,7 @@ io.on('connection',function(socket)
 {
     socket.on(CMD_REGISTER,function(playerName,lang,aGameID)
     {
-        if (state == STATE_REGISTRATION)
+        if (game.registrationOpen())
         {
             var regStatus = 0; // TODO: game.validateNewPlayer(playerName);
             if (regStatus == 0)
@@ -183,7 +147,7 @@ io.on('connection',function(socket)
             else
                 sendToClient(CMD_REGISTRATION_ERROR,regStatus);
         }
-        else if (state == STATE_STARTED)
+        else if (game.gameStarted())
         {
             if (players.getPlayer(playerName) != null && aGameID==gameID)
                 console.log("Server: Ignoring player already registered: "+playerName);
@@ -201,13 +165,13 @@ io.on('connection',function(socket)
 
     socket.on(CMD_GET_GAME_ID,function()
     {
-        sendToClient(CMD_GAME_ID,gameID);
+        sendToClient(CMD_GAME_ID,game.getGameID());
     });
  
     socket.on(CMD_BUY_STOCK,function(aGameID,playerName,stockName,amount)
     {
         console.log("Server: buystock: "+aGameID+"/"+playerName+"/"+stockName+"/"+amount);
-        if (aGameID==gameID)
+        if (game.validID(aGameID))
             players.buyStock(playerName,stockName,amount);
     });
 
@@ -221,57 +185,42 @@ io.on('connection',function(socket)
     socket.on(CMD_SELL_STOCK,function(aGameID,playerName,stockName,amount)
     {
         console.log("Server: sellstock: "+aGameID+"/"+playerName+"/"+stockName+"/"+amount);
-        if (aGameID==gameID)
+        if (game.validID(aGameID))
             players.sellStock(playerName,stockName,amount);
     });    
 
     socket.on(CMD_HACK,function(aGameID,hackingPlayerName,hackedPlayerName)
     {
         console.log("Server: hack of "+hackedPlayerName+" by "+hackingPlayerName);
-        if (aGameID==gameID)
+        if (game.validID(aGameID))
             players.setupHack(hackingPlayerName,hackedPlayerName);
     });
 
     socket.on(CMD_SUSPECT,function(aGameID,suspectingPlayerName,suspectedPlayerName)
     {
         console.log("Server: suspect: "+suspectingPlayerName+"/"+suspectedPlayerName);
-        if (aGameID==gameID)
+        if (game.validID(aGameID))
              players.suspectHacker(suspectingPlayerName,suspectedPlayerName);
     });    
 
     socket.on(CMD_INSIDER,function(aGameID,insiderPlayerName)
     {
         console.log("Server: insider: "+insiderPlayerName);
-        if (aGameID==gameID)
+        if (game.validID(aGameID))
             players.setupInsider(insiderPlayerName,game.getDate());
     });    
     
     socket.on(CMD_DEPOSIT,function(aGameID,playerName,amount)
     {
         console.log("Server: deposit: "+playerName);
-        if (aGameID==gameID)
+        if (game.validID(aGameID))
             players.deposit(playerName,amount);
     });    
     
     socket.on(CMD_BANK,function(aGameID,playerName,amount)
     {
         console.log("Server: withdraw: "+playerName);
-        if (aGameID==gameID)
+        if (game.validID(aGameID))
             players.bankCash(playerName,amount);
     });
 });
-
-function generateGameID()
-{
-    return MIN_GAME_ID+9*Math.floor(MIN_GAME_ID*Math.random());
-}
-
-function registerBots(einstein,numBots)
-{
-    if (einstein)
-        players.registerPlayer(EINSTEIN,PLAYER_EINSTEIN);
-    for (var i=0;i<numBots;i++)
-    {
-        players.registerPlayer(BOT_NAME_PREFIX+(i+1),PLAYER_BOT);
-    }
-}

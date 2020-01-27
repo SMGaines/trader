@@ -1,81 +1,142 @@
-/* game .js
+global.EINSTEIN_PREFIX="EINSTEIN";
+global.BOT_NAME_PREFIX="BOT";
 
-- Interfaces with server.js
+const STATE_INITIALISING = 0;
+const STATE_REGISTRATION = 1;
+const STATE_STARTED = 2;
+const STATE_FINISHED = 3;
 
-- Implements game date and interest rates and exposes :-
-- initialise
-- start - to start the whole game
-- processEndOfDay
-- 
-*/
-const INITIAL_INTEREST_RATE=3.5;
+const GAME_START_DATE = new Date("January 1 2020 00:00:00");
 
-const RATE_ADJUST_INCREMENT = .1; // How quickly Interest rates fluctuate
-const MAX_RATE = 10; // Max Interest rate
-const MIN_RATE=1;
+const SIMULATION_DAY_LENGTH=10; // in Milliseconds i.e. ultra-fast game
 
-var interestRate;
-var rateTrend;
-var gameDate;
-var gameEndDate;
+const DAY_REDUCTION_PER_DAY_IN_MS = 2; // Day in real time get shorter by DAY_REDUCTION_PER_DAY_IN_MS per day
+const MIN_GAME_ID=10000;
 
-exports.initialise = function(gameDurationInMonths,gameLang)
+var players=require("./Players.js");
+var market=require("./stockmarket.js");
+var broker=require("./broker.js");
+var events = require('./events.js');
+
+var gameDate,gameEndDate;
+var dayDurationInSeconds,gameDurationInMonths;
+var simulation;
+var gameID;
+var state;
+
+exports.initialise=function(simul,gameDuration,dayLengthInSeconds,numBots,numEinsteins)
 {
-  gameDate = new Date("January 1 2020 00:00:00");
-  gameEndDate=new Date(gameDate);
-  gameEndDate.setMonth(gameDate.getMonth()+gameDurationInMonths);
-  log("Game ends on: "+gameEndDate);
+    console.log("Game: Initialising: "+gameID);
+    state=STATE_INITIALISING;
+
+    simulation=simul=="Yes";
+
+    gameID=generateGameID();
+
+    dayDurationInMS=dayLengthInSeconds*1000;
+    gameDurationInMonths=gameDuration;
+
+    gameDate = GAME_START_DATE;
+    gameEndDate=new Date(gameDate);
+    gameEndDate.setMonth(gameDate.getMonth()+gameDurationInMonths);
+
+    startRegistration(numEinsteins,numBots);
 }
 
-exports.start =function()
+startRegistration=function(numEinsteins,numBots)
 {
-  interestRate=INITIAL_INTEREST_RATE;
-  rateTrend=getRandomTrend();
+  console.log("Game: Starting registration");
+  state=STATE_REGISTRATION;
+  registerBots(numEinsteins,numBots);
 }
 
-exports.gameCompleted = function()
+exports.start=function()
 {
-  return gameDate >= gameEndDate;
+    console.log("Server: Starting game");
+    state=STATE_STARTED;
+    market.initialise(players.getNumPlayers());
+    events.initialise(gameDate,gameDurationInMonths,market.getStocks()); 
 }
+
+exports.processDay = function()
+{
+  dayDurationInMS-=DAY_REDUCTION_PER_DAY_IN_MS;
+
+  gameDate.setDate(gameDate.getDate() + 1);
+  if (gameOver())
+  {
+    state=STATE_FINISHED;
+    return events.getEndOfGameEvent(players.getWinnerName());
+  }
+
+  // Sometimes some post-processing is done on the event, hence it's passed back
+  var newsEvent = events.getNewsEvent(gameDate);
+  newsEvent=market.processDay(gameDate,newsEvent); 
+  newsEvent=players.processDay(gameDate,newsEvent); 
+  newsEvent=broker.processDay(gameDate,newsEvent); 
+  return newsEvent;
+}
+
+exports.getDayDurationInMS=function()
+{
+  return simulation?SIMULATION_DAY_LENGTH:dayDurationInMS;
+}
+
+exports.isSimulation=function()
+{
+  return simulation;
+}
+
+exports.isInitialising=function()
+{
+  return state == STATE_INITIALISING;
+}
+
+exports.registrationOpen=function()
+{
+  return state == STATE_REGISTRATION;
+}
+
+exports.gameStarted=function()
+{
+  return state == STATE_STARTED;
+}
+
+gameOver = function()
+{
+  return gameDate >= gameEndDate || players.weHaveAMillionnaire();
+}
+exports.gameOver=gameOver;
 
 exports.getDate = function()
 {
   return gameDate;
 }
 
-exports.processDay = function()
+exports.validID=function(anID)
 {
-  gameDate.setDate(gameDate.getDate() + 1);
-  adjustRates();
+  return anID==gameID;
 }
 
-exports.getInterestRate=function()
+exports.getGameID=function()
 {
-  return interestRate;
+  return gameID;
 }
 
-adjustRates=function()
+function generateGameID()
 {
-  // On the first of each month, the rate trend can flip
-  if (gameDate.getDate() == 1) 
+    return MIN_GAME_ID+9*Math.floor(MIN_GAME_ID*Math.random());
+}
+
+function registerBots(numEinsteins,numBots)
+{
+  for (var i=0;i<numEinsteins;i++)
   {
-    rateTrend=getRandomTrend();
-    console.log("New interest trend is: "+rateTrend);
+    players.registerPlayer(EINSTEIN_PREFIX+(i+1),PLAYER_EINSTEIN);
   }
-
-  interestRate+=(rateTrend*Math.random()*RATE_ADJUST_INCREMENT);
-  interestRate=clamp(interestRate,MIN_RATE,MAX_RATE);
-}
-
-function getRandomTrend()
-{
-  if (Math.random() >= .5)
-    return 1;
-  else
-    return -1;
-}
-
-clamp =function(val, min, max) 
-{
-  return val > max ? max : val < min ? min : val;
+  
+  for (var i=0;i<numBots;i++)
+  {
+    players.registerPlayer(BOT_NAME_PREFIX+(i+1),PLAYER_BOT);
+  }
 }

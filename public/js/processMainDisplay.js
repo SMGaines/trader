@@ -111,9 +111,6 @@ socket.on(CMD_END_OF_GAME,function(data)
 {  
     console.log("GAME OVER");
     document.getElementById("openingBell").play();
-
-    var endEvent=data.msg;
-    newspaperChart.initNewsStory(endEvent);
 });
 
 socket.on(CMD_GAME_STARTED,function(data)

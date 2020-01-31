@@ -10,6 +10,12 @@ exports.processBot=function(player,gameDate,numPlayers)
       player.bankCash(broker.getCash(player.name));
     return;
   }
+  if (player.name == "BOT2")
+  {
+    if (broker.getCash(player.name) > 0)
+      player.bankCash(broker.getCash(player.name));
+    return;
+  }
   var rndAmount = MIN_STOCK_PURCHASE*(1+Math.floor(Math.random()*20));
   var rndStock=mkt.getRandomStock();
   if (nearEndOfGame(gameDate))

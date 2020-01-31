@@ -39,7 +39,7 @@ exports.initialise=function(gameStartDate,gameDurationInMonths,stocks)
 
 exports.getEndOfGameEvent=function(winnerName)
 {
-  return new NewsEvent(EVENT_GAME_WINNER,"",getNewsMsg(MSG_NEWS_HEAD_WINNER,winnerName),getNewsMsg(MSG_NEWS_SUB_WINNER));
+  return new NewsEvent(EVENT_GAME_WINNER,"",getNewsMsg(MSG_NEWS_HEAD_WINNER,winnerName),getNewsMsg(MSG_NEWS_SUB_WINNER),true);
 }
 
 getNewsEvent = function(aDate)

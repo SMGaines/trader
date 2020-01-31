@@ -10,7 +10,6 @@ const GAME_START_DATE = new Date("January 1 2020 00:00:00");
 
 const SIMULATION_DAY_LENGTH=10; // in Milliseconds i.e. ultra-fast game
 
-const DAY_REDUCTION_PER_DAY_IN_MS = 2; // Day in real time get shorter by DAY_REDUCTION_PER_DAY_IN_MS per day
 const MIN_GAME_ID=10000;
 
 var players=require("./Players.js");
@@ -19,12 +18,12 @@ var broker=require("./broker.js");
 var events = require('./events.js');
 
 var gameDate,gameEndDate;
-var dayDurationInSeconds,gameDurationInMonths;
+var dayDurationInMS,gameDurationInMonths,perDayReductionInMS;
 var simulation;
 var gameID;
 var state;
 
-exports.initialise=function(simul,gameDuration,dayLengthInSeconds,numBots,numEinsteins)
+exports.initialise=function(simul,gameDuration,dayLengthStartInSeconds,dayLengthEndInSeconds,numBots,numEinsteins)
 {
     console.log("Game: Initialising: "+gameID);
     state=STATE_INITIALISING;
@@ -33,7 +32,11 @@ exports.initialise=function(simul,gameDuration,dayLengthInSeconds,numBots,numEin
 
     gameID=generateGameID();
 
-    dayDurationInMS=dayLengthInSeconds*1000;
+    dayDurationInMS=dayLengthStartInSeconds*1000;
+
+    // Days in real time get shorter by perDayReductionInMS per day
+    perDayReductionInMS=1000*(dayLengthStartInSeconds-dayLengthEndInSeconds) / (gameDuration*30);
+
     gameDurationInMonths=gameDuration;
 
     gameDate = GAME_START_DATE;
@@ -60,7 +63,7 @@ exports.start=function()
 
 exports.processDay = function()
 {
-  dayDurationInMS-=DAY_REDUCTION_PER_DAY_IN_MS;
+  dayDurationInMS-=perDayReductionInMS;
 
   gameDate.setDate(gameDate.getDate() + 1);
   if (gameOver())

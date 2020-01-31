@@ -12,16 +12,30 @@
     <div id='gameAdmin'>  
         <form action="/adminResponse">
             <table>
-                <tr><th><label class='subheaderText' for="simulation">Simulation</label></th>
-                <th><select class='largeText' name='simulation'><option value='No'>No</option><option value='Yes'>Yes</option></select></th></tr>
-                <tr><th><label class='subheaderText' for="dayDuration">Day Duration</label></th>
-                <th><input class='largeText' type="number" name="dayDuration" min = "1" max = "3" value="2"></th></tr>
-                <tr><th><label class='subheaderText' for="gameMonths">Game Months</label></th>
-                <th><input class='largeText' type="number" name="gameMonths" min = "12" max = "36" value="24"></th></tr>
-                <tr><th><label class='subheaderText' for="numBots">Num Bots</label></th>
-                <th><input class='largeText' type="number" name="numBots" min = "0" max = "6" value="4"></th></tr>
-                <tr><th><label class='subheaderText' for="einstein">Num Einsteins</label></th>
-                <th><input class='largeText' type="number" name="numEinsteins" min = "0" max = "6" value="4"></th></tr>
+                <tr>
+                    <th><label class='subheaderText' for="simulation">Simulation</label></th>
+                    <th><select class='largeText' name='simulation'><option value='No'>No</option><option value='Yes'>Yes</option></select></th>
+                </tr>
+                <tr>
+                    <th><label class='subheaderText' for="dayDurationStart">Day Duration Start</label></th>
+                    <th><input class='largeText' type="number" name="dayDurationStart" min = "1" max = "3" value="2"></th>
+                </tr>
+                <tr>
+                    <th><label class='subheaderText' for="dayDurationEnd">Day Duration End</label></th>
+                    <th><input class='largeText' type="number" name="dayDurationEnd" min = "1" max = "3" value="1"></th>
+                </tr>
+                <tr>
+                    <th><label class='subheaderText' for="gameMonths">Game Months</label></th>
+                    <th><input class='largeText' type="number" name="gameMonths" min = "12" max = "36" value="24"></th>
+                </tr>
+                <tr>
+                    <th><label class='subheaderText' for="numBots">Num Bots</label></th>
+                    <th><input class='largeText' type="number" name="numBots" min = "0" max = "6" value="4"></th>
+                </tr>
+                <tr>
+                    <th><label class='subheaderText' for="einstein">Num Einsteins</label></th>
+                    <th><input class='largeText' type="number" name="numEinsteins" min = "0" max = "6" value="4"></th>
+                </tr>
                 <tr><th><input class='largeText' type="submit" value="Start Registration"></th></tr>
             </table>
         </form> 

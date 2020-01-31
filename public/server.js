@@ -55,7 +55,7 @@ app.get('/registrationComplete',function(req,res)
 
 app.get('/adminResponse',function(req,res)
 {
-    game.initialise(req.query.simulation,req.query.gameMonths,req.query.dayDuration,req.query.numBots,req.query.numEinsteins);
+    game.initialise(req.query.simulation,req.query.gameMonths,req.query.dayDurationStart,req.query.dayDurationEnd,req.query.numBots,req.query.numEinsteins);
     res.sendFile(__dirname+'/registration.html');
 });
 

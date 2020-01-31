@@ -34,8 +34,8 @@ exports.initialise=function(simul,gameDuration,dayLengthStartInSeconds,dayLength
 
     dayDurationInMS=dayLengthStartInSeconds*1000;
 
-    // Days in real time get shorter by perDayReductionInMS per day
-    perDayReductionInMS=1000*(dayLengthStartInSeconds-dayLengthEndInSeconds) / (gameDuration*30);
+    // Days in real-time get shorter by perDayReductionInMS per day
+    perDayReductionInMS=1000*(dayLengthStartInSeconds-dayLengthEndInSeconds) / (gameDuration*30); // 30 is average number of days per month
 
     gameDurationInMonths=gameDuration;
 
@@ -66,18 +66,22 @@ exports.processDay = function()
   dayDurationInMS-=perDayReductionInMS;
 
   gameDate.setDate(gameDate.getDate() + 1);
-  if (gameOver())
-  {
-    state=STATE_FINISHED;
-    return events.getEndOfGameEvent(players.getWinnerName());
-  }
 
   // Sometimes some post-processing is done on the event, hence it's passed back
   var newsEvent = events.getNewsEvent(gameDate);
   newsEvent=market.processDay(gameDate,newsEvent); 
   newsEvent=players.processDay(gameDate,newsEvent); 
   newsEvent=broker.processDay(gameDate,newsEvent); 
-  return newsEvent;
+
+  if (gameOver())
+  {
+    state=STATE_FINISHED;
+    var endOfGameEvent=events.getEndOfGameEvent(players.getWinnerName());
+    console.log("game:"+gameDate+" processDay: Game over: "+endOfGameEvent);
+    return endOfGameEvent;
+  }
+  else
+    return newsEvent;
 }
 
 exports.getDayDurationInMS=function()

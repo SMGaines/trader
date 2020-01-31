@@ -6,7 +6,7 @@ NewsPaperChart = function()
 
     this.initNewsStory = function(monthEvent)
     {
-        console.log("newsStory: "+monthEvent.stockName+" = "+monthEvent.type);
+        console.log("newsStory: "+monthEvent.type);
         rotating=false;
         rotationAngle=0;
         animationScale=.01;

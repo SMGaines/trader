@@ -168,7 +168,7 @@ newStock=function()
 
 getInitialStockAmount=function()
 {
-  return NUM_STARTING_STOCK+100*numPlayers;
+  return NUM_STARTING_STOCK+STOCK_INCREMENT*numPlayers;
 }
 
 releaseStock=function(stockName)

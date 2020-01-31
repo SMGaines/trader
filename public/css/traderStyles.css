@@ -264,8 +264,9 @@ p{
     border-style: solid;
     border-color: white;
     width: 400px;
+    height: 200px;
     color:white;
-    font-size: 72px;
+    font-size: 96px;
     font-family: "Courier";
     z-index: 9;
   }

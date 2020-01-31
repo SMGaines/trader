@@ -74,7 +74,6 @@ socket.on(CMD_NEW_PRICES,function(data)
     stockChart.draw(stocks);
     stockTicker.loadTickers(stocks);
     financialsDisplay(stocks);
-    players.sort((p1, p2) => (p1.balance > p2.balance) ? -1 : 1);
     playerDisplay(players);
 });
 
@@ -104,13 +103,13 @@ socket.on(CMD_GAME_ID,function(data)
 socket.on(CMD_NEWS_EVENT,function(data)
 {  
     var monthEvent=data.msg;
+    if (monthEvent.isFinalEvent)
+    {
+        console.log("GAME OVER");
+        playerDisplay(players);
+        document.getElementById("openingBell").play();
+    }
     newspaperChart.initNewsStory(monthEvent);
-});
-
-socket.on(CMD_END_OF_GAME,function(data)
-{  
-    console.log("GAME OVER");
-    document.getElementById("openingBell").play();
 });
 
 socket.on(CMD_GAME_STARTED,function(data)
@@ -143,6 +142,7 @@ var financialsDisplay = function(stocks)
 
 var playerDisplay = function(players)
 {
+    players.sort((p1, p2) => (p1.balance > p2.balance) ? -1 : 1);
     var tableBody = document.getElementById('leaderBoardTable').getElementsByTagName('tbody')[0];
     var newRow,newCell;
     tableBody.innerHTML="";
@@ -218,7 +218,10 @@ function createSpan(text,cssClass,colour)
 function formatMoney(amount)
 {
     const formatter = new Intl.NumberFormat('en-US', {style: 'currency',currency: 'USD',maximumFractionDigits: 0, minimumFractionDigits: 0});
-    return createSpan(formatter.format(amount/1000)+"K","mainDisplayText","white");
+    if (amount > 1000000)
+        return createSpan(formatter.format(amount/1000000)+"M","mainDisplayText","white");
+    else
+        return createSpan(formatter.format(amount/1000)+"K","mainDisplayText","white");
 }
 
 function getLongDate(aDate)

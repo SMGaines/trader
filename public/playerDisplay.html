@@ -29,47 +29,41 @@
             <TR><TH style='padding: 20px;'><button class='veryLargeButton' onclick="openSuspectForm()">Suspect</button></TH></TR>
         </TABLE>
     </div>
-	<div class='bigpopup' id='hackForm'>
+	<div class='prison' id='hackForm'>
         <TABLE style="margin:auto;">
-            <TR>
-                <TH>
-                    <span class='mainHeaderText'>Hack</span>
-                </TH>
-            </TR>
+            <TR><TH><span class='headerText'>Hack</span></TH></TR>
             <TR height=50px></TR>
-            <TR>
-                <TH>
-                    <span id='hackPlayers' class='mainHeaderText'>Hack</span>
-                </TH>
-            </TR>
+            <TR><TH id='hackPlayers'></TH></TR>
             <TR height=50px></TR>
             <TR><TH><button class='veryLargeText' type='submit' onclick="hack()">OK</button></TH></TR>
-            <TR><TH><button class='largeText' type='button' onclick="closeHackForm()"></button></TH></TR>
+            <TR height=50px></TR>
+            <TR><TH><button class='largeText' type='button' onclick="closeHackForm()">Cancel</button></TH></TR>
         </TABLE>
     </div>
-    <div class='bigpopup' id='suspectForm'>
+    <div class='prison' id='suspectForm'>
         <TABLE style="margin:auto;">";
             <TR><TH class='headerText'>Suspect</TH></TR>
             <TR height=50px></TR>
             <TR><TH id='suspectPlayers'></TH></TR>
             <TR height=50px></TR>
             <TR><TH><button class='veryLargeText' type='submit' onclick="suspect()">OK</button></TH></TR>
-            <TR><TH><button class='largeText' type='button' onclick="closeSuspectForm()"></button></TH></TR>
+            <TR height=50px></TR>
+            <TR><TH><button class='largeText' type='button' onclick="closeSuspectForm()">Cancel</button></TH></TR>
         </TABLE>
     </div>
-    <div id='transactionForm' class='popup'>
+    <div id='transactionForm' class='prison'>
         <TABLE style="margin:auto;">
             <TR>
-                <TH><button id='stock0' class='stockButton' type='button' onclick='selectStock(0)'></button>>&nbsp;</button></TH>
-                <TH><button id='stock1' class='stockButton' type='button' onclick='selectStock(1)'>&nbsp;</button></TH>
+                <TH style='padding: 20px;'><button id='stock0' class='stockButton' type='button' onclick='selectStock(0)'></button>>&nbsp;</button></TH>
+                <TH style='padding: 20px;'><button id='stock1' class='stockButton' type='button' onclick='selectStock(1)'>&nbsp;</button></TH>
              </TR>
              <TR>
-                <TH><button id='stock2' class='stockButton' type='button' onclick='selectStock(2)'>&nbsp;</button></TH>
-                <TH><button id='stock3' class='stockButton' type='button' onclick='selectStock(3)'>&nbsp;</button></TH>
+                <TH style='padding: 20px;'><button id='stock2' class='stockButton' type='button' onclick='selectStock(2)'>&nbsp;</button></TH>
+                <TH style='padding: 20px;'><button id='stock3' class='stockButton' type='button' onclick='selectStock(3)'>&nbsp;</button></TH>
             </TR>
             <TR>
-                <TH><button id='stock4' class='stockButton' type='button' onclick='selectStock(4)'>&nbsp;</button></TH>
-                <TH><button id='stock5' class='stockButton' type='button' onclick='selectStock(5)'>&nbsp;</button></TH>
+                <TH style='padding: 20px;'><button id='stock4' class='stockButton' type='button' onclick='selectStock(4)'>&nbsp;</button></TH>
+                <TH style='padding: 20px;'><button id='stock5' class='stockButton' type='button' onclick='selectStock(5)'>&nbsp;</button></TH>
             </TR>
 
             <TR><TH style='padding: 20px;' id='stockAmount' class='veryLargeText'></TH>
@@ -89,7 +83,7 @@
             </TR>
         </TABLE>
     </div>
-    <div id='bankForm' class='popup'>
+    <div id='bankForm' class='prison'>
         <TABLE style="margin:auto;">
             <TR><TH style='padding: 20px;' id='bankAmount' class='veryLargeText'></TH></TR>
             <TR><TH style='padding: 20px;'><input id='bankSlider' type='range' class='myslider'/></TH></TR>
@@ -97,7 +91,7 @@
             <TR><TH><button class='veryLargeText' type='button' onclick="closeBankForm()">Cancel</button></TH></TR>
         </TABLE>
     </div>
-	<div class='popup' id='statusForm'>
+	<div class='prison' id='statusForm'>
         <TABLE style="margin:auto;">
             <TR><TH style='padding: 20px;' class='headerText'>Status</TH></TR>
             <TR><TH style='padding: 20px;'class='veryLargeText' id='playerStatus'></TH></TR>
@@ -122,18 +116,10 @@
             <TR><TH style="margin:auto;"><span id="gameWinner" class='veryLargeText'></span></TH></TR>
         </TABLE>
     </div>
-    <div class='bigpopup' id='registrationForm'>
+    <div class='prison' id='registrationForm'>
         <TABLE style="margin:auto;">
             <TR><TH style='padding: 20px;' class='headerText'>Register</TH></TR>
             <TR><TH style='padding: 20px;'><input class='veryLargeText' id='regName' type='text' maxlength='8' size='8'/></TH></TR>
-             <TR>
-                <TH style='padding: 20px;'>
-                    <select class='veryLargeText' id='regLang'>
-                        <option value='EN'>English</option>
-                        <option value='PL'>Polski</option>
-                    </select>
-                </TH>
-            </TR>
             <TR><TH style='padding: 20px;'><button id = 'regButton' class='veryLargeText' type='button' onclick='processRegistrationForm()'>OK</button></TH></TR>
             <TR><TH style='padding: 20px;' class='veryLargeText' id='regStatus'></TH></TR>
         </TABLE>

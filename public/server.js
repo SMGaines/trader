@@ -111,7 +111,9 @@ function processDay()
 
 processGameOver=function(gameOverEvent)
 {
+    console.log("server: processGameOver"+gameOverEvent);
     clearInterval(dayTimer);
+    sendToClient(CMD_PLAYER_LIST,players.getPlayerSummaries());
     sendToClient(CMD_NEWS_EVENT,gameOverEvent);
     sendToClient(CMD_END_OF_GAME,players.getWinnerName()); 
 }
@@ -142,7 +144,7 @@ io.on('connection',function(socket)
             {
                 console.log("Server: New player registered: "+playerName+"("+lang+")");
                 players.registerPlayer(playerName,PLAYER_HUMAN);
-                sendToClient(CMD_REGISTERED,gameID);
+                sendToClient(CMD_REGISTERED,game.getGameID());
             }
             else
                 sendToClient(CMD_REGISTRATION_ERROR,regStatus);
@@ -152,7 +154,7 @@ io.on('connection',function(socket)
             if (players.getPlayer(playerName) != null && aGameID==gameID)
                 console.log("Server: Ignoring player already registered: "+playerName);
             else
-                sendToClient(CMD_ERROR,"Player not registered for game: "+gameID);
+                sendToClient(CMD_ERROR,"Player not registered for game: "+game.getGameID());
         }
         else
             console.log("Ignoring registration attempt");

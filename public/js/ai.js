@@ -18,7 +18,7 @@ exports.processBot=function(player,gameDate,numPlayers)
   }
   var rndAmount = MIN_STOCK_PURCHASE*(1+Math.floor(Math.random()*20));
   var rndStock=mkt.getRandomStock();
-  if (nearEndOfGame(gameDate))
+  if (nearEndOfGame(gameDate) || player.amMillionnaireOnPaper())
   {
     var stockNameToSell=findStockNameToSell(player);
     var amount= broker.getStockHolding(player.name,stockNameToSell);

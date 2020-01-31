@@ -97,6 +97,11 @@ exports.sellStock=function(accountName,stockName,amount)
     return findAccount(accountName).sellStock(stockName,amount);
 }
 
+exports.getStockValue=function(accountName)
+{
+  return findAccount(accountName).getStockValue();
+}
+
 exports.getStockHolding=function(accountName,stockName)
 {
     return findAccount(accountName).getStockHolding(stockName);

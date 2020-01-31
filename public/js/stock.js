@@ -12,7 +12,7 @@ global.STOCK_NAMES=["GOVT","GOLD","OIL","HITECH","PHARMA","MINING"];
 
 global.STOCK_MIN_VALUE = 5;
 global.STOCK_MAX_VALUE = 450;
-global.STOCK_ADJUSTMENT_FACTOR = .25;
+global.STOCK_ADJUSTMENT_FACTOR = 1;
 global.STOCK_DAMPING_FACTOR = .95; // How quickly does stock growth/decline slow down. Nearer to 1 means more slowly
 global.STOCK_INCREMENT = 50;
 global.MIN_STOCK_RELEASE_AMOUNT = 500;

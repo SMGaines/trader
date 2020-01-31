@@ -1,4 +1,4 @@
-const STARTING_CASH = 100000;
+const STARTING_CASH = 75000;
 
 global.PLAYER_HUMAN=0;
 global.PLAYER_BOT=1;
@@ -64,6 +64,11 @@ exports.Player = function(name,type)
   this.isMillionnaire=function()
   {
     return this.balance >=1000000;
+  }
+
+  this.amMillionnaireOnPaper=function()
+  {
+    return this.balance + broker.getStockValue(this.name) +broker.getCash(this.name) >= 1000000;
   }
 
   this.clearInsiderTrading=function()

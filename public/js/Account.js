@@ -204,6 +204,16 @@ exports.Account=function(name)
         return bestName;
     }
 
+    this.getStockValue=function()
+    {
+        var totalValue=0;
+        for (var i=0;i<this.stocks.length;i++)
+        {
+            totalValue+=this.stocks[i].amount*mkt.getStockPrice(this.stocks[i].name);
+        }
+        return totalValue;
+    }
+    
     // ****** Internal functions ********
 
     this.getStockHolding=function(stockName)

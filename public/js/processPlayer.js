@@ -201,6 +201,7 @@ function openTransactionForm()
       stockSlider.min=STOCK_INCREMENT;
       stockSlider.max=MAX_STOCK;
       stockSlider.step=STOCK_INCREMENT;
+      stockSlider.value=(MAX_STOCK-STOCK_INCREMENT)/2;
       document.getElementById("stockAmount").innerHTML=STOCK_INCREMENT;
       document.getElementById("transactionForm").style.display= "block";
     }
@@ -302,18 +303,15 @@ suspect = function()
 function openSuspectForm()
 {
     if (!gameStarted)
-        openStatusForm(myPlayer.lang==LANG_EN?"Game not started":"Gra się nie rozpoczęła");
+        openStatusForm("Game not started");
     else
 	    if (myPlayer.account.suspensionDays > 0)
 		    return;
     else
     {
-        if (numPlayers != players.length)
-        {
-          document.getElementById('suspectPlayers').innerHTML=addSuspectPlayerDropDown();
-          numPlayers=players.length;
-        }  
-        document.getElementById('suspectForm').style.display= "block";
+      document.getElementById('suspectPlayers').innerHTML=addSuspectPlayerDropDown();
+      numPlayers=players.length; 
+      document.getElementById('suspectForm').style.display= "block";
     }
 }
 
@@ -349,17 +347,14 @@ hack = function()
 function openHackForm()
 {
   if (!gameStarted)
-    openStatusForm(myPlayer.lang==LANG_EN?"Game not started":"Gra się nie rozpoczęła");
+    openStatusForm("Game not started");
   else
 	if (myPlayer.account.suspensionDays > 0)
 		return;
   else
   {
-    if (numPlayers != players.length)
-    {
-        document.getElementById('hackPlayers').innerHTML=addHackPlayerDropDown();
-        numPlayers=players.length;
-    }
+    document.getElementById('hackPlayers').innerHTML=addHackPlayerDropDown();
+    numPlayers=players.length;
     document.getElementById('hackForm').style.display= "block";
   }
 }
@@ -394,14 +389,14 @@ insider = function()
 
 // ********** START OF REGISTRATION FUNCTIONS **********
 
-registerPlayer = function(playerName,lang)
+registerPlayer = function(playerName)
 {
   if (playerName != "" && playerName != null) 
   {
     setCookie(COOKIE_USER_PARAMETER,playerName);
     myPlayerName=playerName;
     console.log("Registering player: "+playerName);
-    socket.emit(CMD_REGISTER,playerName,lang,gameID);
+    socket.emit(CMD_REGISTER,playerName,"EN",gameID);
   }
 };
 
@@ -416,11 +411,10 @@ function openRegistrationForm()
 function processRegistrationForm()
 {
   var nameInput=document.getElementById("regName").value;
-  var langInput=document.getElementById("regLang").value;
 	if (nameInput.length >=3 && nameInput.length <= 8)
 	{
 		document.getElementById("registrationForm").style.display= "none";
-		registerPlayer(nameInput,langInput);
+		registerPlayer(nameInput);
 	}
 	else
 		openRegistrationErrorForm(0);
@@ -550,8 +544,8 @@ function getStockByName(stockName)
 
 function addPlayerDropDown(selectID)
 {
-    var html = "<select class='veryLargeText' id='"+selectID+"'>";
-    html+= "<option value='"+NONE+"'>"+(myPlayer.lang==LANG_EN?"Select Player":"Wybierz gracza")+"</option>";
+    var html = "<select class='largeText' id='"+selectID+"'>";
+    html+= "<option value='"+NONE+"'>Select Player</option>";
     players.forEach(function(player)
     {
       if (player.name != myPlayer.name)

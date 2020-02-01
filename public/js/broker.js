@@ -125,7 +125,7 @@ payDividends=function(stockName)
     if (accountStock > 0) 
     {
         var dividendAmount = Math.max(STOCK_INCREMENT,roundStock(accountStock*STOCK_DIVIDEND_RATIO));
-        console.log("Paying dividend of "+dividendAmount+" of stock "+stockName+" to "+this.name);
+        console.log("Paying dividend of "+dividendAmount+" of stock "+stockName+" to "+account.name);
         account.payDividend(stockName,dividendAmount);
     }
   });

@@ -44,6 +44,8 @@ exports.initialise=function(simul,gameDuration,dayLengthStartInSeconds,dayLength
     gameEndDate.setMonth(gameDate.getMonth()+gameDurationInMonths);
 
     startRegistration(numEinsteins,numBots);
+    if (simulation)
+      runSimulation();
 }
 
 startRegistration=function(numEinsteins,numBots)
@@ -53,15 +55,31 @@ startRegistration=function(numEinsteins,numBots)
   registerBots(numEinsteins,numBots);
 }
 
-exports.start=function()
+runSimulation=function()
+{
+  start();
+  while (!gameOver())
+  {
+    var event=processDay();
+    if (event !=null)
+    {
+      console.log("Event: "+event.type+"/"+event.stockName);
+    }
+  }
+  console.log(gameDate.toLocaleDateString("en-UK")+" : Game over: "+players.getWinnerName()+" wins");
+  process.exit();
+}
+
+start=function()
 {
     console.log("Server: Starting game");
     state=STATE_STARTED;
     market.initialise(players.getNumPlayers());
     events.initialise(gameDate,gameDurationInMonths,market.getStocks()); 
 }
+exports.start=start;
 
-exports.processDay = function()
+processDay = function()
 {
   dayDurationInMS-=perDayReductionInMS;
 
@@ -77,12 +95,12 @@ exports.processDay = function()
   {
     state=STATE_FINISHED;
     var endOfGameEvent=events.getEndOfGameEvent(players.getWinnerName());
-    console.log("game:"+gameDate+" processDay: Game over: "+endOfGameEvent);
     return endOfGameEvent;
   }
   else
     return newsEvent;
 }
+exports.processDay=processDay;
 
 exports.getDayDurationInMS=function()
 {

@@ -2,6 +2,7 @@ const GAME_TITLE = "TRADER v2.0";
 const FONT_SIZE = 40;
 const FONT_NAME = "courier";
 
+const MAX_STOCKS = 6; // Co-ordinate with stockmarket.js
 const STOCK_MIN_VALUE = 5;
 const STOCK_MAX_VALUE = 500;
 const STOCK_COLOURS = ["#0000FF","#CFB53B", "#808080","#FF1493","#9370DB","#dc143c"]; // Must sync with stock.js
@@ -130,13 +131,18 @@ var financialsDisplay = function(stocks)
     tableRow.innerHTML="";
     newCell = tableRow.insertCell();    
     newCell.style.padding="10px";
+    newCell.style.width="13%";   
     newCell.innerHTML=createSpan("Avail","mainDisplayText","white");
 
-    for (var i=0;i<stocks.length;i++)
+    for (var i=0;i<MAX_STOCKS;i++)
     {
         newCell = tableRow.insertCell();    
         newCell.style.padding="10px";
-        newCell.innerHTML = createSpan(stocks[i].available,"mainDisplayText",stocks[i].suspensionDays > 0?"black":stocks[i].colour);
+        newCell.style.width="13%";   
+        if (i<stocks.length)
+             newCell.innerHTML = createSpan(stocks[i].available,"mainDisplayText",stocks[i].suspensionDays > 0?"black":stocks[i].colour);
+        else
+            newCell.innerHTML="&nbsp;";
     };
 }
 

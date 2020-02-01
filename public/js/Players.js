@@ -175,12 +175,12 @@ processBots=function(gameDate)
     else if (players[i].name.startsWith(BOT_NAME_PREFIX))
       players[i].processBot(gameDate,players.length);
   }
-  logBotActivity();
+  logBotActivity(gameDate);
 }
 
 // ****** Internal functions **********
 
-logBotActivity=function()
+logBotActivity=function(gameDate)
 {
     for (var i=0;i<players.length;i++)
     {
@@ -192,8 +192,8 @@ logBotActivity=function()
                 stockStr+=pSummary.account.stocks[j].name+":"+pSummary.account.stocks[j].amount+",";
         }
         stockStr+="]";
-        console.log(players[i].name+"/Bank:"+formatMoney(pSummary.balance)+"/Cash:"+formatMoney(pSummary.account.cash)+
-                    "/Suspended:"+(pSummary.account.suspensionDays>0?"Y":"N")+"/stocks:"+stockStr);
+        console.log(gameDate.toLocaleDateString("en-UK")+": "+players[i].name+"/Bank:"+formatMoney(pSummary.balance)+"/Cash:"+formatMoney(pSummary.account.cash)+
+                    "/Suspended:"+(pSummary.account.suspensionDays>0?"Y":"N")+"/stocks:"+stockStr+"("+formatMoney(broker.getStockValue(players[i].name))+")");
   }  
 }
 

@@ -55,7 +55,7 @@ getMonthYear = function(aDate)
 
 getFormattedDate = function(aDate)
 {
-  return aDate.toLocaleDateString("en-US", {year: 'numeric', month: 'long', day: 'numeric' }); 
+  return aDate.toLocaleDateString("en-US", {year: 'numeric', month: 'short', day: 'numeric' }); 
 }
 
 isChristmas=function(aDate)

@@ -111,7 +111,7 @@ function processDay()
 
 processGameOver=function(gameOverEvent)
 {
-    console.log("server: processGameOver"+gameOverEvent);
+    console.log("server: processGameOver"+gameOverEvent.type);
     clearInterval(dayTimer);
     sendToClient(CMD_PLAYER_LIST,players.getPlayerSummaries());
     sendToClient(CMD_NEWS_EVENT,gameOverEvent);

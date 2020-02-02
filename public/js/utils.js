@@ -27,9 +27,9 @@ isAlphaNumeric = function(str)
 }
 exports.isAlphaNumeric=isAlphaNumeric;
 
-daysElapsed = function(nowDate,lastCrimeDate)
+daysElapsed = function(nowDate,beforeDate)
 {
-  const diffTime = Math.abs(nowDate - lastCrimeDate);
+  const diffTime = Math.abs(nowDate - beforeDate);
   return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 }
 exports.daysElapsed=daysElapsed;
@@ -46,7 +46,6 @@ roundStock =function(amount)
   return STOCK_INCREMENT*Math.floor(amount/STOCK_INCREMENT);
 }
 exports.roundStock=roundStock;
-
 
 getMonthYear = function(aDate)
 {

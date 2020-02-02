@@ -2,7 +2,7 @@ var mkt=require("./stockmarket.js");
 var broker=require("./broker.js");
 var events = require('./events.js');
 
-exports.processBot=function(player,gameDate,numPlayers)
+exports.processBot=function(player,gameDate,gameEndDate,numPlayers)
 {
   if (player.name == "BOT1")
   {
@@ -18,7 +18,7 @@ exports.processBot=function(player,gameDate,numPlayers)
   }
   var rndAmount = MIN_STOCK_PURCHASE*(1+Math.floor(Math.random()*20));
   var rndStock=mkt.getRandomStock();
-  if (nearEndOfGame(gameDate) || player.amMillionnaireOnPaper())
+  if (nearEndOfGame(gameEndDate,gameDate) || player.amMillionnaireOnPaper())
   {
     var stockNameToSell=findStockNameToSell(player);
     var amount= broker.getStockHolding(player.name,stockNameToSell);
@@ -45,16 +45,16 @@ exports.processBot=function(player,gameDate,numPlayers)
     player.suspectHacker(broker.chooseRandomAccountName(player.name),numPlayers);
 }
 
-  function nearEndOfGame(gameDate)
+  function nearEndOfGame(gameEndDate,gameDate)
   {
-    return gameDate.getMonth()==11 && gameDate.getYear()==121; // getYear returns year minus 1900 :)
+    return daysElapsed(gameEndDate,gameDate) < 10;
   }
 
-  exports.processEinstein=function(player,gameDate,numPlayers)
+  exports.processEinstein=function(player,gameDate,gameEndDate,numPlayers)
   {
     var bestPerformingStock=mkt.getFastestRisingStock();
     var worstPerformingStock=mkt.getFastestFallingStock();
-    if (nearEndOfGame(gameDate))
+    if (nearEndOfGame(gameEndDate,gameDate))
     {
       var stockNameToSell=findStockNameToSell(player);
       var amount= broker.getStockHolding(player.name,stockNameToSell);

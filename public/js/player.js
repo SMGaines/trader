@@ -197,14 +197,14 @@ exports.Player = function(name,type)
     this.lastInsiderTradeDate=new Date(gameDate); 
   }
 
-  this.processBot=function(gameDate,numPlayers)
+  this.processBot=function(gameDate,gameEndDate,numPlayers)
   {
-    ai.processBot(this,gameDate,numPlayers);
+    ai.processBot(this,gameDate,gameEndDate,numPlayers);
   }
   
-  this.processEinstein=function(gameDate,numPlayers)
+  this.processEinstein=function(gameDate,gameEndDate,numPlayers)
   {
-    ai.processEinstein(this,gameDate,numPlayers);
+    ai.processEinstein(this,gameDate,gameEndDate,numPlayers);
   }
 
   this.setStatus=function(msgType,argX,argY,argZ)

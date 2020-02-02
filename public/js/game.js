@@ -7,7 +7,7 @@ const STATE_STARTED = 2;
 const STATE_FINISHED = 3;
 
 const GAME_START_DATE = new Date("January 1 2020 00:00:00");
-
+const GAME_OVER_WARNING_DAYS=10; // How many days 'game over' warning you get when one person gets to $1m
 const SIMULATION_DAY_LENGTH=10; // in Milliseconds i.e. ultra-fast game
 
 const MIN_GAME_ID=10000;
@@ -22,6 +22,7 @@ var dayDurationInMS,gameDurationInMonths,perDayReductionInMS;
 var simulation;
 var gameID;
 var state;
+var setGameEndDate;
 
 exports.initialise=function(simul,gameDuration,dayLengthStartInSeconds,dayLengthEndInSeconds,numBots,numEinsteins)
 {
@@ -42,6 +43,7 @@ exports.initialise=function(simul,gameDuration,dayLengthStartInSeconds,dayLength
     gameDate = GAME_START_DATE;
     gameEndDate=new Date(gameDate);
     gameEndDate.setMonth(gameDate.getMonth()+gameDurationInMonths);
+    setGameEndDate=false;
 
     startRegistration(numEinsteins,numBots);
     if (simulation)
@@ -85,10 +87,20 @@ processDay = function()
 
   gameDate.setDate(gameDate.getDate() + 1);
 
+  // When someone reaches $1m, players have GAME_OVER_WARNING_DAYS until the game ends 
+  // (assuming we're not already very near the end of the game)
+  if (players.weHaveAMillionnaire() && !setGameEndDate && daysElapsed(gameEndDate,gameDate) > GAME_OVER_WARNING_DAYS)
+  {
+    setGameEndDate=true;
+    gameEndDate=new Date(gameDate);
+    gameEndDate.setDate(gameDate.getDate()+GAME_OVER_WARNING_DAYS);
+    console.log("***** MILLIONNAIRE: Game end date now: "+gameEndDate);
+  }
+
   // Sometimes some post-processing is done on the event, hence it's passed back
   var newsEvent = events.getNewsEvent(gameDate);
   newsEvent=market.processDay(gameDate,newsEvent); 
-  newsEvent=players.processDay(gameDate,newsEvent); 
+  newsEvent=players.processDay(gameDate,gameEndDate,newsEvent); 
   newsEvent=broker.processDay(gameDate,newsEvent); 
 
   if (gameOver())
@@ -129,7 +141,7 @@ exports.gameStarted=function()
 
 gameOver = function()
 {
-  return gameDate >= gameEndDate || players.weHaveAMillionnaire();
+  return gameDate >= gameEndDate;
 }
 exports.gameOver=gameOver;
 

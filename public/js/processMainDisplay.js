@@ -225,7 +225,7 @@ function formatMoney(amount)
 {
     const formatter = new Intl.NumberFormat('en-US', {style: 'currency',currency: 'USD',maximumFractionDigits: 0, minimumFractionDigits: 0});
     if (amount > 1000000)
-        return createSpan(formatter.format(amount/1000000)+"M","mainDisplayText","white");
+        return createSpan(formatter.format(amount/1000000)+"M","mainDisplayText","red");
     else
         return createSpan(formatter.format(amount/1000)+"K","mainDisplayText","white");
 }

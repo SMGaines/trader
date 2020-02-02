@@ -12,7 +12,7 @@ NewsPaperChart = function()
         animationScale=.01;
         createNewsPaper(monthEvent);
         newsObject = document.getElementById("newsDisplay");
-        newsObject.style.visibility='visible';
+        newsObject.style.display="block"; //visibility='visible';
         if (monthEvent.isFinalEvent)
         {
             document.getElementById("newsGameOver").play();
@@ -49,7 +49,7 @@ NewsPaperChart = function()
 
     function hideNews()
     {
-        newsObject.style.visibility='hidden';
+        newsObject.style.display="none"; //visibility='hidden';
         rotationAngle=0;
         animationScale=.01;
     }

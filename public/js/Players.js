@@ -43,9 +43,9 @@ exports.getPlayerSummaries=function()
     return playerSummary;
 }
 
-exports.processDay=function(gameDate,newsEvent)
+exports.processDay=function(gameDate,gameEndDate,newsEvent)
 {
-    processBots(gameDate);
+    processBots(gameDate,gameEndDate);
     checkInsiderTrading(gameDate);
     applyInterestRates();
     if (isChristmas(gameDate))
@@ -166,14 +166,14 @@ exports.bankCash=function(playerName,amount)
         player.bankCash(amount);
 }
 
-processBots=function(gameDate)
+processBots=function(gameDate,gameEndDate)
 {
   for (var i=0;i<players.length;i++)
   {
     if (players[i].name.startsWith(EINSTEIN_PREFIX))
-      players[i].processEinstein(gameDate,players.length);
+      players[i].processEinstein(gameDate,gameEndDate,players.length);
     else if (players[i].name.startsWith(BOT_NAME_PREFIX))
-      players[i].processBot(gameDate,players.length);
+      players[i].processBot(gameDate,gameEndDate,players.length);
   }
   logBotActivity(gameDate);
 }
@@ -260,7 +260,7 @@ applyInterestRates = function()
 {
   players.forEach(function(player)
   {
-    var interestRate= 1+player.balance/50000;
+    var interestRate= Math.min(1+player.balance/50000,10);
     if (player.balance > 0)
         player.balance*=(100+interestRate/50)/100;
   });

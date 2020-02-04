@@ -22,8 +22,9 @@
     </div>
     <div style='margin:auto;padding: 30px;'>
         <TABLE style="margin:auto;">
-            <TR><TH style='padding: 20px;'><button id='bankBalance' class='veryLargeButton' onclick="openBankForm()">$0</button></TH></TR>
-            <TR><TH style='padding: 20px;'><button class='veryLargeButton' onclick="openTransactionForm()">Transact</button></TH></TR>
+            <TR><TH style='padding: 20px;'><button class='veryLargeButton' id='bankBalance'  onclick="openBankForm()"></button></TH></TR>
+            <TR><TH style='padding: 20px;'><button class='veryLargeButton' onclick="openBuyForm()">Buy</button></TH></TR>
+            <TR><TH style='padding: 20px;'><button class='veryLargeButton' onclick="openSellForm()">Sell</button></TH></TR>
             <TR><TH style='padding: 20px;'><button class='veryLargeButton' onclick="insider()">Insider</button></TH></TR>
             <TR><TH style='padding: 20px;'><button class='veryLargeButton' onclick="openHackForm()">Hack</button></TH></TR>
             <TR><TH style='padding: 20px;'><button class='veryLargeButton' onclick="openSuspectForm()">Suspect</button></TH></TR>
@@ -51,34 +52,56 @@
             <TR><TH><button class='largeText' type='button' onclick="closeSuspectForm()">Cancel</button></TH></TR>
         </TABLE>
     </div>
-    <div id='transactionForm' class='prison'>
+    <div id='buyForm' class='prison'>
         <TABLE style="margin:auto;">
             <TR>
-                <TH style='padding: 20px;'><button id='stock0' class='stockButton' type='button' onclick='selectStock(0)'></button>>&nbsp;</button></TH>
-                <TH style='padding: 20px;'><button id='stock1' class='stockButton' type='button' onclick='selectStock(1)'>&nbsp;</button></TH>
+                <TH style='padding: 20px;'><button id='buyStock0' class='stockButton' type='button' onclick='selectBuyStock(0)'></button>>&nbsp;</button></TH>
+                <TH style='padding: 20px;'><button id='buyStock1' class='stockButton' type='button' onclick='selectBuyStock(1)'>&nbsp;</button></TH>
              </TR>
              <TR>
-                <TH style='padding: 20px;'><button id='stock2' class='stockButton' type='button' onclick='selectStock(2)'>&nbsp;</button></TH>
-                <TH style='padding: 20px;'><button id='stock3' class='stockButton' type='button' onclick='selectStock(3)'>&nbsp;</button></TH>
+                <TH style='padding: 20px;'><button id='buyStock2' class='stockButton' type='button' onclick='selectBuyStock(2)'>&nbsp;</button></TH>
+                <TH style='padding: 20px;'><button id='buyStock3' class='stockButton' type='button' onclick='selectBuyStock(3)'>&nbsp;</button></TH>
             </TR>
             <TR>
-                <TH style='padding: 20px;'><button id='stock4' class='stockButton' type='button' onclick='selectStock(4)'>&nbsp;</button></TH>
-                <TH style='padding: 20px;'><button id='stock5' class='stockButton' type='button' onclick='selectStock(5)'>&nbsp;</button></TH>
+                <TH style='padding: 20px;'><button id='buyStock4' class='stockButton' type='button' onclick='selectBuyStock(4)'>&nbsp;</button></TH>
+                <TH style='padding: 20px;'><button id='buyStock5' class='stockButton' type='button' onclick='selectBuyStock(5)'>&nbsp;</button></TH>
             </TR>
 
-            <TR><TH style='padding: 20px;' id='stockAmount' class='veryLargeText'></TH>
-            <TH style='padding: 20px;'><input id='stockSlider' type='range' class='myslider'/></TH></TR>
+            <TR><TH colspan='2' style='padding: 20px;' id='buyStockAmount' class='stockText'></TH></TR>
+            <TR><TH colspan='2' style='padding: 20px;'><input id='buyStockSlider' type='range' class='myslider'/></TH></TR>
+            <TR><TH colspan='2' style='padding: 20px;'><button class='veryLargeText' type='button' onclick='buy()'>Buy</button></TH></TR>
             <TR>
-                <TH style='padding: 20px;'>
-                    <button class='veryLargeText' type='button' onclick='buy()'>Buy</button>
+                <TH colspan='2' style='padding: 20px;'>
+                    <button class='veryLargeText' type='button' onclick="closeBuyForm()">Cancel</button>
                 </TH>
-                <TH style='padding: 20px;'>
+            </TR>
+        </TABLE>
+    </div>
+    <div id='sellForm' class='prison'>
+        <TABLE style="margin:auto;">
+            <TR>
+                <TH style='padding: 20px;'><button id='sellStock0' class='stockButton' type='button' onclick='selectSellStock(0)'></button>>&nbsp;</button></TH>
+                <TH style='padding: 20px;'><button id='sellStock1' class='stockButton' type='button' onclick='selectSellStock(1)'>&nbsp;</button></TH>
+             </TR>
+             <TR>
+                <TH style='padding: 20px;'><button id='sellStock2' class='stockButton' type='button' onclick='selectSellStock(2)'>&nbsp;</button></TH>
+                <TH style='padding: 20px;'><button id='sellStock3' class='stockButton' type='button' onclick='selectSellStock(3)'>&nbsp;</button></TH>
+            </TR>
+            <TR>
+                <TH style='padding: 20px;'><button id='sellStock4' class='stockButton' type='button' onclick='selectSellStock(4)'>&nbsp;</button></TH>
+                <TH style='padding: 20px;'><button id='sellStock5' class='stockButton' type='button' onclick='selectSellStock(5)'>&nbsp;</button></TH>
+            </TR>
+
+            <TR><TH colspan='2' style='padding: 20px;' id='sellStockAmount' class='stockText'></TH></TR>
+            <TR><TH colspan='2' style='padding: 20px;'><input id='sellStockSlider' type='range' class='myslider'/></TH></TR>
+            <TR>
+                <TH colspan='2' style='padding: 20px;'>
                     <button class='veryLargeText' type='button' onclick='sell()'>Sell</button>
                 </TH>
             </TR>
             <TR>
                 <TH colspan='2' style='padding: 20px;'>
-                    <button class='veryLargeText' type='button' onclick="closeTransactionForm()">Cancel</button>
+                    <button class='veryLargeText' type='button' onclick="closeSellForm()">Cancel</button>
                 </TH>
             </TR>
         </TABLE>

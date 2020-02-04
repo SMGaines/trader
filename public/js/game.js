@@ -77,6 +77,7 @@ start=function()
     console.log("Server: Starting game");
     state=STATE_STARTED;
     market.initialise(players.getNumPlayers());
+    market.openMarket();
     events.initialise(gameDate,gameDurationInMonths,market.getStocks()); 
 }
 exports.start=start;

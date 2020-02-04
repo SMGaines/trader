@@ -90,6 +90,9 @@ exports.Player = function(name,type)
       case ACCOUNT_INSUFFICIENT_STOCK:
         this.setStatus(MSG_NO_STOCK);
         break;
+      case MARKET_CLOSED:
+          this.setStatus(MSG_MARKET_CLOSED);
+          break;
       default:
         this.setStatus(MSG_SHARE_SALE,result,stockName);
         break;
@@ -115,6 +118,9 @@ exports.Player = function(name,type)
         break;
       case BROKER_ACCOUNT_OVERDRAWN:
         this.setStatus(MSG_ACCOUNT_OVERDRAWN);
+        break;
+      case MARKET_CLOSED:
+        this.setStatus(MSG_MARKET_CLOSED);
         break;
       default: 
         this.setStatus(MSG_SHARE_BUY,result,stockName);
@@ -237,6 +243,7 @@ exports.Player = function(name,type)
       case EVENT_STOCK_DIVIDEND: this.setStatus(MSG_EVENT_STOCK_DIVIDEND,event.stockName,interestingEventDate);break;
       case EVENT_STOCK_SUSPENDED: this.setStatus(MSG_EVENT_STOCK_SUSPENDED,event.stockName,interestingEventDate);break;
       case EVENT_STOCK_SPLIT: this.setStatus(MSG_EVENT_STOCK_SPLIT,event.stockName,interestingEventDate);break;
+      case EVENT_MARKET_CLOSED: this.setStatus(MSG_EVENT_MARKET_CLOSED,"",interestingEventDate);break;
       default: log("setupInsider: Unknown event type: "+event.type);
     }
   }

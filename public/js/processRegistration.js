@@ -45,7 +45,7 @@ var playerDisplay = function()
 
     for (var i=0;i<players.length;i++)
     {
-        if (i%2==0)
+        if (i%3==0)
             newRow=regTable.insertRow();
         newCell = newRow.insertCell();  
         newCell.style.width="40%";   

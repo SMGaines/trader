@@ -41,15 +41,14 @@ const NONE = "NONE";
 
 var stocks=[];
 var numStocks;
-var numPlayers;
 var players = [];
 var myPlayer;
 var myPlayerName;
-var gameStarted;
 var gameDate;
 var policeAudioPlayed;
 var bankAmountMonitor;
-var stockAmountMonitor,stockSelectedIndex;
+var sellStockAmountMonitor,sellStockSelectedIndex;
+var buyStockAmountMonitor,buyStockSelectedIndex;
 var gameID;
 var liftMusic;
 
@@ -59,19 +58,11 @@ socket.on(CMD_GAME_STARTED,function(data)
 {
   console.log("processPlayer: Game Started");
   closeGameWaitForm();
-  gameStarted=true;
 });
 
 socket.on(CMD_NEW_PRICES,function(data)
 {
-  gameStarted=true;
   stocks=data.msg;
-  
-  if (numStocks != stocks.length) 
-  {
-    numStocks=stocks.length;
-    updateStockButtons();
-  }
 });
 
 socket.on(CMD_GAME_DATE,function(data)
@@ -109,7 +100,6 @@ socket.on(CMD_ERROR,function(data)
 
 socket.on(CMD_PLAYER_LIST,function(data)
 {
-  gameStarted=true;
   var tradeOccurred=false;
   if (myPlayer != null)
     tradeOccurred=checkForTrades(data.msg);
@@ -123,10 +113,7 @@ socket.on(CMD_PLAYER_LIST,function(data)
   }
   document.getElementById("bankBalance").innerHTML=formatMoney(myPlayer.account.cash);
   if (tradeOccurred)
-  {
     document.getElementById("trade").play();
-    updateStockButtons();
-  }
 
   if (myPlayer.account.suspensionDays > 0)
   {
@@ -144,8 +131,6 @@ init = function()
 {
     console.log("Init");
     numStocks=0;
-    numPlayers=0;
-    gameStarted=false;
     policeAudioPlayed=false;
     gameID=getCookie(COOKIE_GAME_ID_PARAMETER);
     openRegistrationForm();
@@ -166,86 +151,142 @@ function closeStatusForm()
 
 // ********** END OF STATUS FORM FUNCTIONS **********
 
-// ********** START OF TRANSACTION FUNCTIONS **********
+// ********** START OF BUY FUNCTION ********** 
 
 buy = function()
 {
-  closeTransactionForm();
-  var stockAmount = parseInt(document.getElementById("stockSlider").value);
-  var stockName=stocks[selectedStockIndex].name;
-  console.log("Buying "+stockAmount+" shares of "+stockName);
-  socket.emit(CMD_BUY_STOCK,gameID,myPlayer.name,stockName,stockAmount);
+    closeBuyForm();
+    var stockAmount = parseInt(document.getElementById("buyStockSlider").value);
+    var stockName=stocks[buySelectedStockIndex].name;
+    console.log("Buying "+stockAmount+" shares of "+stockName);
+    socket.emit(CMD_BUY_STOCK,gameID,myPlayer.name,stockName,stockAmount);
 }
 
-sell = function()
+function openBuyForm()
 {
-    closeTransactionForm();
-    var stockAmount = parseInt(document.getElementById("stockSlider").value);
-    var stockName=stocks[selectedStockIndex].name;
-    console.log("Selling "+stockAmount+" shares of "+stockName);
-    socket.emit(CMD_SELL_STOCK,gameID,myPlayer.name,stockName,stockAmount);
+  buySelectedStockIndex=0;
+  updateBuyStockButtons();
+  buyStockAmountMonitor=setInterval(lookForBuyStockAmountChange,100);
+  var buyStockSlider= document.getElementById("buyStockSlider");
+  buyStockSlider.min=0;
+  buyStockSlider.max=0;
+  buyStockSlider.step=0;
+  buyStockSlider.value=0;
+  document.getElementById("buyStockAmount").innerHTML=0;
+  document.getElementById("buyForm").style.display= "block";
 }
 
-function openTransactionForm()
+function selectBuyStock(stockIndex)
 {
-    if (!gameStarted)
-        openStatusForm("Game not started");
-    else
-        if (myPlayer.account.suspensionDays > 0)
-            return;
-    else
-    {
-      selectedStockIndex=0;
-      stockAmountMonitor=setInterval(lookForStockAmountChange,100);
-      var stockSlider= document.getElementById("stockSlider");
-      stockSlider.min=STOCK_INCREMENT;
-      stockSlider.max=MAX_STOCK;
-      stockSlider.step=STOCK_INCREMENT;
-      stockSlider.value=(MAX_STOCK-STOCK_INCREMENT)/2;
-      document.getElementById("stockAmount").innerHTML=STOCK_INCREMENT;
-      document.getElementById("transactionForm").style.display= "block";
-    }
-}
-
-function selectStock(stockIndex)
-{
-  console.log("selectStock: "+stocks[stockIndex].name+" selected");
-  selectedStockIndex=stockIndex;
-  var stockSlider= document.getElementById("stockSlider");
-  stockSlider.max=Math.max(stocks[selectedStockIndex].available,getPlayerStockHolding(myPlayer,stocks[selectedStockIndex].name));
+  console.log("selectBuyStock: "+stocks[stockIndex].name+" selected");
+  
+  buySelectedStockIndex=stockIndex;
+  var buyStockSlider= document.getElementById("buyStockSlider");
+  buyStockSlider.min=STOCK_INCREMENT;
+  buyStockSlider.step=STOCK_INCREMENT;
+  buyStockSlider.max=stocks[buySelectedStockIndex].available;
 
   for (var i=0;i<stocks.length;i++)
   {
-      document.getElementById("stock"+i).style.color=(i==stockIndex?"#003200":"white");
+      document.getElementById("buyStock"+i).style.color=(i==stockIndex?"#003200":"white");
   }
 }
 
-function updateStockButtons()
+function updateBuyStockButtons()
 {
-  stockSelectedIndex=0;
   if (typeof stocks == 'undefined' || typeof myPlayer == 'undefined')
     return;
   for (var i=0;i<stocks.length;i++)
   {
-    stockCell=document.getElementById("stock"+i);
-    stockCell.style.backgroundColor=stocks[i].colour;
-    stockCell.innerHTML=stocks[i].name;
+    var stockButton=document.getElementById("buyStock"+i);
+    stockButton.style.backgroundColor=stocks[i].colour;
+    stockButton.innerHTML=stocks[i].name;
+    stockButton.disabled=(stocks[i].available == 0);
   }
 }
 
-function lookForStockAmountChange()
+function lookForBuyStockAmountChange()
 {
-  var stockAmount = parseInt(document.getElementById("stockSlider").value);
-  document.getElementById("stockAmount").innerHTML = stockAmount;
+  var stockAmount = parseInt(document.getElementById("buyStockSlider").value);
+  document.getElementById("buyStockAmount").innerHTML = stockAmount;
 }
 
-function closeTransactionForm()
+function closeBuyForm()
 {
-  clearInterval(stockAmountMonitor);
-	document.getElementById("transactionForm").style.display= "none";
+  clearInterval(buyStockAmountMonitor);
+	document.getElementById("buyForm").style.display= "none";
 }
 
-// ********** END OF TRANSACTION FORM FUNCTIONS **********
+// ********** END OF BUY FORM FUNCTIONS **********
+
+// ********** START OF SELL FUNCTION ********** 
+
+sell = function()
+{
+    closeSellForm();
+    var stockAmount = parseInt(document.getElementById("sellStockSlider").value);
+    var stockName=stocks[sellSelectedStockIndex].name;
+    console.log("Selling "+stockAmount+" shares of "+stockName);
+    socket.emit(CMD_SELL_STOCK,gameID,myPlayer.name,stockName,stockAmount);
+}
+
+function openSellForm()
+{
+  sellSelectedStockIndex=0;
+  updateSellStockButtons();
+  sellStockAmountMonitor=setInterval(lookForSellStockAmountChange,100);
+  var sellStockSlider= document.getElementById("sellStockSlider");
+  sellStockSlider.min=0;
+  sellStockSlider.max=0;
+  sellStockSlider.step=0;
+  sellStockSlider.value=0;
+  document.getElementById("sellStockAmount").innerHTML=0;
+  document.getElementById("sellForm").style.display= "block";
+}
+
+function selectSellStock(stockIndex)
+{
+  console.log("selectSellStock: "+stocks[stockIndex].name+" selected");
+  
+  sellSelectedStockIndex=stockIndex;
+  var sellStockSlider= document.getElementById("sellStockSlider");
+  sellStockSlider.min=STOCK_INCREMENT;
+  sellStockSlider.step=STOCK_INCREMENT;
+  sellStockSlider.max=getPlayerStockHolding(myPlayer,stocks[sellSelectedStockIndex].name);
+
+  for (var i=0;i<stocks.length;i++)
+  {
+      document.getElementById("sellStock"+i).style.color=(i==stockIndex?"#003200":"white");
+  }
+}
+
+function updateSellStockButtons()
+{
+  if (typeof stocks == 'undefined' || typeof myPlayer == 'undefined')
+    return;
+  for (var i=0;i<stocks.length;i++)
+  {
+    var stockHolding=getPlayerStockHolding(myPlayer,stocks[i].name);
+    var stockButton=document.getElementById("sellStock"+i);
+    stockButton.style.backgroundColor=stocks[i].colour;
+    stockButton.innerHTML=stocks[i].name;
+    stockButton.disabled=(stockHolding == 0);
+  }
+}
+
+function lookForSellStockAmountChange()
+{
+  var stockAmount = parseInt(document.getElementById("sellStockSlider").value);
+  document.getElementById("sellStockAmount").innerHTML = stockAmount;
+}
+
+function closeSellForm()
+{
+  clearInterval(sellStockAmountMonitor);
+	document.getElementById("sellForm").style.display= "none";
+}
+
+// ********** END OF SELL FORM FUNCTIONS **********
 
 // ********** START OF BANK FUNCTIONS **********
 
@@ -264,21 +305,14 @@ function lookForBankAmountChange()
 
 function openBankForm()
 {
-  if (!gameStarted)
-    openStatusForm(myPlayer.lang==LANG_EN?"Game not started":"Gra się nie rozpoczęła");
-  else
-    if (myPlayer.account.suspensionDays > 0)
-      return;
-  else
-  {
-    bankAmountMonitor=setInterval(lookForBankAmountChange,100);
-    var bankSlider= document.getElementById("bankSlider");
-    bankSlider.min=0;
-    bankSlider.max=myPlayer.account.cash;
-    bankSlider.step=myPlayer.account.cash/100; // i.e. steps of 1%
-    document.getElementById("bankAmount").innerHTML=myPlayer.account.cash/20;
-    document.getElementById("bankForm").style.display= "block";
-  }
+  bankAmountMonitor=setInterval(lookForBankAmountChange,100);
+  var bankSlider= document.getElementById("bankSlider");
+  bankSlider.min=0;
+  bankSlider.max=myPlayer.account.cash;
+  bankSlider.step=myPlayer.account.cash/100; // i.e. steps of 1%
+  bankSlider.value=Math.floor(myPlayer.account.cash/2);
+  document.getElementById("bankAmount").innerHTML=myPlayer.account.cash/2;
+  document.getElementById("bankForm").style.display= "block";
 }
 
 function closeBankForm()
@@ -302,17 +336,8 @@ suspect = function()
 
 function openSuspectForm()
 {
-    if (!gameStarted)
-        openStatusForm("Game not started");
-    else
-	    if (myPlayer.account.suspensionDays > 0)
-		    return;
-    else
-    {
-      document.getElementById('suspectPlayers').innerHTML=addSuspectPlayerDropDown();
-      numPlayers=players.length; 
-      document.getElementById('suspectForm').style.display= "block";
-    }
+  document.getElementById('suspectPlayers').innerHTML=addSuspectPlayerDropDown();
+  document.getElementById('suspectForm').style.display= "block";
 }
 
 getSuspectedPlayerName = function(action)
@@ -346,17 +371,8 @@ hack = function()
 
 function openHackForm()
 {
-  if (!gameStarted)
-    openStatusForm("Game not started");
-  else
-	if (myPlayer.account.suspensionDays > 0)
-		return;
-  else
-  {
-    document.getElementById('hackPlayers').innerHTML=addHackPlayerDropDown();
-    numPlayers=players.length;
-    document.getElementById('hackForm').style.display= "block";
-  }
+  document.getElementById('hackPlayers').innerHTML=addHackPlayerDropDown();
+  document.getElementById('hackForm').style.display= "block";
 }
 
 function addHackPlayerDropDown()
@@ -599,9 +615,8 @@ formatMoney = function(amount)
 {
     const formatter = new Intl.NumberFormat('en-US', {style: 'currency',currency: 'USD',maximumFractionDigits: 0, minimumFractionDigits: 0});
     var money = amount >1000000?"$1m":formatter.format(Math.abs(amount)/1000)+"k";
-    return createSpan(money,"veryLargeButton",amount >=0?"white":"red");
+    return createSpan(money,"",amount >=0?"white":"red");
 }
-
 
 function createSpan(text,cssClass,colour)
 {

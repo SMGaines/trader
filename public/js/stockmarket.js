@@ -23,43 +23,64 @@
 */
 
 const IPO_INITIAL_TREND = 2; // IPO's always start well :)
+const MKT_CLOSE_BASE_DAYS = 7;
 
 var stk = require("./stock.js");
 
 stocks=[];
 var numActiveStocks;
 var numPlayers;
+var marketClosedDaysRemaining;
 
 exports.initialise=function(aNumPlayers)
 {
   numPlayers=aNumPlayers;
   setupStock();
+  marketClosedDaysRemaining=0;
 }
 
-exports.open=function()
+openMarket=function()
 {
-  
+  marketClosedDaysRemaining=0;
 }
+exports.openMarket=openMarket;
 
-exports.close=function()
+closeMarket=function()
 {
+  marketClosedDaysRemaining=Math.floor(MKT_CLOSE_BASE_DAYS*(1+Math.random()));
 }
+exports.closeMarket=closeMarket;
+
+isOpen=function()
+{
+  return marketClosedDaysRemaining==0;
+}
+exports.isOpen=isOpen;
 
 exports.buyStock=function(stockName,amount)
 {
-  var sharesToPurchased = getStock(stockName).buy(amount);
-  return sharesToPurchased;
+  if (!isOpen())
+    return;
+  var sharesPurchased = getStock(stockName).buy(amount);
+  return sharesPurchased;
 }
 
 // Returns value of stock sale
 exports.sellStock=function(stockName,amount)
 {
+  if (!isOpen())
+    return;
   return getStock(stockName).sell(amount);
 }
 
 exports.processDay=function(gameDate,newsEvent)
 {
-  updatePrices();
+  if (marketClosedDaysRemaining > 0)
+  {
+    updatePrices();
+    marketClosedDaysRemaining--;
+  }
+    
   checkSuspendedStocks();
   return processMarketEvent(newsEvent);
 }
@@ -135,6 +156,9 @@ processMarketEvent=function(newsEvent)
       case EVENT_STOCK_RELEASE:     releaseStock(newsEvent.stockName);break;
       case EVENT_STOCK_SPLIT:       stockSplit(newsEvent.stockName); break;  // This doubles available stock
       case EVENT_STOCK_SUSPENDED:   suspendStock(newsEvent.stockName);break;
+      case EVENT_MARKET_CLOSED:     closeMarket();
+                                    newsEvent.headLine = newsEvent.headLine.replace("$x",marketClosedDaysRemaining);
+                                    break;
     }
   }
   return newsEvent;

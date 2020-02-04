@@ -16,6 +16,7 @@ global.EVENT_STOCK_RELEASE = 13;
 global.EVENT_STOCK_DIVIDEND = 14;
 global.EVENT_STOCK_SUSPENDED = 15;
 global.EVENT_STOCK_SPLIT=16;
+global.EVENT_MARKET_CLOSED=17;
 
 global.AVERAGE_MONTH_LENGTH=30.5;
 
@@ -136,6 +137,8 @@ function createMainEvents(stocks)
   events.push(new NewsEvent(EVENT_STOCK_SPLIT,stockName,getNewsMsg(MSG_NEWS_HEAD_SPLIT,stockName),getNewsMsg(MSG_NEWS_SUB_SPLIT)));
   stockName=findHighestPriceStock(stocks);
   events.push(new NewsEvent(EVENT_STOCK_SPLIT,stockName,getNewsMsg(MSG_NEWS_HEAD_SPLIT,stockName),getNewsMsg(MSG_NEWS_SUB_SPLIT)));
+  events.push(new NewsEvent(EVENT_MARKET_CLOSED,"",getNewsMsg(MSG_NEWS_HEAD_MKT_CLOSE),getNewsMsg(MSG_NEWS_SUB_MKT_CLOSE)));
+  events.push(new NewsEvent(EVENT_MARKET_CLOSED,"",getNewsMsg(MSG_NEWS_HEAD_MKT_CLOSE),getNewsMsg(MSG_NEWS_SUB_MKT_CLOSE)));
 }
 
 function getRandomStock(stocks,exceptStock)

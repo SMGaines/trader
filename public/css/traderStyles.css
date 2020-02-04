@@ -240,7 +240,7 @@ p{
     width: 700px;
     background-color: #90EE90;
     z-index: 9;
-}
+} 
 
 .veryLargeButton {
   border-radius: 25px;
@@ -257,7 +257,14 @@ p{
   cursor: pointer;
   text-align: center;
   z-index: 9;
+  box-shadow: 0 9px #999;
 }
+
+.veryLargeButton:active {
+    background-color: #3e8e41;
+    box-shadow: 0 5px #666;
+    transform: translateY(4px);
+  }
 
 .stockButton {
     border-radius: 25px;
@@ -271,17 +278,29 @@ p{
     z-index: 9;
   }
 
-.veryLargeText {
-  border-radius: 25px;
-  display: block;
-  background-color: #4CAF50;
-  color: white;
-  font-size: 128px;
-  font-family: "Courier";
-  text-align: center;
-  z-index: 10;
-  margin: auto;
-}
+  .veryLargeText {
+    border-radius: 25px;
+    display: block;
+    background-color: #4CAF50;
+    color: white;
+    font-size: 128px;
+    font-family: "Courier";
+    text-align: center;
+    z-index: 10;
+    margin: auto;
+  }
+  
+  .stockText {
+    border-radius: 25px;
+    display: block;
+    background-color: #4CAF50;
+    color: white;
+    font-size: 128px;
+    width: 200%;
+    font-family: "Courier";
+    text-align: center;
+    z-index: 10;
+  }
 
 .clientHeaderText {
     border-radius: 25px;

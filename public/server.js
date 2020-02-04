@@ -105,8 +105,7 @@ function processDay()
         return;
     }
 
-    if (!game.isSimulation())
-        updateClients(newsEvent);
+    updateClients(newsEvent);
 }
 
 processGameOver=function(gameOverEvent)
@@ -139,19 +138,20 @@ io.on('connection',function(socket)
     {
         if (game.registrationOpen())
         {
-            var regStatus = 0; // TODO: game.validateNewPlayer(playerName);
+            var regStatus = players.validateNewPlayer(playerName);
             if (regStatus == 0)
             {
                 console.log("Server: New player registered: "+playerName+"("+lang+")");
                 players.registerPlayer(playerName,PLAYER_HUMAN);
                 sendToClient(CMD_REGISTERED,game.getGameID());
+                sendToClient(CMD_PLAYER_LIST,players.getPlayerSummaries());
             }
             else
                 sendToClient(CMD_REGISTRATION_ERROR,regStatus);
         }
         else if (game.gameStarted())
         {
-            if (players.getPlayer(playerName) != null && aGameID==gameID)
+            if (players.getPlayer(playerName) != null && game.validID(aGameID))
                 console.log("Server: Ignoring player already registered: "+playerName);
             else
                 sendToClient(CMD_ERROR,"Player not registered for game: "+game.getGameID());

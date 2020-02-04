@@ -22,6 +22,13 @@ exports.registerPlayer=function(playerName,type)
     players.push(newPlayer);
 }
 
+exports.validateNewPlayer=function(playerName)
+{
+    if (playerName.length <3 || playerName.length > 8 || findPlayer(playerName) != null)
+        return -1; //Player shouldn't exist
+    return 0;
+}
+
 exports.getPlayer=function(playerName)
 {
     return findPlayer(playerName);
@@ -102,7 +109,7 @@ exports.weHaveAMillionnaire=function()
 
 exports.getWinnerName=function()
 {
-    //return players.reduce(function(prev, current) {return (prev.y > current.y) ? prev : current});
+    //return players.reduce(function(prev, current) {return (prev.y > current.y) ? prev : current}).name;
     
     var bestIndex=-1;
     var bestScore=-1;

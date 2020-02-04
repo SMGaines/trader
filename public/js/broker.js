@@ -20,6 +20,7 @@ global.BROKER_INSUFFICIENT_STOCK = -2;
 global.ACCOUNT_INSUFFICIENT_FUNDS=-3;
 global.ACCOUNT_INSUFFICIENT_STOCK=-4;
 global.BROKER_ACCOUNT_OVERDRAWN=-5;
+global.MARKET_CLOSED=-6;
 
 var account=require("./Account.js");
 var mkt=require("./stockmarket.js");
@@ -89,12 +90,16 @@ exports.getCash=function(accountName)
 
 exports.buyStock=function(accountName,stockName,amount)
 {
-    return findAccount(accountName).buyStock(stockName,amount);
+  if (!mkt.isOpen())
+    return MARKET_CLOSED;
+  return findAccount(accountName).buyStock(stockName,amount);
 }
 
 exports.sellStock=function(accountName,stockName,amount)
 {
-    return findAccount(accountName).sellStock(stockName,amount);
+  if (!mkt.isOpen())
+    return MARKET_CLOSED;
+  return findAccount(accountName).sellStock(stockName,amount);
 }
 
 exports.getStockValue=function(accountName)

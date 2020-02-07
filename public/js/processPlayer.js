@@ -37,6 +37,12 @@ const CMD_DEPOSIT="deposit";
 const CMD_BANK="bank";
 // ******* End of shared list of constants between server.js, processMainDisplay.js and processPlayer.js *******
 
+// *** Shared with Players.js
+const PLAYER_INVALID_NAME_LENGTH = -1;
+const PLAYER_INVALID_NAME = -2;
+const PLAYER_DUPLICATE=-3;
+// ***
+
 const NONE = "NONE";
 
 var stocks=[];
@@ -44,7 +50,7 @@ var numStocks;
 var players = [];
 var myPlayer;
 var myPlayerName;
-var gameDate;
+var gameDate,gameEndDate;
 var policeAudioPlayed;
 var bankAmountMonitor;
 var sellStockAmountMonitor,sellStockSelectedIndex;
@@ -67,7 +73,9 @@ socket.on(CMD_NEW_PRICES,function(data)
 
 socket.on(CMD_GAME_DATE,function(data)
 {
-  gameDate=new Date(data.msg);
+  var gameDates=data.msg;
+  gameDate=new Date(gameDates.currentDate);
+  gameEndDate=new Date(gameDates.endDate);
 });
 
 socket.on(CMD_END_OF_GAME,function(data)
@@ -81,14 +89,15 @@ socket.on(CMD_REGISTERED,function(data)
   gameID=data.msg;
   setCookie(COOKIE_GAME_ID_PARAMETER,gameID);
   document.getElementById("gameTitle").innerHTML= GAME_NAME+" "+GAME_VERSION+": "+ gameID;
+  closeRegistrationForm();
   openGameWaitForm(myPlayerName,gameID);
 });
 
 socket.on(CMD_REGISTRATION_ERROR,function(data)
 {
-    var regError = data.msg;
-    console.log("Error in registration: "+regError);
-    openRegistrationErrorForm(regError);
+  var regError = data.msg;
+  console.log("Error in registration: "+regError);
+  showRegistrationError(regError);
 });
 
 socket.on(CMD_ERROR,function(data)
@@ -427,13 +436,8 @@ function openRegistrationForm()
 function processRegistrationForm()
 {
   var nameInput=document.getElementById("regName").value;
-	if (nameInput.length >=3 && nameInput.length <= 8)
-	{
-		document.getElementById("registrationForm").style.display= "none";
-		registerPlayer(nameInput);
-	}
-	else
-		openRegistrationErrorForm(0);
+	//document.getElementById("registrationForm").style.display= "none";
+	registerPlayer(nameInput);
 }
 
 function closeRegistrationForm()
@@ -441,12 +445,14 @@ function closeRegistrationForm()
 	document.getElementById("registrationForm").style.display= "none";
 }
 
-function openRegistrationErrorForm(error)
+function showRegistrationError(error)
 {
-	if (error == REG_PLAYER_EXISTS)
+	if (error == PLAYER_DUPLICATE)
 		document.getElementById("regStatus").innerHTML="Player name in use";
-	else
-		document.getElementById("regStatus").innerHTML=("Name must be between 3 and 8 chars");
+	else if (error == PLAYER_INVALID_NAME_LENGTH)
+    document.getElementById("regStatus").innerHTML=("Name must be between 3 and 8 chars");
+  else if (error == PLAYER_INVALID_NAME)
+    document.getElementById("regStatus").innerHTML=("Name must be alphanumeric");
 }
 
 // ********** END OF REGISTRATION FORM FUNCTIONS **********

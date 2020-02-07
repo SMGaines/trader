@@ -82,6 +82,11 @@ start=function()
 }
 exports.start=start;
 
+exports.getGameDaysLeft=function()
+{
+  return daysElapsed(gameEndDate,gameDate);
+}
+
 processDay = function()
 {
   dayDurationInMS-=perDayReductionInMS;
@@ -146,6 +151,11 @@ gameOver = function()
 }
 exports.gameOver=gameOver;
 
+exports.getDates = function()
+{
+  return new GameDates(gameDate,gameEndDate);
+}
+
 exports.getDate = function()
 {
   return gameDate;
@@ -177,4 +187,10 @@ function registerBots(numEinsteins,numBots)
   {
     players.registerPlayer(BOT_NAME_PREFIX+(i+1),PLAYER_BOT);
   }
+}
+
+GameDates = function (currentDate,endDate)
+{
+  this.currentDate=currentDate;
+  this.endDate=endDate;
 }

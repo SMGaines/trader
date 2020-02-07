@@ -11,6 +11,8 @@ const STOCK_NAMES=["GOVT","GOLD","OIL","HITECH","PHARMA","MINING"];// Must sync 
 const HISTORY_SIZE = 50;
 const NONE = -1;
 
+const COUNTDOWN_DAYS = 10;
+
 // ******* Shared list of constants between server.js, processMainDisplay.js and processPlayer.js *******
 const CMD_NEW_PRICES="newprices";
 const CMD_NEWS_EVENT="newsevent";
@@ -45,7 +47,7 @@ var stockChart,newspaperChart,stockTicker;
 var numStocks;
 var players = [];
 var stocks = [];
-var gameDate;
+var gameDate,gameEndDate;
 var gameLang;
 var gameID;
 
@@ -80,8 +82,10 @@ socket.on(CMD_NEW_PRICES,function(data)
 
 socket.on(CMD_GAME_DATE,function(data)
 {
-    gameDate=new Date(data.msg);
-    showDate();
+  var gameDates=data.msg;
+  gameDate=new Date(gameDates.currentDate);
+  gameEndDate=new Date(gameDates.endDate);
+  showDate();
 });
 
 socket.on(CMD_GAME_LANGUAGE,function(data)
@@ -211,7 +215,10 @@ function showGameInfo()
 
 function showDate()
 {
-    document.getElementById('gamedate').innerHTML=getLongDate(gameDate);
+    var dateObj=document.getElementById('gamedate');
+    dateObj.innerHTML=getLongDate(gameDate);
+    if (dayDiff(gameDate,gameEndDate) <= COUNTDOWN_DAYS)
+        dateObj.style.color="red";
 }
 
 // Utilities
@@ -234,4 +241,9 @@ function getLongDate(aDate)
 {
     var options = {year: 'numeric', month: 'short', day: 'numeric' };
     return aDate.toLocaleDateString("en-US", options);
+}
+
+function dayDiff(date1,date2)
+{
+    return Math.ceil((date2 - date1) / (1000 * 60 * 60 * 24)); 
 }

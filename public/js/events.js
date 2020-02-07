@@ -65,11 +65,12 @@ getNewsMsg=function(msgType,argX,argY,argZ)
 
 function setEventDates(gameStartDate,gameDurationInMonths)
 {
-  var eventInterval = Math.floor(events.length*AVERAGE_MONTH_LENGTH/gameDurationInMonths);
+  var eventLengthInDays=gameDurationInMonths*AVERAGE_MONTH_LENGTH;
+  var eventIntervalInDays = Math.floor(eventLengthInDays/events.length);
   for (var i=0;i<events.length;i++)
   {
     events[i].date=new Date(gameStartDate);
-    events[i].date.setDate(gameStartDate.getDate()+i*eventInterval);
+    events[i].date.setDate(gameStartDate.getDate()+i*eventIntervalInDays);
   }
 }
 

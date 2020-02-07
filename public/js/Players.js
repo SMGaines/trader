@@ -10,6 +10,12 @@ global.BASE_LOTTERY_WIN = 50000;
 global.TAX_PERCENTAGE=20; // Percentage tax rate on shares for a tax return
 global.XMAS_PRESENT_BASE=10000;
 
+// *** Shared with processPlayer.js
+const PLAYER_INVALID_NAME_LENGTH = -1;
+const PLAYER_INVALID_NAME = -2;
+const PLAYER_DUPLICATE=-3;
+// ***
+
 var player = require('./player.js');
 var broker=require("./broker.js");
 
@@ -24,8 +30,12 @@ exports.registerPlayer=function(playerName,type)
 
 exports.validateNewPlayer=function(playerName)
 {
-    if (playerName.length <3 || playerName.length > 8 || findPlayer(playerName) != null)
-        return -1; //Player shouldn't exist
+    if (playerName.length < 3 || playerName.length > 8)
+        return PLAYER_INVALID_NAME_LENGTH;
+    if (!isAlphaNumeric(playerName))
+        return PLAYER_INVALID_NAME;
+    if (findPlayer(playerName) != null)
+        return PLAYER_DUPLICATE; //Player shouldn't exist
     return 0;
 }
 

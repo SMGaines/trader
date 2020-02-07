@@ -76,11 +76,10 @@ exports.sellStock=function(stockName,amount)
 exports.processDay=function(gameDate,newsEvent)
 {
   if (marketClosedDaysRemaining > 0)
-  {
-    updatePrices();
     marketClosedDaysRemaining--;
-  }
     
+  updatePrices();
+ 
   checkSuspendedStocks();
   return processMarketEvent(newsEvent);
 }
@@ -256,7 +255,7 @@ updatePrices = function()
     if (stock.suspensionDays == 0)
     {
       var increase = STOCK_ADJUSTMENT_FACTOR*(stock.trend+getRandomFactor())*getRiskMultiplier(stock.riskiness);
-      if ((increase > 0 && stock.price < STOCK_MAX_VALUE) || (increase <0 && stock.price > STOCK_MIN_VALUE))
+      if ((increase > 0 /*&& stock.price < STOCK_MAX_VALUE*/) || (increase <0 && stock.price > STOCK_MIN_VALUE))
         stock.price += increase;
       if (Math.abs(stock.trend) > 1)
         stock.trend*=STOCK_DAMPING_FACTOR;

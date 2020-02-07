@@ -86,7 +86,7 @@ exports.Stock = function(name,amount,riskiness,colour)
         if (this.trend >= 1)
             return this.price;
           else
-            return this.price*(1+.05*this.trend);
+            return this.price*(1+.1*this.trend);
         }
 
     this.calculateBuyPrice = function()
@@ -95,7 +95,7 @@ exports.Stock = function(name,amount,riskiness,colour)
         if (this.trend <= 1)
             return this.price;
         else
-            return this.price*(1+.05*this.trend);
+            return this.price*(1+.1*this.trend);
     }
 }
 

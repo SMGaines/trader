@@ -124,7 +124,7 @@ function updateClients(newsEvent)
 
     sendToClient(CMD_PLAYER_LIST,players.getPlayerSummaries());
     sendToClient(CMD_NEW_PRICES,market.getStocks());
-    sendToClient(CMD_GAME_DATE,game.getDate());
+    sendToClient(CMD_GAME_DATE,game.getDates()); // Sends current game date & game end date
 }
 
 function sendToClient(cmd,info)

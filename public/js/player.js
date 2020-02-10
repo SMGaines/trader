@@ -1,4 +1,4 @@
-const STARTING_CASH = 75000;
+const STARTING_CASH = 50000;
 
 global.PLAYER_HUMAN=0;
 global.PLAYER_BOT=1;
@@ -36,6 +36,11 @@ exports.Player = function(name,type)
 
   this.bankCash = function(amount)
   {
+    if (broker.hackInProgress(this.name))
+    {
+      this.setStatus(MSG_HACK_IN_PROGRESS);
+      return;
+    }
     var result=broker.withdrawCash(this.name,amount);
     switch(result)
     {
@@ -51,6 +56,11 @@ exports.Player = function(name,type)
 
   this.depositCash=function(amount)
   {
+    if (broker.hackInProgress(this.name))
+    {
+      this.setStatus(MSG_HACK_IN_PROGRESS);
+      return;
+    }
     if (this.balance >=amount)
       broker.depositCash(this.name,amount);
     this.balance-=amount;
@@ -84,6 +94,11 @@ exports.Player = function(name,type)
       this.setStatus(MSG_SUSPENDED);
       return;
     }
+    if (broker.hackInProgress(this.name))
+    {
+      this.setStatus(MSG_HACK_IN_PROGRESS);
+      return;
+    }
     var result=broker.sellStock(this.name,stockName,amount);
     switch(result)
     {
@@ -91,8 +106,11 @@ exports.Player = function(name,type)
         this.setStatus(MSG_NO_STOCK);
         break;
       case MARKET_CLOSED:
-          this.setStatus(MSG_MARKET_CLOSED);
-          break;
+        this.setStatus(MSG_MARKET_CLOSED);
+        break;
+      case BROKER_STOCK_SUSPENDED:
+        this.setStatus(MSG_STOCK_SUSPENDED);
+        break;
       default:
         this.setStatus(MSG_SHARE_SALE,result,stockName);
         break;
@@ -104,6 +122,11 @@ exports.Player = function(name,type)
     if (broker.accountIsSuspended(this.name))
     {
       this.setStatus(MSG_SUSPENDED);
+      return;
+    }
+    if (broker.hackInProgress(this.name))
+    {
+      this.setStatus(MSG_HACK_IN_PROGRESS);
       return;
     }
     
@@ -121,6 +144,9 @@ exports.Player = function(name,type)
         break;
       case MARKET_CLOSED:
         this.setStatus(MSG_MARKET_CLOSED);
+        break;
+      case BROKER_STOCK_SUSPENDED:
+        this.setStatus(MSG_STOCK_SUSPENDED);
         break;
       default: 
         this.setStatus(MSG_SHARE_BUY,result,stockName);
@@ -154,6 +180,11 @@ exports.Player = function(name,type)
 
   this.suspectHacker=function(suspectedPlayerName,numPlayers)
   {
+    if (broker.hackInProgress(this.name))
+    {
+      this.setStatus(MSG_HACK_IN_PROGRESS);
+      return;
+    }
     if (broker.accountIsSuspended(this.name))
     {
       this.setStatus(MSG_SUSPENDED);
@@ -187,6 +218,11 @@ exports.Player = function(name,type)
     if (broker.accountIsSuspended(this.name))
     {
       this.setStatus(MSG_SUSPENDED);
+      return;
+    }
+    if (broker.hackInProgress(this.name))
+    {
+      this.setStatus(MSG_HACK_IN_PROGRESS);
       return;
     }
 

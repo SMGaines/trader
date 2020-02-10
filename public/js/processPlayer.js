@@ -128,6 +128,8 @@ socket.on(CMD_PLAYER_LIST,function(data)
   {
     openSuspensionForm(myPlayer);
   }
+  else if (myPlayer.account.hackDaysLeft > 0)
+    showHackInProgressForm(myPlayer.account.hackDaysLeft);
   else if (myPlayer.status != "")
   {
     if (isChristmas(gameDate))
@@ -483,6 +485,21 @@ function closeSuspensionForm()
 }
 
 // ********** END OF SUSPENSION FORM FUNCTIONS **********
+
+// ********** START OF HACK IN PROGRESS FORM FUNCTIONS **********
+
+function showHackInProgressForm(hackDaysLeft)
+{
+  if (hackDaysLeft==0)
+  {
+    document.getElementById('hackInProgressForm').style.display= "none";
+    return;
+  }
+  document.getElementById('hackDaysLeft').innerHTML = "Days left: "+hackDaysLeft;
+  document.getElementById('hackInProgressForm').style.display= "block";
+}
+
+// ********** END OF HACK IN PROGRESS FORM FUNCTIONS **********
 
 // ********** START OF GAME WAIT FORM FUNCTIONS **********
 

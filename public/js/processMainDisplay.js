@@ -1,10 +1,7 @@
 const GAME_TITLE = "TRADER v2.0";
-const FONT_SIZE = 40;
-const FONT_NAME = "courier";
-
 const MAX_STOCKS = 6; // Co-ordinate with stockmarket.js
-const STOCK_MIN_VALUE = 5;
-const STOCK_MAX_VALUE = 500;
+const STOCK_MIN_VALUE = 5; // The lowest *display* value - actual stock price can go lower
+const STOCK_MAX_VALUE = 700; // The highest *display* value - actual stock price can go higher
 const STOCK_COLOURS = ["#0000FF","#CFB53B", "#808080","#FF1493","#9370DB","#dc143c"]; // Must sync with stock.js
 const STOCK_NAMES=["GOVT","GOLD","OIL","HITECH","PHARMA","MINING"];// Must sync with stock.js
 
@@ -38,9 +35,6 @@ const CMD_GAME_DATE="gamedate";
 const CMD_DEPOSIT="deposit";
 const CMD_BANK="bank";
 // ******* End of shared list of constants between server.js, processMainDisplay.js and processPlayer.js *******
-
-const TAX_BEGIN_TIMER = 10000;
-const TAX_SHOW_TIMER = 10000;
 
 var stockChart,newspaperChart,stockTicker;
 

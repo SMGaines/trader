@@ -57,6 +57,12 @@ isOpen=function()
 }
 exports.isOpen=isOpen;
 
+isSuspended=function(stockName)
+{
+  return getStock(stockName).isSuspended();
+}
+exports.isSuspended=isSuspended;
+
 exports.buyStock=function(stockName,amount)
 {
   if (!isOpen())

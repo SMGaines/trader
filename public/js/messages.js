@@ -21,6 +21,7 @@ global.MSG_DIVIDEND=["You have received a dividend of $x shares of $y","Otrzyma�
 global.MSG_SPLIT=["$x has split",""];
 global.MSG_TAX = ["You have been taxed on your shares: $x","Opodatkowano twoje akcji: $x"];
 global.MSG_ALREADY_HACKING = ["You are already hacking $x","Już hakujesz $x"];
+global.MSG_HACK_IN_PROGRESS = ["Not allowed - hack in progress","Już hakujesz $x"];
 global.MSG_ALREADY_BEING_HACKED =["$x is already being hacked","$x już jest zhakowany"];
 global.MSG_HACK_INITIATED = ["Hack of $x initiated","Hack $x zainicjowany wysokości $y"];
 global.MSG_SUSPICION_IGNORED = ["Suspicion ignored - you are not being hacked","Podejrzenia zignorowano - nie jesteś zhakowany"];

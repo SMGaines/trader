@@ -296,7 +296,7 @@ p{
     background-color: #4CAF50;
     color: white;
     font-size: 128px;
-    width: 200%;
+    width: 190%;
     font-family: "Courier";
     text-align: center;
     z-index: 10;
@@ -352,6 +352,17 @@ p{
       margin: auto;
     }
   
+    .adminText {
+      border-radius: 25px;
+      display: block;
+      background-color: #4CAF50;
+      color: white;
+      font-size: 72px;
+      font-family: "Courier";
+      text-align: center;
+      z-index: 10;
+      margin: auto;
+    }
   .mediumText {
     border-radius: 25px;
     display: block;
@@ -442,7 +453,10 @@ p{
 .myslider { 
     -webkit-appearance: none; 
     background: #4CAF50  ; 
-    width: 100%; 
+    border-radius: 25px;
+    border-style: solid;
+    border-color: #003200;
+    width: 95%; 
     height: 100px; 
     opacity: 2; 
    } 

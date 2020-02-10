@@ -19,7 +19,7 @@ StockChart = function(canvas)
         updateStockHistory(stocks);
         var tickStart=axisMargin+xAxisIndent;
         var tickWidth=(this.canvas.width-2*tickStart)/HISTORY_SIZE;
-        self.ctx.clearRect(tickStart-2, yAxisIndent+axisMargin, this.canvas.width+2-2*tickStart, this.canvas.height-2*(yAxisIndent+axisMargin));
+        self.ctx.clearRect(tickStart-2, 0, this.canvas.width+4-2*tickStart, this.canvas.height-yAxisIndent-5);
         for (var i=0;i<stocks.length;i++)
         {
             self.ctx.beginPath();
@@ -71,7 +71,7 @@ StockChart = function(canvas)
 
         ctx.strokeStyle="#FFFFFF";
     
-        for (var i=0;i<=STOCK_MAX_VALUE;i+=50) // y-axis shows increments of 50
+        for (var i=0;i<=STOCK_MAX_VALUE;i+=100) // y-axis shows increments of 100
         {
             ctx.strokeText(STOCK_MAX_VALUE-i,width-xAxisIndent+10,Math.floor(height*(i/STOCK_MAX_VALUE))-yAxisIndent);
             ctx.strokeText(STOCK_MAX_VALUE-i,15,height*(i/STOCK_MAX_VALUE)-yAxisIndent);

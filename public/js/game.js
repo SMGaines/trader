@@ -44,7 +44,8 @@ exports.initialise=function(simul,gameDuration,dayLengthStartInSeconds,dayLength
     gameEndDate=new Date(gameDate);
     gameEndDate.setMonth(gameDate.getMonth()+gameDurationInMonths);
     setGameEndDate=false;
-
+    broker.clearAccounts();
+    players.clearPlayers();
     startRegistration(numEinsteins,numBots);
     if (simulation)
       runSimulation();

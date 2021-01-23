@@ -33,6 +33,11 @@ exports.createAccount=function(accountName)
     accounts.push(new account.Account(accountName));
 }
 
+exports.clearAccounts=function()
+{
+  accounts=[];
+}
+
 exports.getAccountSummary=function(accountName)
 {
   return findAccount(accountName);

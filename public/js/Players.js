@@ -28,6 +28,11 @@ exports.registerPlayer=function(playerName,type)
     players.push(newPlayer);
 }
 
+exports.clearPlayers=function()
+{
+    players=[];
+}
+
 exports.validateNewPlayer=function(playerName)
 {
     if (playerName.length < 3 || playerName.length > 8)

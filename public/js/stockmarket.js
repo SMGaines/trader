@@ -272,6 +272,7 @@ updatePrices = function()
 function setupStock()
 {
   numActiveStocks=0;
+  stocks=[];
   for (var i=0;i<NUM_INITIAL_STOCKS;i++)
   {
     newStock();

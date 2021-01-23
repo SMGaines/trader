@@ -5,7 +5,7 @@
   "main": "public/server.js",
   "scripts": {
     "test": "trader",
-    "start": "nodemon public/server.js"
+    "start": "node public/server.js"
   },
   "author": "smg",
   "license": "ISC",

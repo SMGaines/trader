@@ -61,7 +61,8 @@ socket = io.connect();
 socket.on(CMD_NEW_PRICES,function(data)
 {
     stocks=data.msg;
-    
+    console.log("CMD_NEW_PRICES: Stocks length: "+stocks.length);
+   
     if (numStocks !=stocks.length)
     {
         stockChart.updateStocks(stocks);

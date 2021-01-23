@@ -53,6 +53,11 @@ app.get('/registrationComplete',function(req,res)
    startGame();
 });
 
+app.get('/view',function(req,res)
+{
+   res.sendFile(__dirname+'/mainDisplay.html');
+});
+
 app.get('/adminResponse',function(req,res)
 {
     game.initialise(req.query.simulation,req.query.gameMonths,req.query.dayDurationStart,req.query.dayDurationEnd,req.query.numBots,req.query.numEinsteins);

@@ -155,7 +155,7 @@ processMarketEvent=function(newsEvent)
       case EVENT_CRASH_ALL_STOCKS:  crashAllStocks();break;
       case EVENT_BOOM_ALL_STOCKS:   boomAllStocks();break;
       case EVENT_STOCK_IPO:         var stockName=newStock();
-                                    getStock(stockName).setTrend(IPO_INITIAL_TREND); // IPO's alwats start well :)
+                                    getStock(stockName).setTrend(IPO_INITIAL_TREND); // IPO's always start well :)
                                     newsEvent.headLine = newsEvent.headLine.replace("$name",stockName);
                                     break;
       case EVENT_STOCK_RELEASE:     releaseStock(newsEvent.stockName);break;

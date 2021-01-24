@@ -49,6 +49,7 @@ global.MSG_EVENT_MARKET_CLOSED= ["The Market will close on $x",""];
 global.MSG_HAPPY_XMAS = ["Merry Christmas: you receive $x","Wesołych świąt: otrzymasz $x"];
 global.MSG_BANKED = ["You have banked $x","Wesołych świąt: otrzymasz $x"];
 global.MSG_MARKET_CLOSED = ["Transaction not allowed - market closed","Wesołych świąt: otrzymasz $x"];
+global.MSG_NO_BUYER = ["There is no buyer for this stock"];
 
 global.MSG_NEWS_HEAD_WINNER = ["$x wins!!","$x wygrywa !!"];
 global.MSG_NEWS_SUB_WINNER = ["Crushes opposition with impressive win","Miażdży przeciwników imponującą wygraną"];

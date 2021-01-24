@@ -28,7 +28,7 @@ socket.on(CMD_PLAYER_LIST,function(data)
 socket.on(CMD_GAME_ADDRESS,function(data)
 {
     var serverIP=data.msg;
-    document.getElementById('gameConnectDetails').innerHTML=createSpan("Connect to http://"+serverIP+":8081/player");
+    document.getElementById('gameConnectDetails').innerHTML=createSpan("Connect to http://"+serverIP+":8080/player");
 });
 
 init = function()

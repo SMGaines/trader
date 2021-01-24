@@ -197,7 +197,7 @@ processBots=function(gameDate,gameEndDate)
     else if (players[i].name.startsWith(BOT_NAME_PREFIX))
       players[i].processBot(gameDate,gameEndDate,players.length);
   }
-  logBotActivity(gameDate);
+  //logBotActivity(gameDate);
 }
 
 // ****** Internal functions **********

@@ -105,6 +105,9 @@ exports.Player = function(name,type)
       case ACCOUNT_INSUFFICIENT_STOCK:
         this.setStatus(MSG_NO_STOCK);
         break;
+      case MARKET_NO_BUYER:
+        this.setStatus(MSG_NO_BUYER);
+        break;
       case MARKET_CLOSED:
         this.setStatus(MSG_MARKET_CLOSED);
         break;
@@ -171,6 +174,9 @@ exports.Player = function(name,type)
     {
       case BROKER_OK:
         this.setStatus(MSG_HACK_INITIATED,hackedPlayerName);
+        return;
+      case ERROR_HACK_ALREADY_IN_PROGRESS:
+        this.setStatus(MSG_ALREADY_BEING_HACKED,hackedPlayerName);
         return;
       default: 
         log(this.name+": setupHack: error: "+error);
@@ -256,7 +262,7 @@ exports.Player = function(name,type)
     if (argY !== undefined) msg=msg.replace("$y",argY);
     if (argZ !== undefined) msg=msg.replace("$z",argZ);
     this.status=msg;
-    log(this.name+": "+msg);
+    log("player: setStatus: "+this.name+": "+msg);
   }
 
   this.isConvicted=function()

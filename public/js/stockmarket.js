@@ -243,6 +243,11 @@ checkSuspendedStocks=function()
   }  
 }
 
+exports.declineTooSteep=function(stockName)
+{
+  return getStock(stockName).trend < STOCK_NO_BUYER_TREND;
+}
+
 function getStock(stockName)
 {
   for (var i=0;i<stocks.length;i++)
@@ -264,7 +269,10 @@ updatePrices = function()
       if ((increase > 0 /*&& stock.price < STOCK_MAX_VALUE*/) || (increase <0 && stock.price > STOCK_MIN_VALUE))
         stock.price += increase;
       if (Math.abs(stock.trend) > 1)
+      {
         stock.trend*=STOCK_DAMPING_FACTOR;
+        console.log("stockMarket: updatePrices: Trend for: "+stock.name+" = "+stock.trend);
+      }
     }
   });
 }

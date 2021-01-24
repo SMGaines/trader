@@ -29,7 +29,7 @@ exports.initialise=function(simul,gameDuration,dayLengthStartInSeconds,dayLength
     console.log("Game: Initialising: "+gameID);
     state=STATE_INITIALISING;
 
-    simulation=simul=="Yes";
+    simulation=(simul=="Yes");
 
     gameID=generateGameID();
 

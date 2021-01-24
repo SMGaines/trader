@@ -177,7 +177,11 @@ function getPlayerColour(player)
    if (player.account.suspensionDays > 0)
         return "black";
     else if (player.account.beingHackedBy!="NONE")
+    {
+        console.log("getPlayerColour: "+player.account.beingHackedBy);
         return "red";
+    }
+      
     return "white";
 }
 

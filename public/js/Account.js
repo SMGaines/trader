@@ -102,7 +102,7 @@ exports.Account=function(name)
     this.setupHacker=function(hackedName)
     {
         this.isHacking=hackedName;
-        this.hackDaysLeft= HACKING_DURATION_DAYS*Math.floor(.5+.5*Math.random()); // i.e. between 50% and 100 % of HACKING_DURATION_DAYS (defined in Players.js)
+        this.hackDaysLeft= Math.floor(.5*HACKING_DURATION_DAYS*(1+Math.random())); // i.e. between 50% and 100 % of HACKING_DURATION_DAYS (defined in Players.js)
     }
 
     this.setHackOnAccount=function(hackerName)

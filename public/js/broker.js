@@ -21,7 +21,7 @@ global.ACCOUNT_INSUFFICIENT_FUNDS=-3;
 global.ACCOUNT_INSUFFICIENT_STOCK=-4;
 global.BROKER_ACCOUNT_OVERDRAWN=-5;
 global.MARKET_CLOSED=-6;
-
+global.MARKET_NO_BUYER=-7;
 
 var account=require("./Account.js");
 var mkt=require("./stockmarket.js");
@@ -109,7 +109,9 @@ exports.sellStock=function(accountName,stockName,amount)
     return MARKET_CLOSED;
   if (mkt.stockSuspended(stockName))
     return BROKER_STOCK_SUSPENDED;
-  return findAccount(accountName).sellStock(stockName,amount);
+  if (mkt.declineTooSteep(stockName))
+    return MARKET_NO_BUYER;
+return findAccount(accountName).sellStock(stockName,amount);
 }
 
 exports.getStockValue=function(accountName)

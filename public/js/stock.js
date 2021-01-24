@@ -17,6 +17,7 @@ global.STOCK_DAMPING_FACTOR = .95; // How quickly does stock growth/decline slow
 global.STOCK_INCREMENT = 50;
 global.MIN_STOCK_RELEASE_AMOUNT = 500;
 global.STOCK_MAX_TREND = 3;
+global.STOCK_NO_BUYER_TREND=-1;
 global.MIN_STOCK_PURCHASE = 50;
 global.NUM_INITIAL_STOCKS=4;
 global.STOCK_DIVIDEND_RATIO = .25;

@@ -22,6 +22,10 @@ const CMD_GET_GAME_ID="getgameID";
 const CMD_GAME_DATE="gamedate";
 const CMD_DEPOSIT="deposit";
 const CMD_BANK="bank";
+const CMD_INTEREST_RATE="interestRate";
+const CMD_SHORT_STOCK="shortStock";
+const CMD_REPAY_STOCK="repayStock";
+
 // ******* End of shared list of constants between server.js, processMainDisplay.js and processPlayer.js *******
 
 var game = require('./js/game.js');
@@ -66,7 +70,8 @@ app.get('/adminResponse',function(req,res)
 
 app.get('/admin',function(req,res)
 {
-     res.sendFile(__dirname+'/admin.html');
+    clearInterval(dayTimer);
+    res.sendFile(__dirname+'/admin.html');
 });
 
 app.get('/instructionsEN',function(req,res)
@@ -130,6 +135,7 @@ function updateClients(newsEvent)
     sendToClient(CMD_PLAYER_LIST,players.getPlayerSummaries());
     sendToClient(CMD_NEW_PRICES,market.getStocks());
     sendToClient(CMD_GAME_DATE,game.getDates()); // Sends current game date & game end date
+    sendToClient(CMD_INTEREST_RATE,game.getInterestRate());
 }
 
 function sendToClient(cmd,info)
@@ -182,6 +188,20 @@ io.on('connection',function(socket)
             players.buyStock(playerName,stockName,amount);
     });
 
+    socket.on(CMD_SHORT_STOCK,function(aGameID,playerName,stockName,amount)
+    {
+        console.log("Server: shortstock: "+aGameID+"/"+playerName+"/"+stockName+"/"+amount);
+        if (game.validID(aGameID))
+            players.shortStock(playerName,stockName,amount);
+    });
+
+    socket.on(CMD_REPAY_STOCK,function(aGameID,playerName,stockName)
+    {
+        console.log("Server: repaystock: "+aGameID+"/"+playerName+"/"+stockName);
+        if (game.validID(aGameID))
+            players.repayStock(playerName,stockName);
+    });
+
     socket.on(CMD_GET_GAME_ADDRESS,function()
     {
         var myIP = utils.getLocalIP();
@@ -203,11 +223,11 @@ io.on('connection',function(socket)
             players.setupHack(hackingPlayerName,hackedPlayerName);
     });
 
-    socket.on(CMD_SUSPECT,function(aGameID,suspectingPlayerName,suspectedPlayerName)
+    socket.on(CMD_SUSPECT,function(aGameID,suspectingPlayerName)
     {
-        console.log("Server: suspect: "+suspectingPlayerName+"/"+suspectedPlayerName);
+        console.log("Server: suspect: "+suspectingPlayerName);
         if (game.validID(aGameID))
-             players.suspectHacker(suspectingPlayerName,suspectedPlayerName);
+             players.suspectHacking(suspectingPlayerName);
     });    
 
     socket.on(CMD_INSIDER,function(aGameID,insiderPlayerName)

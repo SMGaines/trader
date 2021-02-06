@@ -1,6 +1,9 @@
 global.EINSTEIN_PREFIX="EINSTEIN";
 global.BOT_NAME_PREFIX="BOT";
 
+global.MIN_INTEREST_RATE = 1;
+global.MAX_INTEREST_RATE = 5;
+
 const STATE_INITIALISING = 0;
 const STATE_REGISTRATION = 1;
 const STATE_STARTED = 2;
@@ -23,6 +26,7 @@ var simulation;
 var gameID;
 var state;
 var setGameEndDate;
+var interestRate;
 
 exports.initialise=function(simul,gameDuration,dayLengthStartInSeconds,dayLengthEndInSeconds,numBots,numEinsteins)
 {
@@ -44,6 +48,8 @@ exports.initialise=function(simul,gameDuration,dayLengthStartInSeconds,dayLength
     gameEndDate=new Date(gameDate);
     gameEndDate.setMonth(gameDate.getMonth()+gameDurationInMonths);
     setGameEndDate=false;
+
+    interestRate=0;
     broker.clearAccounts();
     players.clearPlayers();
     startRegistration(numEinsteins,numBots);
@@ -88,6 +94,11 @@ exports.getGameDaysLeft=function()
   return daysElapsed(gameEndDate,gameDate);
 }
 
+exports.getInterestRate=function()
+{
+  return interestRate;
+}
+
 processDay = function()
 {
   dayDurationInMS-=perDayReductionInMS;
@@ -107,7 +118,8 @@ processDay = function()
   // Sometimes some post-processing is done on the event, hence it's passed back
   var newsEvent = events.getNewsEvent(gameDate);
   newsEvent=market.processDay(gameDate,newsEvent); 
-  newsEvent=players.processDay(gameDate,gameEndDate,newsEvent); 
+  interestRate=market.calcInterestRate();
+  newsEvent=players.processDay(gameDate,gameEndDate,newsEvent,interestRate); 
   newsEvent=broker.processDay(gameDate,newsEvent); 
 
   if (gameOver())

@@ -24,10 +24,12 @@
         <TABLE style="margin:auto;">
             <TR><TH style='padding: 20px;'><button class='veryLargeButton' id='bankBalance'  onclick="openBankForm()"></button></TH></TR>
             <TR><TH style='padding: 20px;'><button class='veryLargeButton' onclick="openBuyForm()">Buy</button></TH></TR>
+            <TR><TH style='padding: 20px;'><button class='veryLargeButton' onclick="openShortForm()">Short</button></TH></TR>
+            <TR><TH style='padding: 20px;'><button class='veryLargeButton' onclick="openRepayForm()">Repay Short</button></TH></TR>
             <TR><TH style='padding: 20px;'><button class='veryLargeButton' onclick="openSellForm()">Sell</button></TH></TR>
             <TR><TH style='padding: 20px;'><button class='veryLargeButton' onclick="insider()">Insider</button></TH></TR>
             <TR><TH style='padding: 20px;'><button class='veryLargeButton' onclick="openHackForm()">Hack</button></TH></TR>
-            <TR><TH style='padding: 20px;'><button class='veryLargeButton' onclick="openSuspectForm()">Suspect</button></TH></TR>
+            <TR><TH style='padding: 20px;'><button class='veryLargeButton' onclick="suspect()">Suspect</button></TH></TR>
         </TABLE>
     </div>
 	<div class='prison' id='hackForm'>
@@ -77,6 +79,58 @@
             </TR>
         </TABLE>
     </div>
+
+    <div id='shortForm' class='prison'>
+        <TABLE style="margin:auto;">
+            <TR>
+                <TH style='padding: 20px;'><button id='shortStock0' class='stockButton' type='button' onclick='selectShortStock(0)'></button>>&nbsp;</button></TH>
+                <TH style='padding: 20px;'><button id='shortStock1' class='stockButton' type='button' onclick='selectShortStock(1)'>&nbsp;</button></TH>
+             </TR>
+             <TR>
+                <TH style='padding: 20px;'><button id='shortStock2' class='stockButton' type='button' onclick='selectShortStock(2)'>&nbsp;</button></TH>
+                <TH style='padding: 20px;'><button id='shortStock3' class='stockButton' type='button' onclick='selectShortStock(3)'>&nbsp;</button></TH>
+            </TR>
+            <TR>
+                <TH style='padding: 20px;'><button id='shortStock4' class='stockButton' type='button' onclick='selectShortStock(4)'>&nbsp;</button></TH>
+                <TH style='padding: 20px;'><button id='shortStock5' class='stockButton' type='button' onclick='selectShortStock(5)'>&nbsp;</button></TH>
+            </TR>
+
+            <TR><TH colspan='2' style='padding: 20px;' id='shortStockAmount' class='stockText'></TH></TR>
+            <TR><TH colspan='2' style='padding: 20px;'><input id='shortStockSlider' type='range' class='myslider'/></TH></TR>
+            <TR><TH colspan='2' style='padding: 20px;'><button class='veryLargeText' type='button' onclick='short()'>Short</button></TH></TR>
+            <TR>
+                <TH colspan='2' style='padding: 20px;'>
+                    <button class='veryLargeText' type='button' onclick="closeShortForm()">Cancel</button>
+                </TH>
+            </TR>
+        </TABLE>
+    </div>
+
+    <div id='repayForm' class='prison'>
+        <TABLE style="margin:auto;">
+            <TR>
+                <TH style='padding: 20px;'><button id='repayStock0' class='stockButton' type='button' onclick='selectRepayStock(0)'></button>>&nbsp;</button></TH>
+                <TH style='padding: 20px;'><button id='repayStock1' class='stockButton' type='button' onclick='selectRepayStock(1)'>&nbsp;</button></TH>
+             </TR>
+             <TR>
+                <TH style='padding: 20px;'><button id='repayStock2' class='stockButton' type='button' onclick='selectRepayStock(2)'>&nbsp;</button></TH>
+                <TH style='padding: 20px;'><button id='repayStock3' class='stockButton' type='button' onclick='selectRepayStock(3)'>&nbsp;</button></TH>
+            </TR>
+            <TR>
+                <TH style='padding: 20px;'><button id='repayStock4' class='stockButton' type='button' onclick='selectRepayStock(4)'>&nbsp;</button></TH>
+                <TH style='padding: 20px;'><button id='repayStock5' class='stockButton' type='button' onclick='selectRepayStock(5)'>&nbsp;</button></TH>
+            </TR>
+
+            <TR><TH colspan='2' style='padding: 20px;' id='repayStockAmount' class='stockText'></TH></TR>
+             <TR><TH colspan='2' style='padding: 20px;'><button class='veryLargeText' type='button' onclick='repay()'>Repay Short</button></TH></TR>
+            <TR>
+                <TH colspan='2' style='padding: 20px;'>
+                    <button class='veryLargeText' type='button' onclick="closeRepayForm()">Cancel</button>
+                </TH>
+            </TR>
+        </TABLE>
+    </div>
+
     <div id='sellForm' class='prison'>
         <TABLE style="margin:auto;">
             <TR>

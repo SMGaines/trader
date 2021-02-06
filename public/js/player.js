@@ -26,12 +26,16 @@ exports.Player = function(name,type)
 
   this.getSummary=function()
   {
+    var accountSummary=broker.getAccountSummary(this.name);
+    if (accountSummary.status != "")
+      this.status=accountSummary.status;
     return new PlayerSummary(this.name,this.balance,this.status,broker.getAccountSummary(this.name));
   }
 
   this.clearStatus=function()
   {
     this.status="";
+    broker.clearStatus(this.name);
   }
 
   this.bankCash = function(amount)
@@ -157,6 +161,51 @@ exports.Player = function(name,type)
     }
   }
   
+  this.shortStock = function(stockName,amount)
+  {
+    if (broker.accountIsSuspended(this.name))
+    {
+      this.setStatus(MSG_SUSPENDED);
+      return;
+    }
+    if (broker.hackInProgress(this.name))
+    {
+      this.setStatus(MSG_HACK_IN_PROGRESS);
+      return;
+    }
+    
+    var result = broker.shortStock(this.name,stockName,amount);
+    switch(result)
+    {
+      case ACCOUNT_INSUFFICIENT_FUNDS:
+        this.setStatus(MSG_INSUFFICIENT_FUNDS);
+        break;
+      case BROKER_INSUFFICIENT_STOCK:
+        this.setStatus(MSG_INSUFFICIENT_STOCK);
+        break;
+      case BROKER_ACCOUNT_OVERDRAWN:
+        this.setStatus(MSG_ACCOUNT_OVERDRAWN);
+        break;
+      case MARKET_CLOSED:
+        this.setStatus(MSG_MARKET_CLOSED);
+        break;
+      case BROKER_STOCK_SUSPENDED:
+        this.setStatus(MSG_STOCK_SUSPENDED);
+        break;
+      case BROKER_STOCK_ALREADY_BORROWED:
+        this.setStatus(MSG_STOCK_ALREADY_BORROWED);
+        break;
+      default: 
+        this.setStatus(MSG_SHARE_BORROW,result,stockName);
+        break;
+    }
+  }
+
+  this.repayStock=function(stockName)
+  {
+    broker.repayStock(this.name,stockName);
+  }
+
   this.setupHack=function(hackedPlayerName)
   {
     if (broker.accountIsSuspended(this.name))
@@ -184,7 +233,7 @@ exports.Player = function(name,type)
     } 
   }
 
-  this.suspectHacker=function(suspectedPlayerName,numPlayers)
+  this.suspectHacking=function()
   {
     if (broker.hackInProgress(this.name))
     {
@@ -204,17 +253,17 @@ exports.Player = function(name,type)
     
     var hackerName=broker.getHackerName(this.name);
 
-    if (hackerName == suspectedPlayerName) // Correct guess
+    if (hackerName != NONE) // Is actually being hacked
     {
       broker.suspendAccount(hackerName,HACKING_SUSPENSION_DAYS);
-      this.setStatus(MSG_HACK_DETECTED,suspectedPlayerName,HACKING_SUSPENSION_DAYS);
-      broker.clearHack(hackerName,suspectedPlayerName);
+      this.setStatus(MSG_HACK_DETECTED,hackerName,HACKING_SUSPENSION_DAYS);
+      broker.clearHack(hackerName,this.name);
     }
     else
     {
       var suspension = Math.floor(HACKING_SUSPENSION_DAYS/numPlayers);
       broker.suspendAccount(this.name,suspension);
-      this.setStatus(MSG_WRONG_SUSPICION,suspectedPlayerName);
+      this.setStatus(MSG_SUSPICION_IGNORED);
     }
   }
 
@@ -262,7 +311,7 @@ exports.Player = function(name,type)
     if (argY !== undefined) msg=msg.replace("$y",argY);
     if (argZ !== undefined) msg=msg.replace("$z",argZ);
     this.status=msg;
-    log("player: setStatus: "+this.name+": "+msg);
+    //log("player: setStatus: "+this.name+": "+msg);
   }
 
   this.isConvicted=function()

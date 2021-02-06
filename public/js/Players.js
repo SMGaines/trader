@@ -65,11 +65,11 @@ exports.getPlayerSummaries=function()
     return playerSummary;
 }
 
-exports.processDay=function(gameDate,gameEndDate,newsEvent)
+exports.processDay=function(gameDate,gameEndDate,newsEvent,interestRate)
 {
     processBots(gameDate,gameEndDate);
     checkInsiderTrading(gameDate);
-    applyInterestRates();
+    applyInterestRates(interestRate);
     if (isChristmas(gameDate))
         processChristmas();
     return processPlayersEvent(newsEvent);
@@ -146,6 +146,20 @@ exports.buyStock=function(playerName,stockName,amount)
         player.buyStock(stockName,amount);
 }
 
+exports.shortStock=function(playerName,stockName,amount)
+{
+    var player=findPlayer(playerName);
+    if (player!=null)
+        player.shortStock(stockName,amount);
+}
+
+exports.repayStock=function(playerName,stockName)
+{
+    var player=findPlayer(playerName);
+    if (player!=null)
+        player.repayStock(stockName);
+}
+
 exports.sellStock=function(playerName,stockName,amount)
 {
     var player=findPlayer(playerName);
@@ -155,16 +169,16 @@ exports.sellStock=function(playerName,stockName,amount)
 
 exports.setupHack=function(playerName,hackedPlayerName)
 {
-    var player=findPlayer(playerName);
-    if (player!=null)
-        player.setupHack(hackedPlayerName);
+    var hackingPlayer=findPlayer(playerName);
+    if (hackingPlayer!=null)
+        hackingPlayer.setupHack(hackedPlayerName);
 }
 
-exports.suspectHacker=function(playerName,hackerName)
+exports.suspectHacking=function(playerName)
 {
     var player=findPlayer(playerName);
     if (player!=null)
-        player.suspectHacker(hackerName,players.length);
+        player.suspectHacking();
 }
 
 exports.setupInsider=function(playerName,gameDate)
@@ -278,12 +292,15 @@ findLotteryWinner=function()
     return players[bestIndex];
 }
 
-applyInterestRates = function()
+// Interest rate is a number between 1 and 5
+applyInterestRates = function(interestRate)
 {
   players.forEach(function(player)
   {
-    var interestRate= Math.min(1+player.balance/50000,10);
     if (player.balance > 0)
-        player.balance*=(100+interestRate/50)/100;
+    {
+        var currentBalance=player.balance;
+        player.balance*=(100+interestRate/10)/100;
+    }
   });
 }

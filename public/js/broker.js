@@ -22,6 +22,11 @@ global.ACCOUNT_INSUFFICIENT_STOCK=-4;
 global.BROKER_ACCOUNT_OVERDRAWN=-5;
 global.MARKET_CLOSED=-6;
 global.MARKET_NO_BUYER=-7;
+global.ACCOUNT_MARGIN_CALL=-8;
+global.BROKER_STOCK_ALREADY_BORROWED=-9;
+global.BROKER_NOTHING_TO_REPAY=-10;
+
+global.MIN_MARGIN_CALL_DAYS = 30;
 
 var account=require("./Account.js");
 var mkt=require("./stockmarket.js");
@@ -43,10 +48,16 @@ exports.getAccountSummary=function(accountName)
   return findAccount(accountName);
 }
 
+exports.clearStatus=function(accountName)
+{
+  findAccount(accountName).status="";
+}
+
 exports.processDay=function(gameDate,newsEvent)
 {
   checkSuspendedAccounts();
   checkHacks();
+  checkMarginCalls();
   if (newsEvent !=null)
     newsEvent=processBrokerEvent(newsEvent);
   return newsEvent;
@@ -71,6 +82,14 @@ checkSuspendedAccounts=function()
     accounts.forEach(function(account)
     {
         account.progressSuspension();
+    });
+}
+
+checkMarginCalls=function()
+{
+    accounts.forEach(function(account)
+    {
+        account.checkMarginCalls();
     });
 }
 
@@ -101,6 +120,20 @@ exports.buyStock=function(accountName,stockName,amount)
   if (mkt.stockSuspended(stockName))
     return BROKER_STOCK_SUSPENDED;
   return findAccount(accountName).buyStock(stockName,amount);
+}
+
+exports.shortStock=function(accountName,stockName,amount)
+{
+  if (!mkt.isOpen())
+    return MARKET_CLOSED;
+  if (mkt.stockSuspended(stockName))
+    return BROKER_STOCK_SUSPENDED;
+  return findAccount(accountName).shortStock(stockName,amount);
+}
+
+exports.repayStock=function(accountName,stockName)
+{
+  return findAccount(accountName).repayStock(stockName);
 }
 
 exports.sellStock=function(accountName,stockName,amount)
@@ -165,13 +198,11 @@ exports.taxReturn=function(accountName)
 exports.setupHack = function(hackingAccountName,hackedAccountName)
 {  
     var hackerAccount=findAccount(hackingAccountName);
-    var hackedAccount=findAccount(hackedAccountName);
-    if (hackedAccount.beingHacked())
+    if (beingHacked(hackedAccountName))
     {
         return ERROR_HACK_ALREADY_IN_PROGRESS;
     }
     hackerAccount.setupHacker(hackedAccountName);
-    hackedAccount.setHackOnAccount(hackingAccountName);
     return BROKER_OK;
 }
 
@@ -186,7 +217,7 @@ checkHacks=function()
         {
           var hackedAccount=findAccount(account.getHackedAccountName());
           executeHack(account,hackedAccount);
-          clearHack(account.name,hackedAccount.name);
+          clearHack(account.name);
         }
       }
     });
@@ -200,14 +231,27 @@ executeHack=function(hackerAccount,hackedAccount)
     var holding=hackedAccount.getStockHolding(mostValuableStockName);
     var stolenAmount=Math.max(STOCK_INCREMENT,roundStock(holding/2));
     hackedAccount.reduceStockHolding(mostValuableStockName,stolenAmount);
+    hackedAccount.setAccountStatus(MSG_HACK_STEAL,hackerAccount.name,stolenAmount,mostValuableStockName)
     hackerAccount.addToStockHolding(mostValuableStockName,stolenAmount);
+    hackerAccount.setAccountStatus(MSG_SUCCESSFUL_HACK,stolenAmount,mostValuableStockName);
+  }
+  else
+  {
+    hackerAccount.setAccountStatus(MSG_SUCCESSFUL_HACK_NO_SHARES,hackedAccount.name);
   }
 }
 
-exports.beingHacked=function(accountName)
+beingHacked=function(accountName)
 {
-    return findAccount(accountName).beingHacked();
+  accounts.forEach(function(account)
+  {
+    if (account.isHacking == accountName)
+      return true;
+  });
+
+  return false;
 }
+exports.beingHacked=beingHacked;
 
 exports.hackInProgress=function(accountName)
 {
@@ -216,13 +260,17 @@ exports.hackInProgress=function(accountName)
 
 exports.getHackerName=function(accountName)
 {
-    return findAccount(accountName).getHackerName();
+  accounts.forEach(function(account)
+  {
+    if (account.isHacking == accountName)
+      return this.name;
+  });
+  return NONE;
 }
 
-clearHack=function(hackerAccountName,hackedAccountName)
+clearHack=function(hackerAccountName)
 {
   findAccount(hackerAccountName).stopHackingAnAccount();
-  findAccount(hackedAccountName).stopBeingHacked();
 }
 exports.clearHack=clearHack;
 
@@ -232,7 +280,7 @@ exports.chooseAccountNameToHack=function(accountName)
   var best=-1;
   for (var i=0;i<accounts.length;i++)
   {
-    if (accounts[i].name != accountName && !accounts[i].beingHacked() && players[i].getBankBalance() > best)
+    if (accounts[i].name != accountName && !beingHacked(accounts[i].name) && players[i].getBankBalance() > best)
     {
       best=players[i].getBankBalance();
       bestIndex=i;

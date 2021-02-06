@@ -29,8 +29,12 @@ exports.processBot=function(player,gameDate,gameEndDate,numPlayers)
   }    
   else if (broker.getStockHolding(player.name,rndStock.name) > 0 && rndStock.price > 50 && rndStock.trend < 0)
     player.sellStock(rndStock.name,rndAmount);
-  else if (rndStock.trend > 0 || rndStock.price < 50 && rndStock.available > 0)
+    else if (rndStock.trend > 0 || rndStock.price < 50 && rndStock.available > 0)
     player.buyStock(rndStock.name,rndAmount);
+  else if (rndStock.trend <0 && rndStock.available > 0)
+    player.shortStock(rndStock.name,rndAmount);
+  else if (Math.random() > .9)
+    player.repayStock(rndStock.name);
   else if (Math.random() > .95 && broker.getCash(player.name) > 0)
     player.bankCash(.1*broker.getCash(player.name));
   else if (Math.random() > .95 && !broker.hackInProgress(player.name))

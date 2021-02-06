@@ -34,6 +34,8 @@ const CMD_GET_GAME_ID="getgameID";
 const CMD_GAME_DATE="gamedate";
 const CMD_DEPOSIT="deposit";
 const CMD_BANK="bank";
+const CMD_INTEREST_RATE="interestRate";
+const CMD_SHORT_STOCK="shortStock";
 // ******* End of shared list of constants between server.js, processMainDisplay.js and processPlayer.js *******
 
 var stockChart,newspaperChart,stockTicker;
@@ -81,6 +83,12 @@ socket.on(CMD_GAME_DATE,function(data)
   gameDate=new Date(gameDates.currentDate);
   gameEndDate=new Date(gameDates.endDate);
   showDate();
+});
+
+socket.on(CMD_INTEREST_RATE,function(data)
+{
+  var interestRate=data.msg;
+  document.getElementById("interestRate").innerHTML=interestRate.toFixed(1);
 });
 
 socket.on(CMD_GAME_LANGUAGE,function(data)
@@ -174,15 +182,35 @@ var playerDisplay = function(players)
 
 function getPlayerColour(player)
 {
-   if (player.account.suspensionDays > 0)
+    var hackDaysLeft=getHackDaysLeft(player);
+    if (player.account.suspensionDays > 0)
         return "black";
-    else if (player.account.beingHackedBy!="NONE")
+    else if (hackDaysLeft > 0)
+        return getHackedPlayerColour(hackDaysLeft);
+    else
+        return "white";
+}
+
+function getHackDaysLeft(player)
+{
+    for (var i=0;i<players.length;i++)
     {
-        console.log("getPlayerColour: "+player.account.beingHackedBy);
-        return "red";
+        if (players[i].account.isHacking == player.name)
+            return players[i].account.hackDaysLeft;
     }
-      
-    return "white";
+    return 0;
+}
+
+function getHackedPlayerColour(daysLeft)
+{
+    if (daysLeft < 2)
+        return "rgb(255,0,0)";
+    else if (daysLeft < 10)
+        return "rgb(255,200,200)";
+    else if (daysLeft < 15)
+        return "rgb(255,220,220)";
+    else 
+        return "rgb(255,240,240)";
 }
 
 function createStockDisplay(playerStocks)

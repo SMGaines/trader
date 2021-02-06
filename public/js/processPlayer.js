@@ -35,6 +35,9 @@ const CMD_GET_GAME_ID="getgameID";
 const CMD_GAME_DATE="gamedate";
 const CMD_DEPOSIT="deposit";
 const CMD_BANK="bank";
+const CMD_INTEREST_RATE="interestRate";
+const CMD_SHORT_STOCK="shortStock";
+const CMD_REPAY_STOCK="repayStock";
 // ******* End of shared list of constants between server.js, processMainDisplay.js and processPlayer.js *******
 
 // *** Shared with Players.js
@@ -55,6 +58,8 @@ var policeAudioPlayed;
 var bankAmountMonitor;
 var sellStockAmountMonitor,sellStockSelectedIndex;
 var buyStockAmountMonitor,buyStockSelectedIndex;
+var shortStockAmountMonitor,shortStockSelectedIndex;
+var repayStockSelectedIndex;
 var gameID;
 var liftMusic;
 
@@ -230,6 +235,132 @@ function closeBuyForm()
 
 // ********** END OF BUY FORM FUNCTIONS **********
 
+// ********** START OF REPAY FUNCTION ********** 
+repay = function()
+{
+    closeRepayForm();
+    var stockName=stocks[shortSelectedStockIndex].name;
+    console.log("Repaying borrowed shares of "+stockName);
+    socket.emit(CMD_REPAY_STOCK,gameID,myPlayer.name,stockName);
+}
+
+function openRepayForm()
+{
+  repaySelectedStockIndex=0;
+  updateRepayStockButtons();
+  document.getElementById("repayForm").style.display= "block";
+}
+
+function selectRepayStock(stockIndex)
+{
+  console.log("selectRepayStock: "+stocks[stockIndex].name+" selected");
+  
+  repaySelectedStockIndex=stockIndex;
+
+  for (var i=0;i<stocks.length;i++)
+  {
+    document.getElementById("repayStock"+i).style.color=(i==stockIndex?"#003200":"white");
+  }
+}
+
+function updateRepayStockButtons()
+{
+  if (typeof stocks == 'undefined' || typeof myPlayer == 'undefined')
+    return;
+  for (var i=0;i<stocks.length;i++)
+  {
+    var stockButton=document.getElementById("repayStock"+i);
+    stockButton.style.backgroundColor=stocks[i].colour;
+    stockButton.innerHTML=stocks[i].name;
+    stockButton.disabled=(getShortedStockAmount(stocks[i].name) == 0); // Can't repay a stock that you haven't shorted
+  }
+}
+
+function closeRepayForm()
+{
+	document.getElementById("repayForm").style.display= "none";
+}
+
+// ********** END OF REPAY FORM FUNCTIONS **********
+
+// ********** START OF SHORT FUNCTION ********** 
+
+short = function()
+{
+    closeShortForm();
+    var stockAmount = parseInt(document.getElementById("shortStockSlider").value);
+    var stockName=stocks[shortSelectedStockIndex].name;
+    console.log("Shorting "+stockAmount+" shares of "+stockName);
+    socket.emit(CMD_SHORT_STOCK,gameID,myPlayer.name,stockName,stockAmount);
+}
+
+function openShortForm()
+{
+  shortSelectedStockIndex=0;
+  updateShortStockButtons();
+  shortStockAmountMonitor=setInterval(lookForShortStockAmountChange,100);
+  var shortStockSlider= document.getElementById("shortStockSlider");
+  shortStockSlider.min=0;
+  shortStockSlider.max=0;
+  shortStockSlider.step=0;
+  shortStockSlider.value=0;
+  document.getElementById("shortStockAmount").innerHTML=0;
+  document.getElementById("shortForm").style.display= "block";
+}
+
+function selectShortStock(stockIndex)
+{
+  console.log("selectShortStock: "+stocks[stockIndex].name+" selected");
+  
+  shortSelectedStockIndex=stockIndex;
+  var shortStockSlider= document.getElementById("shortStockSlider");
+  shortStockSlider.min=STOCK_INCREMENT;
+  shortStockSlider.step=STOCK_INCREMENT;
+  shortStockSlider.max=stocks[shortSelectedStockIndex].available;
+
+  for (var i=0;i<stocks.length;i++)
+  {
+    document.getElementById("buyStock"+i).style.color=(i==stockIndex?"#003200":"white");
+  }
+}
+
+function updateShortStockButtons()
+{
+  if (typeof stocks == 'undefined' || typeof myPlayer == 'undefined')
+    return;
+  for (var i=0;i<stocks.length;i++)
+  {
+    var stockButton=document.getElementById("shortStock"+i);
+    stockButton.style.backgroundColor=stocks[i].colour;
+    stockButton.innerHTML=stocks[i].name;
+    stockButton.disabled=(stocks[i].available == 0 || getShortedStockAmount(stocks[i].name) > 0); // Can't short a stock you're already currently shorting
+  }
+}
+
+function getShortedStockAmount(stockName)
+{
+  for (var i=0;i<myPlayer.account.borrowedStocks.length;i++)
+  {
+    if (myPlayer.account.borrowedStocks[i].name==stockName)
+      return myPlayer.account.borrowedStocks[i].amount;
+  }
+  return 0;
+}
+
+function lookForShortStockAmountChange()
+{
+  var stockAmount = parseInt(document.getElementById("shortStockSlider").value);
+  document.getElementById("shortStockAmount").innerHTML = stockAmount;
+}
+
+function closeShortForm()
+{
+  clearInterval(shortStockAmountMonitor);
+	document.getElementById("shortForm").style.display= "none";
+}
+
+// ********** END OF SHORT FORM FUNCTIONS **********
+
 // ********** START OF SELL FUNCTION ********** 
 
 sell = function()
@@ -339,27 +470,12 @@ function closeBankForm()
 suspect = function()
 {
     closeSuspectForm();
-    var suspectedPlayerName = getSuspectedPlayerName();
-    if (suspectedPlayerName == NONE)
-        return;
-    socket.emit(CMD_SUSPECT,gameID,myPlayer.name,suspectedPlayerName);
+    socket.emit(CMD_SUSPECT,gameID,myPlayer.name);
 }
 
 function openSuspectForm()
 {
-  document.getElementById('suspectPlayers').innerHTML=addSuspectPlayerDropDown();
   document.getElementById('suspectForm').style.display= "block";
-}
-
-getSuspectedPlayerName = function(action)
-{
-    var dd = document.getElementById('suspectSelectPlayer');
-    return dd.options[dd.selectedIndex].value;
-}
-
-function addSuspectPlayerDropDown()
-{
-    return addPlayerDropDown("suspectSelectPlayer");
 }
 
 function closeSuspectForm()

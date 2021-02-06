@@ -79,6 +79,12 @@ exports.sellStock=function(stockName,amount)
   return getStock(stockName).sell(amount);
 }
 
+// After a margin call - see Account.js
+exports.repayStock=function(stockName,amount)
+{
+  return getStock(stockName).sell(amount);
+}
+
 exports.processDay=function(gameDate,newsEvent)
 {
   if (marketClosedDaysRemaining > 0)
@@ -259,6 +265,26 @@ function getStock(stockName)
   return null;
 }
 
+// Interest rate is calculated based on market state
+// Market doing badly = high interest
+// Market doing well = low interest
+// Returns a number between MIN_INTEREST_RATE && MAX_INTEREST_RATE
+
+exports.calcInterestRate=function()
+{
+  var totalTrend=0;
+  stocks.forEach(function(stock)
+  {
+    totalTrend+=stock.trend;
+  });
+
+  var averageTrend=totalTrend/stocks.length;
+
+  // Average trend will be between -STOCK_MAX_TREND && STOCK_MAX_TREND
+  // 'STOCK_MAX_TREND-averageTrend' will therefore vary between 0 and 2*STOCK_MAX_TREND
+  return STOCK_MAX_TREND-averageTrend;
+}
+
 updatePrices = function()
 {
   stocks.forEach(function(stock)
@@ -271,7 +297,6 @@ updatePrices = function()
       if (Math.abs(stock.trend) > 1)
       {
         stock.trend*=STOCK_DAMPING_FACTOR;
-        console.log("stockMarket: updatePrices: Trend for: "+stock.name+" = "+stock.trend);
       }
     }
   });

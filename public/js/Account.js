@@ -7,10 +7,11 @@ exports.Account=function(name)
     this.name=name;
     this.cash=0;
     this.stocks=[];
+    this.borrowedStocks=[];
     this.isHacking=NONE;
-    this.beingHackedBy=NONE;
     this.suspensionDays=0;
     this.hackDaysLeft=0;
+    this.status="";
 
     this.getCash=function()
     {
@@ -39,6 +40,43 @@ exports.Account=function(name)
     this.isOverDrawn=function()
     {
         return this.cash < 0;
+    }
+
+    this.checkMarginCalls=function()
+    {
+        for (var i=0;i<this.borrowedStocks.length;i++)
+        {
+            if (this.borrowedStocks[i].marginCallDays > 0)
+            {
+                this. borrowedStocks[i].marginCallDays--;
+                if (this.borrowedStocks[i].marginCallDays == 0)
+                {
+                    this.handleMarginCall(i);
+                }  
+            }
+        }
+    }
+
+    this.handleMarginCall=function(stockIndex)
+    {
+        // If account has enough stock to cover the margin call then just pay it back
+        if (this.getStockHolding(this.borrowedStocks[stockIndex].name) >= this.borrowedStocks[stockIndex].amount)
+        {
+            this.reduceStockHolding(this.borrowedStocks[stockIndex].name,this.borrowedStocks[stockIndex].amount);
+            mkt.repayStock(this.borrowedStocks[stockIndex].name,this.borrowedStocks[stockIndex].amount); 
+            this.borrowedStocks[stockIndex].amount=0;
+            this.setAccountStatus(MSG_MARGIN_CALL_REPAID_WITH_EXISTING_STOCK);
+        }
+        else 
+        {
+            var stockPrice=mkt.getStockPrice(this.borrowedStocks[stockIndex].name);
+            console.log("Account: handleMarginCall: "+stockPrice+"/"+this.borrowedStocks[stockIndex].amount);
+            var repaymentAmount=this.borrowedStocks[stockIndex].amount*stockPrice;
+            this.debit(repaymentAmount);
+            mkt.repayStock(this.borrowedStocks[stockIndex].name,this.borrowedStocks[stockIndex].amount); 
+            this.setAccountStatus(MSG_MARGIN_CALL_REPAID,formatMoney(repaymentAmount));
+            this.borrowedStocks[stockIndex].amount=0;
+        }
     }
 
     this.progressSuspension=function()
@@ -84,35 +122,16 @@ exports.Account=function(name)
         return this.isHacking;
     }
 
-    this.beingHacked=function()
-    {
-        return this.beingHackedBy!=NONE;
-    }
-
     this.stopHackingAnAccount=function()
     {
         this.isHacking = NONE;
-    }
-    
-    this.stopBeingHacked=function()
-    {
-        this.beingHackedBy = NONE;
     }
 
     this.setupHacker=function(hackedName)
     {
         this.isHacking=hackedName;
         this.hackDaysLeft= Math.floor(.5*HACKING_DURATION_DAYS*(1+Math.random())); // i.e. between 50% and 100 % of HACKING_DURATION_DAYS (defined in Players.js)
-    }
-
-    this.setHackOnAccount=function(hackerName)
-    {
-        this.beingHackedBy=hackerName;
-    }
-
-    this.getHackerName=function()
-    {
-        return this.beingHackedBy;
+        console.log("Account: setupHacker: hacker="+this.name+" / hacked="+hackedName+" / "+this.hackDaysLeft);
     }
 
     this.splitStock=function(stockName)
@@ -144,6 +163,40 @@ exports.Account=function(name)
         }
         else
             return BROKER_INSUFFICIENT_STOCK;
+    }
+
+    this.shortStock=function(stockName,amount)
+    {
+        if (this.getBorrowedStockHolding(stockName) > 0)
+            return BROKER_STOCK_ALREADY_BORROWED;
+
+        // No checks (deliberately) on Player account cash
+        // Upon a margin call, the player could sink into massive debt
+ 
+        var sharesBorrowed=mkt.buyStock(stockName,amount); 
+        if (sharesBorrowed > 0)
+        {
+            this.addToBorrowedStockHolding(stockName,sharesBorrowed);
+            var valueOfSale = mkt.sellStock(stockName,sharesBorrowed); 
+            this.deposit(valueOfSale);
+            console.log("Account: shortStock: "+this.name+" borrowed "+sharesBorrowed+" shares of "+stockName+" and sold them for "+formatMoney(valueOfSale));
+            return sharesBorrowed;
+        }
+        else
+            return BROKER_INSUFFICIENT_STOCK;
+    }
+
+    this.repayStock=function(stockName)
+    {
+        var amount=this.getBorrowedStockHolding(stockName);
+        if (amount == 0)
+        {
+            this.setAccountStatus(MSG_NOTHING_TO_REPAY,amount,stockName);
+            return BROKER_NOTHING_TO_REPAY;
+        }
+        mkt.repayStock(stockName,amount); 
+        this.setAccountStatus(MSG_STOCK_BORROW_REPAID,amount,stockName);
+        this.clearBorrowedStockHolding(stockName);
     }
 
     this.sellStock = function(stockName,amount)
@@ -226,6 +279,16 @@ exports.Account=function(name)
         return 0;
     }
 
+    this.getBorrowedStockHolding=function(stockName)
+    {
+        for (var i=0;i<this.borrowedStocks.length;i++)
+        {
+            if (this.borrowedStocks[i].name==stockName)
+                return this.borrowedStocks[i].amount;
+        }
+        return 0;
+    }
+
     this.addToStockHolding=function(stockName,amount)
     {
         for (var i=0;i<this.stocks.length;i++)
@@ -240,6 +303,34 @@ exports.Account=function(name)
         this.stocks.push(new StockHolding(stockName,amount));
     }
 
+    this.addToBorrowedStockHolding=function(stockName,amount)
+    {
+        var marginCallDays=MIN_MARGIN_CALL_DAYS*Math.floor(1+Math.random()*2);
+        for (var i=0;i<this.borrowedStocks.length;i++)
+        {
+            if (this.borrowedStocks[i].name==stockName)
+            {
+                this.borrowedStocks[i].amount=amount;
+                this.borrowedStocks[i].marginCallDays=marginCallDays;
+                return;
+            }
+        }        
+        this.borrowedStocks.push(new BorrowedStockHolding(stockName,amount,marginCallDays));
+    }
+
+    this.clearBorrowedStockHolding=function(stockName)
+    {
+        for (var i=0;i<this.borrowedStocks.length;i++)
+        {
+            if (this.borrowedStocks[i].name==stockName)
+            {
+                this.borrowedStocks[i].amount=0;
+                this.borrowedStocks[i].marginCallDays=0;
+                return;
+            }
+        }      
+    }
+
     this.reduceStockHolding= function (stockName,amount)
     {
         for (var i=0;i<this.stocks.length;i++)
@@ -251,9 +342,26 @@ exports.Account=function(name)
         }
     }
 
+    this.setAccountStatus=function(msgType,argX,argY,argZ)
+    {
+        var msg =msgType[LANG_EN];
+        if (argX !== undefined) msg=msg.replace("$x",argX);
+        if (argY !== undefined) msg=msg.replace("$y",argY);
+        if (argZ !== undefined) msg=msg.replace("$z",argZ);
+        this.status=msg;
+        console.log("Account: setStatus: "+this.name+": "+msg);
+    }
+
     StockHolding = function (name,amount)
     {
         this.name=name;
         this.amount=amount;
+    }
+
+    BorrowedStockHolding = function (name,amount,marginCallDays)
+    {
+        this.name=name;
+        this.amount=amount;
+        this.marginCallDays=marginCallDays;
     }
 }

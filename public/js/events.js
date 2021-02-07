@@ -194,7 +194,7 @@ exports.findUpcomingEvent = function (aDate,numDays)
     var dayDiff = dayDifference(aDate,events[i].date);
     if (dayDiff>0 && dayDiff <= numDays && interestingEvent(events[i].type))
     {
-        return events[i];
+      return events[i];
     }
   }
   return null;

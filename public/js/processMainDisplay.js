@@ -63,7 +63,7 @@ socket = io.connect();
 socket.on(CMD_NEW_PRICES,function(data)
 {
     stocks=data.msg;
-    console.log("CMD_NEW_PRICES: Stocks length: "+stocks.length);
+    //console.log("CMD_NEW_PRICES: Stocks length: "+stocks.length);
    
     if (numStocks !=stocks.length)
     {
@@ -205,12 +205,12 @@ function getHackedPlayerColour(daysLeft)
 {
     if (daysLeft < 2)
         return "rgb(255,0,0)";
-    else if (daysLeft < 10)
-        return "rgb(255,200,200)";
-    else if (daysLeft < 15)
+    else if (daysLeft < 5)
         return "rgb(255,220,220)";
-    else 
+    else if (daysLeft < 10)
         return "rgb(255,240,240)";
+    else 
+        return "rgb(255,255,255)";
 }
 
 function createStockDisplay(playerStocks)

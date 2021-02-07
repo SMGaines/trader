@@ -133,14 +133,13 @@ socket.on(CMD_PLAYER_LIST,function(data)
   {
     openSuspensionForm(myPlayer);
   }
-  else if (myPlayer.account.hackDaysLeft > 0)
-    showHackInProgressForm(myPlayer.account.hackDaysLeft);
   else if (myPlayer.status != "")
   {
     if (isChristmas(gameDate))
       document.getElementById("xmas").play();
     openStatusForm(myPlayer.status);
   }
+  showHackInProgressForm(myPlayer.account.hackDaysLeft); // Clears the form if zero days left
 });
 
 init = function()

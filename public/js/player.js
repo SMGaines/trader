@@ -261,9 +261,9 @@ exports.Player = function(name,type)
     }
     else
     {
-      var suspension = Math.floor(HACKING_SUSPENSION_DAYS/numPlayers);
+      var suspension = Math.floor(HACKING_SUSPENSION_DAYS/2);
       broker.suspendAccount(this.name,suspension);
-      this.setStatus(MSG_SUSPICION_IGNORED);
+      this.setStatus(MSG_WASTING_POLICE_TIME,suspension);
     }
   }
 
@@ -334,7 +334,7 @@ exports.Player = function(name,type)
       case EVENT_STOCK_DIVIDEND: this.setStatus(MSG_EVENT_STOCK_DIVIDEND,event.stockName,interestingEventDate);break;
       case EVENT_STOCK_SUSPENDED: this.setStatus(MSG_EVENT_STOCK_SUSPENDED,event.stockName,interestingEventDate);break;
       case EVENT_STOCK_SPLIT: this.setStatus(MSG_EVENT_STOCK_SPLIT,event.stockName,interestingEventDate);break;
-      case EVENT_MARKET_CLOSED: this.setStatus(MSG_EVENT_MARKET_CLOSED,"",interestingEventDate);break;
+      case EVENT_MARKET_CLOSED: this.setStatus(MSG_EVENT_MARKET_CLOSED,interestingEventDate);break;
       default: log("setupInsider: Unknown event type: "+event.type);
     }
   }

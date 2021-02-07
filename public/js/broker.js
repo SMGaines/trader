@@ -197,12 +197,12 @@ exports.taxReturn=function(accountName)
 
 exports.setupHack = function(hackingAccountName,hackedAccountName)
 {  
-    var hackerAccount=findAccount(hackingAccountName);
+    var hackingAccount=findAccount(hackingAccountName);
     if (beingHacked(hackedAccountName))
     {
         return ERROR_HACK_ALREADY_IN_PROGRESS;
     }
-    hackerAccount.setupHacker(hackedAccountName);
+    hackingAccount.setupHacker(hackedAccountName);
     return BROKER_OK;
 }
 
@@ -243,12 +243,11 @@ executeHack=function(hackerAccount,hackedAccount)
 
 beingHacked=function(accountName)
 {
-  accounts.forEach(function(account)
+  for (var i=0;i<accounts.length;i++)
   {
-    if (account.isHacking == accountName)
+    if (accounts[i].isHacking == accountName)
       return true;
-  });
-
+  }
   return false;
 }
 exports.beingHacked=beingHacked;

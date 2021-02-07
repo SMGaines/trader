@@ -46,7 +46,7 @@ exports.processBot=function(player,gameDate,gameEndDate,numPlayers)
   else if (Math.random() > .95)
     player.setupInsider(gameDate);
   else if (broker.beingHacked(player.name))
-    player.suspectHacker(broker.chooseRandomAccountName(player.name),numPlayers);
+    player.suspectHacking();
 }
 
   function nearEndOfGame(gameEndDate,gameDate)
@@ -80,7 +80,7 @@ exports.processBot=function(player,gameDate,gameEndDate,numPlayers)
         player.setupHack(playerToHackName);
     }
     else if (broker.beingHacked(player.name) && Math.random() > .95)
-      player.suspectHacker(broker.chooseRandomAccountName(player.name),numPlayers);
+      player.suspectHacking();
     else if (player.numInsiderDeals == 0)
     {
       var insiderEvent = player.setupInsider(gameDate);

@@ -258,8 +258,11 @@ function createSpan(text,cssClass,colour)
 function formatMoney(amount)
 {
     const formatter = new Intl.NumberFormat('en-US', {style: 'currency',currency: 'USD',maximumFractionDigits: 0, minimumFractionDigits: 0});
+    const milFormatter = new Intl.NumberFormat('en-US', {style: 'currency',currency: 'USD',maximumFractionDigits: 1, minimumFractionDigits: 1});
     if (amount > 1000000)
-        return createSpan(formatter.format(amount/1000000)+"M","mainDisplayText","red");
+        return createSpan(milFormatter.format(amount/1000000)+"M","mainDisplayText","green");
+    else if (amount < 0)
+        return createSpan(formatter.format(Math.abs(amount/1000))+"K","mainDisplayText","red");
     else
         return createSpan(formatter.format(amount/1000)+"K","mainDisplayText","white");
 }

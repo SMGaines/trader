@@ -93,19 +93,23 @@ processPlayersEvent=function(newsEvent)
     return newsEvent;
 }
 
-// If the account has a negative balance, pay it off from the bank account;
+// 1) Any borrowed(shorted) shares are paid back at market rate
+// 2) If the account has a negative balance, pay it off from the bank account;
 // (Used right at end of game)
+
 exports.payAccountDebts=function()
 {
     players.forEach(function(player)
     {
-      var accountBalance = broker.getCash(player.name);
-      if (accountBalance < 0)
-      {
-        player.debit(Math.abs(accountBalance));
-        player.setStatus(MSG_DEBTS_PAID,formatMoney(Math.abs(accountBalance)))
-        console.log("Players: payAccountDebts: "+player.name+" paying debts of "+formatMoney(Math.abs(accountBalance)));
-      }
+        broker.forceMarginCalls(player.name);
+
+        var accountBalance = broker.getCash(player.name);
+        if (accountBalance < 0)
+        {
+            player.debit(Math.abs(accountBalance));
+            player.setStatus(MSG_DEBTS_PAID,formatMoney(Math.abs(accountBalance)))
+            console.log("Players: payAccountDebts: "+player.name+" paying debts of "+formatMoney(Math.abs(accountBalance)));
+        }
     });
 }
 

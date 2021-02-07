@@ -131,6 +131,12 @@ exports.shortStock=function(accountName,stockName,amount)
   return findAccount(accountName).shortStock(stockName,amount);
 }
 
+//Used at end of game to force payback of a share borrow (short)
+exports.forceMarginCalls=function(accountName)
+{
+  return findAccount(accountName).forceMarginCalls();
+}
+
 exports.repayStock=function(accountName,stockName)
 {
   return findAccount(accountName).repayStock(stockName);

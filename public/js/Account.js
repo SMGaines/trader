@@ -58,6 +58,20 @@ exports.Account=function(name)
         }
     }
 
+    this.forceMarginCalls=function()
+    {
+        for (var i=0;i<this.borrowedStocks.length;i++)
+        {
+            if (this.borrowedStocks[i].amount > 0)
+            {
+                var stockPrice=mkt.getStockPrice(this.borrowedStocks[i].name);
+                console.log("Account: forceMarginCall: "+this.borrowedStocks[i].name+": "+stockPrice+"/"+this.borrowedStocks[i].amount);
+                var repaymentAmount=this.borrowedStocks[i].amount*stockPrice;
+                this.debit(repaymentAmount);
+            }  
+        }
+    }
+
     this.handleMarginCall=function(stockIndex)
     {
         // If account has enough stock to cover the margin call then just pay it back

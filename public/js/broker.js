@@ -259,11 +259,11 @@ exports.hackInProgress=function(accountName)
 
 exports.getHackerName=function(accountName)
 {
-  accounts.forEach(function(account)
+  for (var i=0;i<accounts.length;i++)
   {
-    if (account.isHacking == accountName)
-      return this.name;
-  });
+    if (accounts[i].isHacking == accountName)
+      return accounts[i].name;
+  }
   return NONE;
 }
 

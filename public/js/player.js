@@ -196,7 +196,7 @@ exports.Player = function(name,type)
         this.setStatus(MSG_STOCK_ALREADY_BORROWED);
         break;
       default: 
-        this.setStatus(MSG_SHARE_BORROW,result,stockName);
+        //this.setStatus(MSG_SHARE_BORROW,result,stockName);
         break;
     }
   }
@@ -245,11 +245,6 @@ exports.Player = function(name,type)
       this.setStatus(MSG_SUSPENDED);
       return;
     }
-    if (!broker.beingHacked(this.name))
-    {
-      this.setStatus(MSG_SUSPICION_IGNORED);
-      return;
-    }
     
     var hackerName=broker.getHackerName(this.name);
 
@@ -269,7 +264,7 @@ exports.Player = function(name,type)
 
   this.setupInsider = function(gameDate)
   {
-    log("setupInsider: "+this.name+" asking for Insider information on "+gameDate);
+    //log("setupInsider: "+this.name+" asking for Insider information on "+gameDate);
     if (broker.accountIsSuspended(this.name))
     {
       this.setStatus(MSG_SUSPENDED);

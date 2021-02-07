@@ -1,6 +1,7 @@
 global.NONE = "NONE";
 
 var mkt=require("./stockmarket.js");
+const { formatMoney } = require("./utils.js");
 
 exports.Account=function(name)
 {
@@ -69,11 +70,14 @@ exports.Account=function(name)
         }
         else 
         {
+            // Repayment is simulated by just debiting the account based on the current shareprice and the amount borrowed
+            // (In the real world it is done by the account holder buying the relevant shares on the market and giving them back)
+            // Either way, the same net number of shares remain in circulation
             var stockPrice=mkt.getStockPrice(this.borrowedStocks[stockIndex].name);
             console.log("Account: handleMarginCall: "+stockPrice+"/"+this.borrowedStocks[stockIndex].amount);
             var repaymentAmount=this.borrowedStocks[stockIndex].amount*stockPrice;
             this.debit(repaymentAmount);
-            mkt.repayStock(this.borrowedStocks[stockIndex].name,this.borrowedStocks[stockIndex].amount); 
+
             this.setAccountStatus(MSG_MARGIN_CALL_REPAID,formatMoney(repaymentAmount));
             this.borrowedStocks[stockIndex].amount=0;
         }
@@ -179,6 +183,7 @@ exports.Account=function(name)
             this.addToBorrowedStockHolding(stockName,sharesBorrowed);
             var valueOfSale = mkt.sellStock(stockName,sharesBorrowed); 
             this.deposit(valueOfSale);
+            this.setAccountStatus(MSG_SHARE_BORROW,sharesBorrowed,stockName,formatMoney(valueOfSale));
             console.log("Account: shortStock: "+this.name+" borrowed "+sharesBorrowed+" shares of "+stockName+" and sold them for "+formatMoney(valueOfSale));
             return sharesBorrowed;
         }
@@ -194,8 +199,10 @@ exports.Account=function(name)
             this.setAccountStatus(MSG_NOTHING_TO_REPAY,amount,stockName);
             return BROKER_NOTHING_TO_REPAY;
         }
-        mkt.repayStock(stockName,amount); 
-        this.setAccountStatus(MSG_STOCK_BORROW_REPAID,amount,stockName);
+        //mkt.repayStock(stockName,amount); 
+        var stockPrice=mkt.getStockPrice(stockName);
+        this.debit(stockPrice*amount);
+        this.setAccountStatus(MSG_STOCK_BORROW_REPAID,amount,stockName,formatMoney(stockPrice*amount));
         this.clearBorrowedStockHolding(stockName);
     }
 

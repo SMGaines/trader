@@ -245,6 +245,8 @@ repay = function()
 
 function openRepayForm()
 {
+  if (!hasShortedSomeStock())
+    return;
   repaySelectedStockIndex=0;
   updateRepayStockButtons();
   document.getElementById("repayForm").style.display= "block";
@@ -270,8 +272,9 @@ function updateRepayStockButtons()
   {
     var stockButton=document.getElementById("repayStock"+i);
     stockButton.style.backgroundColor=stocks[i].colour;
-    stockButton.innerHTML=stocks[i].name;
-    stockButton.disabled=(getShortedStockAmount(stocks[i].name) == 0); // Can't repay a stock that you haven't shorted
+    var shortedAmount=getShortedStockAmount(stocks[i].name);
+    stockButton.innerHTML=shortedAmount+"";
+    stockButton.disabled=(shortedAmount == 0); // Can't repay a stock that you haven't shorted
   }
 }
 
@@ -334,6 +337,16 @@ function updateShortStockButtons()
     stockButton.innerHTML=stocks[i].name;
     stockButton.disabled=(stocks[i].available == 0 || getShortedStockAmount(stocks[i].name) > 0); // Can't short a stock you're already currently shorting
   }
+}
+
+function hasShortedSomeStock()
+{
+  for (var i=0;i<myPlayer.account.borrowedStocks.length;i++)
+  {
+    if (myPlayer.account.borrowedStocks[i].amount>0)
+      return true;
+  }
+  return false;
 }
 
 function getShortedStockAmount(stockName)

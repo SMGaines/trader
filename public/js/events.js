@@ -1,8 +1,5 @@
 global.EVENT_NONE=0;
-global.EVENT_INTEREST_RATE_UP = 1;
-global.EVENT_INTEREST_RATE_DOWN = 2;
-global.EVENT_INFLATION_RATE_UP = 3;
-global.EVENT_INFLATION_RATE_DOWN = 4;
+
 global.EVENT_GAME_WINNER = 5;
 global.EVENT_TAX_RETURN = 6;
 global.EVENT_LOTTERY_WIN = 7;
@@ -225,8 +222,14 @@ NewsEvent = function (type,stockName,headLine,tagLine,finalEvent)
 
 isGoodNews = function(type)
 {
-  return  (type == EVENT_NONE || type == EVENT_INTEREST_RATE_UP  || type==EVENT_INFLATION_RATE_DOWN ||
+  return  (type == EVENT_NONE ||
            type == EVENT_GAME_WINNER || type == EVENT_LOTTERY_WIN || type == EVENT_BOOM ||
            type == EVENT_BOOM_ALL_STOCKS || type == EVENT_STOCK_IPO || type == EVENT_STOCK_RELEASE ||
+           type == EVENT_STOCK_DIVIDEND || type==EVENT_STOCK_SPLIT);
+}
+
+exports.isPositiveMarketMove = function(type)
+{
+  return  (type == EVENT_BOOM || type == EVENT_BOOM_ALL_STOCKS || type == EVENT_STOCK_IPO || type == EVENT_STOCK_RELEASE ||
            type == EVENT_STOCK_DIVIDEND || type==EVENT_STOCK_SPLIT);
 }

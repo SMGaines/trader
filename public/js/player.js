@@ -38,6 +38,11 @@ exports.Player = function(name,type)
     broker.clearStatus(this.name);
   }
 
+  this.debit=function(amount)
+  {
+    this.balance-=amount;
+  }
+
   this.bankCash = function(amount)
   {
     if (broker.hackInProgress(this.name))

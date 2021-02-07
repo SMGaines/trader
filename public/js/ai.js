@@ -10,12 +10,7 @@ exports.processBot=function(player,gameDate,gameEndDate,numPlayers)
       player.bankCash(broker.getCash(player.name));
     return;
   }
-  if (player.name == "BOT2")
-  {
-    if (broker.getCash(player.name) > 0)
-      player.bankCash(broker.getCash(player.name));
-    return;
-  }
+
   var rndAmount = MIN_STOCK_PURCHASE*(1+Math.floor(Math.random()*20));
   var rndStock=mkt.getRandomStock();
   if (nearEndOfGame(gameEndDate,gameDate) || player.amMillionnaireOnPaper())
@@ -71,7 +66,7 @@ exports.processBot=function(player,gameDate,gameEndDate,numPlayers)
       player.bankCash(.1*broker.getCash(player.name));
     else if (Math.abs(bestPerformingStock.trend) > Math.abs(worstPerformingStock.trend) && bestPerformingStock.available >0 && (bestPerformingStock.trend >= 1 || bestPerformingStock.price < 50))
       player.buyStock(bestPerformingStock.name,bestPerformingStock.available);
-    else if (worstPerformingStock.trend < -1 && broker.getStockHolding(player.name,worstPerformingStock) > 0)
+    else if (worstPerformingStock.trend < 0 && broker.getStockHolding(player.name,worstPerformingStock) > 0)
       player.sellStock(worstPerformingStock.name,broker.getStockHolding(player.name,bestPerformingStock.name));
     else if (Math.random() > .95 && !broker.hackInProgress(player.name))
     {
@@ -79,7 +74,7 @@ exports.processBot=function(player,gameDate,gameEndDate,numPlayers)
       if (playerToHackName!="NONE")
         player.setupHack(playerToHackName);
     }
-    else if (broker.beingHacked(player.name) && Math.random() > .95)
+    else if (broker.beingHacked(player.name) && Math.random() > .9)
       player.suspectHacking();
     else if (player.numInsiderDeals == 0)
     {
@@ -122,6 +117,14 @@ exports.processBot=function(player,gameDate,gameEndDate,numPlayers)
         break;
       case EVENT_BOOM_ALL_STOCKS:
         break; 
+      case EVENT_STOCK_DIVIDEND:
+        var availableCash=player.balance-10000; // make sure he has some cash
+        if (availableCash > 0)
+        {
+          var sharesToBuy=roundStock(availableCash/getStock(event.stockName).price);
+          player.buyStock(event.stockName,sharesToBuy);
+        }
+        break;
       case EVENT_STOCK_SUSPENDED:
         if (player.getStockHolding(event.stockName) > 0)
             player.sellStock(event.stockName,broker.getStockHolding(player.name,event.stockName));

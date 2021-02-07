@@ -1,5 +1,5 @@
 const GAME_NAME="TRADER";
-const GAME_VERSION="2.1";
+const GAME_VERSION="2.2";
 
 const COOKIE_EXPIRY_MS = 60*60*1000;
 const COOKIE_USER_PARAMETER = "username";

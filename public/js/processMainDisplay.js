@@ -1,4 +1,4 @@
-const GAME_TITLE = "TRADER v2.1";
+const GAME_TITLE = "TRADER v2.2";
 const MAX_STOCKS = 6; // Co-ordinate with stockmarket.js
 const STOCK_MIN_VALUE = 5; // The lowest *display* value - actual stock price can go lower
 const STOCK_MAX_VALUE = 700; // The highest *display* value - actual stock price can go higher

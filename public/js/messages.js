@@ -55,6 +55,7 @@ global.MSG_MARGIN_CALL_REPAID=["Margin call repaid for $x",""];
 global.MSG_MARGIN_CALL_REPAID_WITH_EXISTING_STOCK=["Margin repaid with existing stock",""];
 global.MSG_NOTHING_TO_REPAY=["There is nothing to repay",""];
 global.MSG_STOCK_BORROW_REPAID=["Borrow of $x of $y repaid for $z",""];
+global.MSG_DEBTS_PAID=["Account debts of $x have been paid",""];
 
 global.MSG_NEWS_HEAD_WINNER = ["$x wins!!","$x wygrywa !!"];
 global.MSG_NEWS_SUB_WINNER = ["Crushes opposition with impressive win","Miażdży przeciwników imponującą wygraną"];

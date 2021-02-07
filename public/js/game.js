@@ -2,14 +2,16 @@ global.EINSTEIN_PREFIX="EINSTEIN";
 global.BOT_NAME_PREFIX="BOT";
 
 global.MIN_INTEREST_RATE = 1;
-global.MAX_INTEREST_RATE = 5;
+global.MAX_INTEREST_RATE = 7;
+global.STARTING_INTEREST_RATE=2;
+global.INTEREST_RATE_INCREMENT=.02; // Interest rate change per day, up or down
 
 const STATE_INITIALISING = 0;
 const STATE_REGISTRATION = 1;
 const STATE_STARTED = 2;
 const STATE_FINISHED = 3;
 
-const GAME_START_DATE = new Date("January 1 2020 00:00:00");
+const GAME_START_DATE = new Date("January 1 2021 00:00:00");
 const GAME_OVER_WARNING_DAYS=10; // How many days 'game over' warning you get when one person gets to $1m
 const SIMULATION_DAY_LENGTH=10; // in Milliseconds i.e. ultra-fast game
 
@@ -27,6 +29,7 @@ var gameID;
 var state;
 var setGameEndDate;
 var interestRate;
+var interestRateIncrement;
 
 exports.initialise=function(simul,gameDuration,dayLengthStartInSeconds,dayLengthEndInSeconds,numBots,numEinsteins)
 {
@@ -49,7 +52,9 @@ exports.initialise=function(simul,gameDuration,dayLengthStartInSeconds,dayLength
     gameEndDate.setMonth(gameDate.getMonth()+gameDurationInMonths);
     setGameEndDate=false;
 
-    interestRate=0;
+    interestRate=STARTING_INTEREST_RATE;
+    interestRateIncrement=INTEREST_RATE_INCREMENT;
+
     broker.clearAccounts();
     players.clearPlayers();
     startRegistration(numEinsteins,numBots);
@@ -118,13 +123,18 @@ processDay = function()
   // Sometimes some post-processing is done on the event, hence it's passed back
   var newsEvent = events.getNewsEvent(gameDate);
   newsEvent=market.processDay(gameDate,newsEvent); 
-  interestRate=market.calcInterestRate();
   newsEvent=players.processDay(gameDate,gameEndDate,newsEvent,interestRate); 
   newsEvent=broker.processDay(gameDate,newsEvent); 
+
+  if (newsEvent!= null)
+    modifyInterestRateDirection(newsEvent);
+
+  updateInterestRate();
 
   if (gameOver())
   {
     state=STATE_FINISHED;
+    players.payAccountDebts(); // Make sure debts in the account are paid off
     var endOfGameEvent=events.getEndOfGameEvent(players.getWinnerName());
     return endOfGameEvent;
   }
@@ -132,6 +142,21 @@ processDay = function()
     return newsEvent;
 }
 exports.processDay=processDay;
+
+updateInterestRate=function()
+{
+  interestRate+=interestRateIncrement;
+  if (interestRate > MAX_INTEREST_RATE)
+    interestRate=MAX_INTEREST_RATE;
+  if (interestRate < MIN_INTEREST_RATE)
+    interestRate=MIN_INTEREST_RATE;
+}
+
+modifyInterestRateDirection=function(event)
+{
+  var positiveNews = events.isPositiveMarketMove(event);
+  interestRateIncrement=positiveNews?-INTEREST_RATE_INCREMENT:INTEREST_RATE_INCREMENT;
+}
 
 exports.getDayDurationInMS=function()
 {

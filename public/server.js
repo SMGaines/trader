@@ -130,7 +130,9 @@ processGameOver=function(gameOverEvent)
 function updateClients(newsEvent)
 {
     if (newsEvent != null)
+    {
         sendToClient(CMD_NEWS_EVENT,newsEvent);
+    } 
 
     sendToClient(CMD_PLAYER_LIST,players.getPlayerSummaries());
     sendToClient(CMD_NEW_PRICES,market.getStocks());

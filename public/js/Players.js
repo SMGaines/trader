@@ -18,6 +18,7 @@ const PLAYER_DUPLICATE=-3;
 
 var player = require('./player.js');
 var broker=require("./broker.js");
+const { formatMoney } = require('./utils.js');
 
 players=[];
 
@@ -90,6 +91,22 @@ processPlayersEvent=function(newsEvent)
         }
     }
     return newsEvent;
+}
+
+// If the account has a negative balance, pay it off from the bank account;
+// (Used right at end of game)
+exports.payAccountDebts=function()
+{
+    players.forEach(function(player)
+    {
+      var accountBalance = broker.getCash(player.name);
+      if (accountBalance < 0)
+      {
+        player.debit(Math.abs(accountBalance));
+        player.setStatus(MSG_DEBTS_PAID,formatMoney(Math.abs(accountBalance)))
+        console.log("Players: payAccountDebts: "+player.name+" paying debts of "+formatMoney(Math.abs(accountBalance)));
+      }
+    });
 }
 
 processChristmas=function()
@@ -299,7 +316,6 @@ applyInterestRates = function(interestRate)
   {
     if (player.balance > 0)
     {
-        var currentBalance=player.balance;
         player.balance*=(100+interestRate/10)/100;
     }
   });

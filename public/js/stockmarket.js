@@ -152,7 +152,7 @@ processMarketEvent=function(newsEvent)
 {
   if (newsEvent != null)
   {
-    log("processNewsEvent: "+newsEvent.headLine+"/"+newsEvent.stockName);
+    //log("processNewsEvent: "+newsEvent.headLine+"/"+newsEvent.stockName);
     switch(newsEvent.type)
     {
       case EVENT_NONE:              break;
@@ -265,12 +265,7 @@ function getStock(stockName)
   return null;
 }
 
-// Interest rate is calculated based on market state
-// Market doing badly = high interest
-// Market doing well = low interest
-// Returns a number between MIN_INTEREST_RATE && MAX_INTEREST_RATE
-
-exports.calcInterestRate=function()
+exports.getAverageStockTrend=function()
 {
   var totalTrend=0;
   stocks.forEach(function(stock)
@@ -278,11 +273,7 @@ exports.calcInterestRate=function()
     totalTrend+=stock.trend;
   });
 
-  var averageTrend=totalTrend/stocks.length;
-
-  // Average trend will be between -STOCK_MAX_TREND && STOCK_MAX_TREND
-  // 'STOCK_MAX_TREND-averageTrend' will therefore vary between 0 and 2*STOCK_MAX_TREND
-  return STOCK_MAX_TREND-averageTrend;
+  return totalTrend/stocks.length;
 }
 
 updatePrices = function()
@@ -311,14 +302,6 @@ function setupStock()
     newStock();
   }
   numActiveStocks=NUM_INITIAL_STOCKS;
-}
-
-exports.setStartingStockAmounts=function(numAccounts)
-{
-  for (var i=0;i<stocks.length;i++)
-  {
-    stocks[i].available=roundStock(NUM_STARTING_STOCK+players.length*.1*NUM_STARTING_STOCK);
-  }
 }
 
 getRandomFactor = function ()

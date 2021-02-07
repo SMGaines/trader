@@ -74,7 +74,7 @@ exports.Account=function(name)
             // (In the real world it is done by the account holder buying the relevant shares on the market and giving them back)
             // Either way, the same net number of shares remain in circulation
             var stockPrice=mkt.getStockPrice(this.borrowedStocks[stockIndex].name);
-            console.log("Account: handleMarginCall: "+stockPrice+"/"+this.borrowedStocks[stockIndex].amount);
+            //console.log("Account: handleMarginCall: "+stockPrice+"/"+this.borrowedStocks[stockIndex].amount);
             var repaymentAmount=this.borrowedStocks[stockIndex].amount*stockPrice;
             this.debit(repaymentAmount);
 
